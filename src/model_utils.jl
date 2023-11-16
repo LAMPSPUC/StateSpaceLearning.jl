@@ -1,0 +1,130 @@
+ξ_size(T::Int64)::Int64 = T-2
+
+ζ_size(T::Int64, stabilize_ζ::Int64)::Int64 = T-stabilize_ζ-1
+
+ω_size(T::Int64, s::Int64)::Int64 = T-s
+
+o_size(T::Int64)::Int64 = T
+
+function create_ξ(T::Int64, steps_ahead::Int64)::Matrix
+    ξ_matrix = Matrix{Float64}(undef, T+steps_ahead, ξ_size(T))
+    for t in 1:T+steps_ahead
+        ξ_matrix[t, :] = t < T ? vcat(ones(t-1), zeros(T-t-1)) : ξ_matrix[T, :] = ones(ξ_size(T))
+    end
+    
+    return ξ_matrix
+end
+
+function create_ζ(T::Int64, steps_ahead::Int64, stabilize_ζ::Int64)::Matrix
+    ζ_matrix = Matrix{Float64}(undef, T+steps_ahead, ζ_size(T, stabilize_ζ) + stabilize_ζ)
+    for t in 1:T+steps_ahead
+        ζ_matrix[t, :] = t < T ? vcat(collect(t:-1:2), zeros(T-t)) : collect(t:-1:t-ζ_size(T, stabilize_ζ)-stabilize_ζ+1)
+    end
+    return ζ_matrix[:, 1:end-stabilize_ζ]
+end
+
+function create_ω(T::Int64, s::Int64, steps_ahead::Int64)::Matrix
+    ω_matrix_size = ω_size(T, s)
+    ω_matrix = Matrix{Float64}(undef, T+steps_ahead, ω_matrix_size)
+    for t in 1:T+steps_ahead
+        ωₜ_coefs = zeros(ω_matrix_size)
+        Mₜ = Int64(floor((t-1)/s))
+        lag₁ = [t - j*s for j in 1:Mₜ]
+        lag₂ = [t - j*s - 1 for j in 0:Mₜ]
+        ωₜ_coefs[lag₁[lag₁.<=ω_matrix_size]] .= 1
+        ωₜ_coefs[lag₂[0 .< lag₂.<=ω_matrix_size]] .= -1
+        ω_matrix[t, :] = ωₜ_coefs
+    end
+    return ω_matrix
+end
+
+function create_o_matrix(T::Int64, steps_ahead::Int64)::Matrix
+    return vcat(Matrix(1.0 * I, T, T), zeros(steps_ahead, T))
+end
+
+function create_initial_states_Matrix(T::Int64, s::Int64, steps_ahead::Int64, model_type::String)::Matrix
+    μ₀_coefs = ones(T+steps_ahead)
+    ν₀_coefs = collect(1:T+steps_ahead)
+
+    γ₀_coefs = zeros(T+steps_ahead, s)
+    for t in 1:T+steps_ahead
+        γ₀_coefs[t, t % s == 0 ? s : t % s] = 1.0
+    end
+    
+    if model_type == "Basic Structural"
+        return hcat(μ₀_coefs, ν₀_coefs, γ₀_coefs)
+    elseif model_type == "Local Linear Trend"
+        return hcat(μ₀_coefs, ν₀_coefs)
+    elseif model_type == "Local Level"
+        return hcat(μ₀_coefs)
+    end
+
+end
+
+function create_X(model_type::String, T::Int64, s::Int64, Exogenous_X::Matrix{Fl}, outlier::Bool, stabilize_ζ::Int64,
+                  steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
+
+    ξ_matrix = create_ξ(T, steps_ahead)
+    ζ_matrix = create_ζ(T, steps_ahead, stabilize_ζ)
+    ω_matrix = create_ω(T, s, steps_ahead)
+    o_matrix = outlier ? create_o_matrix(T, steps_ahead) : zeros(T+steps_ahead, 0)
+
+    initial_states_matrix = create_initial_states_Matrix(T, s, steps_ahead, model_type)
+    if model_type == "Basic Structural"
+        return hcat(initial_states_matrix, ξ_matrix, ζ_matrix, ω_matrix, o_matrix, vcat(Exogenous_X, Exogenous_Forecast))
+    elseif model_type == "Local Level"
+        return hcat(initial_states_matrix, ξ_matrix, o_matrix, vcat(Exogenous_X, Exogenous_Forecast))
+    elseif model_type == "Local Linear Trend"
+        return hcat(initial_states_matrix, ξ_matrix, ζ_matrix, o_matrix, vcat(Exogenous_X, Exogenous_Forecast))
+    end
+    
+end
+
+function get_components_indexes(T::Int64, s::Int64, Exogenous_X::Matrix{Fl}, outlier::Bool, model_type::String, stabilize_ζ::Int64)::Dict where Fl
+    μ₁_indexes = [1]
+    ν₁_indexes = model_type in ["Local Linear Trend", "Basic Structural"] ? [2] : Int64[]
+    γ₁_indexes = model_type == "Basic Structural" ? collect(3:2+s) : Int64[]
+
+    initial_states_indexes = μ₁_indexes
+    !isempty(ν₁_indexes) ?  initial_states_indexes = vcat(initial_states_indexes, ν₁_indexes) : nothing
+    !isempty(γ₁_indexes) ?  initial_states_indexes = vcat(initial_states_indexes, γ₁_indexes) : nothing 
+
+    FINAL_INDEX = initial_states_indexes[end]
+    
+    ξ_indexes   = collect(FINAL_INDEX + 1:FINAL_INDEX + ξ_size(T))
+    FINAL_INDEX = ξ_indexes[end]
+
+    ζ_indexes   = !isempty(ν₁_indexes) ? collect(FINAL_INDEX + 1:FINAL_INDEX + ζ_size(T, stabilize_ζ)) : Int64[]
+    FINAL_INDEX = !isempty(ν₁_indexes) ? ζ_indexes[end] : FINAL_INDEX
+
+    ω_indexes   = !isempty(γ₁_indexes) ? collect(FINAL_INDEX + 1:FINAL_INDEX + ω_size(T, s)) : Int64[]
+    FINAL_INDEX = !isempty(γ₁_indexes) ? ω_indexes[end] : FINAL_INDEX
+
+    o_indexes   = outlier ? collect(FINAL_INDEX + 1:FINAL_INDEX + o_size(T)) : Int64[]
+    FINAL_INDEX = outlier ? o_indexes[end] : FINAL_INDEX
+
+    exogenous_indexes = collect(FINAL_INDEX + 1:FINAL_INDEX + size(Exogenous_X, 2))
+
+    return Dict("μ₁" => μ₁_indexes, "ν₁" => ν₁_indexes, "γ₁" => γ₁_indexes, 
+                "ξ" => ξ_indexes, "ζ" => ζ_indexes, "ω" => ω_indexes, "o" => o_indexes, 
+                "Exogenous_X" => exogenous_indexes, "initial_states" => initial_states_indexes)
+end
+
+function get_variances(ϵ::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int64}})::Dict where Fl
+    
+    variances = Dict()
+    for component in ["ξ", "ζ", "ω"]
+        !isempty(components_indexes[component]) ? variances[component] = var(coefs[components_indexes[component]]) : nothing
+    end
+    variances["ϵ"] = var(ϵ)
+    return variances
+end
+
+function forecast_model(output::Output, steps_ahead::Int64, Exogenous_Forecast::Matrix{Fl})::Vector{Float64} where Fl
+    @assert output.model_type in AVAILABLE_MODELS "Unavailable Model"
+    Exogenous_X = output.X[:, output.components["Exogenous_X"]["Indexes"]]
+    complete_matrix = create_X(output.model_type, output.T, output.s, Exogenous_X, 
+                                output.outlier, output.stabilize_ζ, steps_ahead, Exogenous_Forecast)
+
+    return complete_matrix[end-steps_ahead+1:end, :]*output.coefs
+end
