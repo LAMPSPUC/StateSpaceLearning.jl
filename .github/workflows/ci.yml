@@ -32,3 +32,7 @@ jobs:
         run: |
           julia --color=yes -e 'import Pkg; Pkg.build()'
           julia --color=yes -e 'import Pkg; Pkg.activate("."); Pkg.instantiate(); Pkg.test()'
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
