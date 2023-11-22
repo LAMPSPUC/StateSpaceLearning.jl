@@ -70,7 +70,7 @@ prediction = exp.(prediction_raw)
 plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
 plot!(vcat(ones(output.T).*NaN, prediction), lab = "Forcast", w=2, color = "blue")
 ```
-![quick_example_airp](./docs/assets/quick_example_airp.png)
+![quick_example_airp](./docs/assets/quick_example_airp.PNG)
 
 ### Completion of missing values
 Quick example of completion of missing values for the air passengers time-series (artificial NaN values are added to the original time-series).
@@ -99,7 +99,7 @@ plot!(real_removed_valued, lab = "Real Removed Values", w=2, color = "red")
 plot!(fitted_completed_missing_values, lab = "Fit in Sample completed values", w=2, color = "blue")
 
 ```
-![quick_example_completion_airp](./docs/assets/quick_example_completion_airp.png)
+![quick_example_completion_airp](./docs/assets/quick_example_completion_airp.PNG)
 
 ## Contributing
 
