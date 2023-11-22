@@ -1,11 +1,74 @@
+"""
+    ξ_size(T::Int64)::Int64
+
+    Calculates the size of ξ innovation matrix based on the input T.
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+
+    # Returns
+    - `Int64`: Size of ξ calculated from T.
+
+"""
 ξ_size(T::Int64)::Int64 = T-2
 
+"""
+ζ_size(T::Int64, stabilize_ζ::Int64)::Int64
+
+    Calculates the size of ζ innovation matrix based on the input T.
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+    - `stabilize_ζ::Int64`: Stabilize parameter ζ.
+
+    # Returns
+    - `Int64`: Size of ζ calculated from T.
+
+"""
 ζ_size(T::Int64, stabilize_ζ::Int64)::Int64 = T-stabilize_ζ-1
 
+"""
+ω_size(T::Int64, s::Int64)::Int64
+
+    Calculates the size of ω innovation matrix based on the input T.
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+    - `s::Int64`: Seasonal period.
+
+    # Returns
+    - `Int64`: Size of ω calculated from T.
+
+"""
 ω_size(T::Int64, s::Int64)::Int64 = T-s
 
+"""
+o_size(T::Int64)::Int64
+
+    Calculates the size of outlier matrix based on the input T.
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+
+    # Returns
+    - `Int64`: Size of o calculated from T.
+
+"""
 o_size(T::Int64)::Int64 = T
 
+"""
+    create_ξ(T::Int64, steps_ahead::Int64)::Matrix
+
+    Creates a matrix of innovations ξ based on the input sizes, and the desired steps ahead (this is necessary for the forecast function)
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+    - `steps_ahead::Int64`: Number of steps ahead (for estimation purposes this should be set at 0).
+
+    # Returns
+    - `Matrix`: Matrix of innovations ξ constructed based on the input sizes.
+
+"""
 function create_ξ(T::Int64, steps_ahead::Int64)::Matrix
     ξ_matrix = Matrix{Float64}(undef, T+steps_ahead, ξ_size(T))
     for t in 1:T+steps_ahead
@@ -15,6 +78,20 @@ function create_ξ(T::Int64, steps_ahead::Int64)::Matrix
     return ξ_matrix
 end
 
+"""
+create_ζ(T::Int64, steps_ahead::Int64, stabilize_ζ::Int64)::Matrix
+
+    Creates a matrix of innovations ζ based on the input sizes, and the desired steps ahead (this is necessary for the forecast function).
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+    - `steps_ahead::Int64`: Number of steps ahead (for estimation purposes this should be set at 0).
+    - `stabilize_ζ::Int64`: Stabilize parameter ζ.
+
+    # Returns
+    - `Matrix`: Matrix of innovations ζ constructed based on the input sizes.
+
+"""
 function create_ζ(T::Int64, steps_ahead::Int64, stabilize_ζ::Int64)::Matrix
     ζ_matrix = Matrix{Float64}(undef, T+steps_ahead, ζ_size(T, stabilize_ζ) + stabilize_ζ)
     for t in 1:T+steps_ahead
@@ -23,6 +100,20 @@ function create_ζ(T::Int64, steps_ahead::Int64, stabilize_ζ::Int64)::Matrix
     return ζ_matrix[:, 1:end-stabilize_ζ]
 end
 
+"""
+create_ω(T::Int64, s::Int64, steps_ahead::Int64)::Matrix
+
+    Creates a matrix of innovations ω based on the input sizes, and the desired steps ahead (this is necessary for the forecast function).
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+    - `s::Int64`: Seasonal period.
+    - `steps_ahead::Int64`: Number of steps ahead (for estimation purposes this should be set at 0).
+    
+    # Returns
+    - `Matrix`: Matrix of innovations ω constructed based on the input sizes.
+
+"""
 function create_ω(T::Int64, s::Int64, steps_ahead::Int64)::Matrix
     ω_matrix_size = ω_size(T, s)
     ω_matrix = Matrix{Float64}(undef, T+steps_ahead, ω_matrix_size)
@@ -38,10 +129,38 @@ function create_ω(T::Int64, s::Int64, steps_ahead::Int64)::Matrix
     return ω_matrix
 end
 
+"""
+create_o_matrix(T::Int64, steps_ahead::Int64)::Matrix
+
+    Creates a matrix of outliers based on the input sizes, and the desired steps ahead (this is necessary for the forecast function).
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+    - `steps_ahead::Int64`: Number of steps ahead (for estimation purposes this should be set at 0).
+    
+    # Returns
+    - `Matrix`: Matrix of outliers constructed based on the input sizes.
+
+"""
 function create_o_matrix(T::Int64, steps_ahead::Int64)::Matrix
     return vcat(Matrix(1.0 * I, T, T), zeros(steps_ahead, T))
 end
 
+"""
+    create_initial_states_Matrix(T::Int64, s::Int64, steps_ahead::Int64, model_type::String)::Matrix
+
+    Creates an initial states matrix based on the input parameters.
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+    - `s::Int64`: Seasonal period.
+    - `steps_ahead::Int64`: Number of steps ahead.
+    - `model_type::String`: Type of model.
+
+    # Returns
+    - `Matrix`: Initial states matrix constructed based on the input parameters.
+
+"""
 function create_initial_states_Matrix(T::Int64, s::Int64, steps_ahead::Int64, model_type::String)::Matrix
     μ₀_coefs = ones(T+steps_ahead)
     ν₀_coefs = collect(1:T+steps_ahead)
@@ -61,6 +180,25 @@ function create_initial_states_Matrix(T::Int64, s::Int64, steps_ahead::Int64, mo
 
 end
 
+"""
+    create_X(model_type::String, T::Int64, s::Int64, Exogenous_X::Matrix{Fl}, outlier::Bool, stabilize_ζ::Int64,
+             steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
+
+    Creates the StateSpaceLearning matrix X based on the model type and input parameters.
+
+    # Arguments
+    - `model_type::String`: Type of model.
+    - `T::Int64`: Length of the original time series.
+    - `s::Int64`: Seasonal period.
+    - `Exogenous_X::Matrix{Fl}`: Exogenous variables matrix.
+    - `outlier::Bool`: Flag for considering outlier component.
+    - `stabilize_ζ::Int64`: Stabilize parameter for ζ matrix.
+    - `steps_ahead::Int64`: Number of steps ahead (default: 0).
+    - `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast matrix (default: zeros).
+
+    # Returns
+    - `Matrix`: StateSpaceLearning matrix X constructed based on the input parameters.
+"""
 function create_X(model_type::String, T::Int64, s::Int64, Exogenous_X::Matrix{Fl}, outlier::Bool, stabilize_ζ::Int64,
                   steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
 
@@ -80,6 +218,23 @@ function create_X(model_type::String, T::Int64, s::Int64, Exogenous_X::Matrix{Fl
     
 end
 
+"""
+    get_components_indexes(T::Int64, s::Int64, Exogenous_X::Matrix{Fl}, outlier::Bool, model_type::String, stabilize_ζ::Int64)::Dict where Fl
+
+    Generates indexes dict for different components based on the model type and input parameters.
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+    - `s::Int64`: Seasonal period.
+    - `Exogenous_X::Matrix{Fl}`: Exogenous variables matrix.
+    - `outlier::Bool`: Flag for considering outlier component.
+    - `model_type::String`: Type of model.
+    - `stabilize_ζ::Int64`: Stabilize parameter for ζ matrix.
+
+    # Returns
+    - `Dict`: Dictionary containing the corresponding indexes for each component of the model.
+
+"""
 function get_components_indexes(T::Int64, s::Int64, Exogenous_X::Matrix{Fl}, outlier::Bool, model_type::String, stabilize_ζ::Int64)::Dict where Fl
     μ₁_indexes = [1]
     ν₁_indexes = model_type in ["Local Linear Trend", "Basic Structural"] ? [2] : Int64[]
@@ -110,6 +265,20 @@ function get_components_indexes(T::Int64, s::Int64, Exogenous_X::Matrix{Fl}, out
                 "Exogenous_X" => exogenous_indexes, "initial_states" => initial_states_indexes)
 end
 
+"""
+    get_variances(ϵ::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int64}})::Dict where Fl
+
+    Calculates variances for each innovation component based on input data.
+
+    # Arguments
+    - `ϵ::Vector{Fl}`: Vector of residuals.
+    - `coefs::Vector{Fl}`: Vector of coefficients.
+    - `components_indexes::Dict{String, Vector{Int64}}`: Dictionary containing indexes for different components.
+
+    # Returns
+    - `Dict`: Dictionary containing variances for each innovation component.
+
+"""
 function get_variances(ϵ::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int64}})::Dict where Fl
     
     variances = Dict()
@@ -120,6 +289,20 @@ function get_variances(ϵ::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Di
     return variances
 end
 
+"""
+    forecast_model(output::Output, steps_ahead::Int64, Exogenous_Forecast::Matrix{Fl})::Vector{Float64} where Fl
+
+    Returns the forecast for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
+
+    # Arguments
+    - `output::Output`: Output object obtained from model fitting.
+    - `steps_ahead::Int64`: Number of steps ahead for forecasting.
+    - `Exogenous_Forecast::Matrix{Fl}`: Exogenous forecast matrix.
+
+    # Returns
+    - `Vector{Float64}`: Vector containing forecasted values.
+
+"""
 function forecast_model(output::Output, steps_ahead::Int64, Exogenous_Forecast::Matrix{Fl})::Vector{Float64} where Fl
     @assert output.model_type in AVAILABLE_MODELS "Unavailable Model"
     Exogenous_X = output.X[:, output.components["Exogenous_X"]["Indexes"]]

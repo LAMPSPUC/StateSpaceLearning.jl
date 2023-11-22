@@ -1,3 +1,20 @@
+"""
+    get_information(T::Int64, K::Int64, ϵ::Vector{Float64};
+                    hyperparameter_selection::String = "bic", p::Int64 = 0)::Float64
+
+    Calculates information criterion value based on the provided parameters and residuals.
+
+    # Arguments
+    - `T::Int64`: Number of observations.
+    - `K::Int64`: Number of selected predictors.
+    - `ϵ::Vector{Float64}`: Vector of residuals.
+    - `hyperparameter_selection::String`: Method for hyperparameter selection (default: "bic").
+    - `p::Int64`: Number of total predictors (default: 0).
+
+    # Returns
+    - `Float64`: Information criterion value.
+
+"""
 function get_information(T::Int64, K::Int64, ϵ::Vector{Float64}; hyperparameter_selection::String = "bic", p::Int64 = 0)::Float64
     if hyperparameter_selection == "bic"
         return T*log(var(ϵ)) + K*log(T)

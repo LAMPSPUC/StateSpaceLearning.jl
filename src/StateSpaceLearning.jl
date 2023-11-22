@@ -16,6 +16,31 @@ include("utils.jl")
 
 export fit_model, forecast
 
+"""
+    fit_model(y::Vector{Fl}; model_type::String="Basic Structural", Exogenous_X::Union{Matrix{Fl}, Missing}=missing,
+              estimation_procedure::String="AdaLasso", s::Int64=12, outlier::Bool=false, stabilize_ζ::Int64=0,
+              α::Float64=0.1, hyperparameter_selection::String="aic", adalasso_coef::Float64=0.1,
+              select_exogenous::Bool=true)::Output where Fl
+
+    Fits the StateSpaceLearning model using specified parameters and estimation procedures.
+
+    # Arguments
+    - `y::Vector{Fl}`: Vector of data.
+    - `model_type::String`: Type of model (default: "Basic Structural").
+    - `Exogenous_X::Union{Matrix{Fl}, Missing}`: Exogenous variables matrix (default: missing).
+    - `estimation_procedure::String`: Estimation procedure (default: "AdaLasso").
+    - `s::Int64`: Seasonal period (default: 12).
+    - `outlier::Bool`: Flag for considering outlier component (default: false).
+    - `stabilize_ζ::Int64`: Stabilize_ζ parameter (default: 0).
+    - `α::Float64`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
+    - `hyperparameter_selection::String`: Information criteria method for hyperparameter selection (default: "aic").
+    - `adalasso_coef::Float64`: AdaLasso adjustment coefficient (default: 0.1).
+    - `select_exogenous::Bool`: Flag to select exogenous variables. When false the penalty factor for these variables will be set to 0 (default: true).
+
+    # Returns
+    - `Output`: Output object containing model information, coefficients, residuals, etc.
+
+"""
 function fit_model(y::Vector{Fl}; model_type::String="Basic Structural", Exogenous_X::Union{Matrix{Fl}, Missing}=missing,
                     estimation_procedure::String="AdaLasso", s::Int64=12, outlier::Bool=false, stabilize_ζ::Int64=0,
                     α::Float64=0.1, hyperparameter_selection::String="aic", adalasso_coef::Float64=0.1, select_exogenous::Bool=true)::Output where Fl
@@ -25,7 +50,7 @@ function fit_model(y::Vector{Fl}; model_type::String="Basic Structural", Exogeno
     @assert (model_type in AVAILABLE_MODELS) "Unavailable Model"
     @assert (estimation_procedure in AVAILABLE_ESTIMATION_PROCEDURES) "Unavailable estimation procedure"
     @assert (hyperparameter_selection in AVAILABLE_HYPERPARAMETER_SELECTION) "Unavailable hyperparameter selection method"
-    @assert 0 < α <= 1 "α must be in (0, 1], Lasso.jl cannot handle α = 0"
+    @assert 0 <= α <= 1 "α must be in (0, 1], Lasso.jl cannot handle α = 0"
     
     valid_indexes = findall(i -> !isnan(i), y)
     estimation_y  = y[valid_indexes]
@@ -48,6 +73,20 @@ function fit_model(y::Vector{Fl}; model_type::String="Basic Structural", Exogeno
     return Output(model_type, X, coefs, ϵ, fitted, components, residuals_variances, s, T, outlier, valid_indexes, stabilize_ζ)
 end
 
+"""
+    forecast(output::Output, steps_ahead::Int64; Exogenous_Forecast::Union{Matrix{Fl}, Missing}=missing)::Vector{Float64} where Fl
+
+    Returns the forecast for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
+
+    # Arguments
+    - `output::Output`: Output object obtained from model fitting.
+    - `steps_ahead::Int64`: Number of steps ahead for forecasting.
+    - `Exogenous_Forecast::Union{Matrix{Fl}, Missing}`: Exogenous variables forecast (default: missing).
+
+    # Returns
+    - `Vector{Float64}`: Vector containing forecasted values.
+
+"""
 function forecast(output::Output, steps_ahead::Int64; Exogenous_Forecast::Union{Matrix{Fl}, Missing}=missing)::Vector{Float64} where Fl
     @assert steps_ahead > 0 "steps_ahead must be a positive integer"
     Exogenous_Forecast = ismissing(Exogenous_Forecast) ? zeros(steps_ahead, 0) : Exogenous_Forecast
