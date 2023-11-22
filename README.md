@@ -84,7 +84,6 @@ using StateSpaceModels
 airp = CSV.File(StateSpaceModels.AIR_PASSENGERS) |> DataFrame
 airpassengers = (airp.passengers).*1.0
 log_air_passengers = log.(airpassengers)
-steps_ahead = 30
 
 log_air_passengers[60:72] .= NaN
 
