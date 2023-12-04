@@ -6,11 +6,16 @@
 
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10).*5
 
-    coefs1, ϵ1 = StateSpaceLearning.fit_adalasso(Estimation_X, estimation_y, 0.1, "aic", components_indexes, 0.1, true)
+    coefs1, ϵ1 = StateSpaceLearning.fit_adalasso(Estimation_X, estimation_y, 0.1, "aic", components_indexes, 0.1, true, true)
     @test length(coefs1) == 43
     @test length(ϵ1) == 10
 
-    coefs2, ϵ2 = StateSpaceLearning.fit_adalasso(Estimation_X, estimation_y, 0.1, "aic", components_indexes, 10000.0, true)
+    coefs1, ϵ1 = StateSpaceLearning.fit_adalasso(Estimation_X, estimation_y, 0.1, "aic", components_indexes, 0.1, true, false)
+    @test length(coefs1) == 43
+    @test length(ϵ1) == 10
+    @test all(coefs1[components_indexes["initial_states"][2:end] .- 1] .!= 0)
+
+    coefs2, ϵ2 = StateSpaceLearning.fit_adalasso(Estimation_X, estimation_y, 0.1, "aic", components_indexes, 10000.0, true, true)
     coefs_lasso, ϵ_lasso = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes; intercept = true)
     @test all(isapprox.(coefs2, coefs_lasso; atol = 1e-3))
     @test all(isapprox.(ϵ2, ϵ_lasso; atol = 1e-3))

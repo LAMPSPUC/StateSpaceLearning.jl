@@ -32,11 +32,11 @@ end
     Estimation_X = StateSpaceLearning.create_X("Basic Structural", 10, 3, Exogenous_X, true, 0)
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10).*5
 
-    coefs1, ϵ1 = StateSpaceLearning.fit_estimation_procedure("Lasso", Estimation_X, estimation_y, 0.1, "aic", components_indexes, 0.1, true)
+    coefs1, ϵ1 = StateSpaceLearning.fit_estimation_procedure("Lasso", Estimation_X, estimation_y, 0.1, "aic", components_indexes, 0.1, true, true)
     @test length(coefs1) == 43
     @test length(ϵ1) == 10
 
-    coefs2, ϵ2 = StateSpaceLearning.fit_estimation_procedure("AdaLasso", Estimation_X, estimation_y, 0.1, "aic", components_indexes, 0.1, true)
+    coefs2, ϵ2 = StateSpaceLearning.fit_estimation_procedure("AdaLasso", Estimation_X, estimation_y, 0.1, "aic", components_indexes, 0.1, true, true)
     @test length(coefs2) == 43
     @test length(ϵ2) == 10
 end
