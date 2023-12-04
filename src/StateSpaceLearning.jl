@@ -36,6 +36,7 @@ export fit_model, forecast
     - `hyperparameter_selection::String`: Information criteria method for hyperparameter selection (default: "aic").
     - `adalasso_coef::Float64`: AdaLasso adjustment coefficient (default: 0.1).
     - `select_exogenous::Bool`: Flag to select exogenous variables. When false the penalty factor for these variables will be set to 0 (default: true).
+    - `penalize_initial_states::Bool`: Flag to penalize initial states. When false the penalty factor for these variables will be set to 0 (default: true).
 
     # Returns
     - `Output`: Output object containing model information, coefficients, residuals, etc.
@@ -43,7 +44,8 @@ export fit_model, forecast
 """
 function fit_model(y::Vector{Fl}; model_type::String="Basic Structural", Exogenous_X::Union{Matrix{Fl}, Missing}=missing,
                     estimation_procedure::String="AdaLasso", s::Int64=12, outlier::Bool=false, stabilize_ζ::Int64=0,
-                    α::Float64=0.1, hyperparameter_selection::String="aic", adalasso_coef::Float64=0.1, select_exogenous::Bool=true)::Output where Fl
+                    α::Float64=0.1, hyperparameter_selection::String="aic", adalasso_coef::Float64=0.1, 
+                    select_exogenous::Bool=true, penalize_initial_states::Bool=true)::Output where Fl
 
     T = length(y)
     @assert T > s "Time series must be longer than the seasonal period"
@@ -62,7 +64,7 @@ function fit_model(y::Vector{Fl}; model_type::String="Basic Structural", Exogeno
 
     components_indexes  = get_components_indexes(T, s, Exogenous_X, outlier, model_type, stabilize_ζ)
 
-    coefs, estimation_ϵ = fit_estimation_procedure(estimation_procedure, Estimation_X, estimation_y, α, hyperparameter_selection, components_indexes, adalasso_coef, select_exogenous)
+    coefs, estimation_ϵ = fit_estimation_procedure(estimation_procedure, Estimation_X, estimation_y, α, hyperparameter_selection, components_indexes, adalasso_coef, select_exogenous, penalize_initial_states)
 
     components          = build_components(Estimation_X, coefs, components_indexes)
 
