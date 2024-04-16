@@ -28,7 +28,7 @@ function build_components(X::Matrix{Tl}, coefs::Vector{Float64}, components_inde
 end
 
 """
-    build_complete_variables(estimation_ϵ::Vector{Float64}, coefs::Vector{Float64}, X::Matrix{Tl}, valid_indexes::Vector{Int64}, T::Int64) -> Tuple{Vector{Float64}, Vector{Float64}} where Tl
+get_fit_and_residuals(estimation_ϵ::Vector{Float64}, coefs::Vector{Float64}, X::Matrix{Tl}, valid_indexes::Vector{Int64}, T::Int64) -> Tuple{Vector{Float64}, Vector{Float64}} where Tl
 
     Builds complete residuals and fit in sample. Residuals will contain nan values for non valid indexes. Fit in Sample will be a vector of fitted values computed from input data and coefficients (non valid indexes will also be calculated via interpolation).
 
@@ -45,8 +45,39 @@ end
         - `fitted::Vector{Float64}`: Vector of fitted values computed from input data and coefficients.
 
 """
-function build_complete_variables(estimation_ϵ::Vector{Float64}, coefs::Vector{Float64}, X::Matrix{Tl}, valid_indexes::Vector{Int64}, T::Int64)::Tuple{Vector{Float64}, Vector{Float64}} where Tl
+function get_fit_and_residuals(estimation_ϵ::Vector{Float64}, coefs::Vector{Float64}, X::Matrix{Tl}, valid_indexes::Vector{Int64}, T::Int64)::Tuple{Vector{Float64}, Vector{Float64}} where Tl
     ϵ      = fill(NaN, T); ϵ[valid_indexes] = estimation_ϵ
     fitted = X*coefs
     return ϵ, fitted
+end
+
+"""
+o_size(T::Int64)::Int64
+
+    Calculates the size of outlier matrix based on the input T.
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+
+    # Returns
+    - `Int64`: Size of o calculated from T.
+
+"""
+o_size(T::Int64)::Int64 = T
+
+"""
+create_o_matrix(T::Int64, steps_ahead::Int64)::Matrix
+
+    Creates a matrix of outliers based on the input sizes, and the desired steps ahead (this is necessary for the forecast function).
+
+    # Arguments
+    - `T::Int64`: Length of the original time series.
+    - `steps_ahead::Int64`: Number of steps ahead (for estimation purposes this should be set at 0).
+    
+    # Returns
+    - `Matrix`: Matrix of outliers constructed based on the input sizes.
+
+"""
+function create_o_matrix(T::Int64, steps_ahead::Int64)::Matrix
+    return vcat(Matrix(1.0 * I, T, T), zeros(steps_ahead, T))
 end

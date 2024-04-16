@@ -62,7 +62,7 @@ end
 
 """
     fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, hyperparameter_selection::String,
-              select_exogenous::Bool, components_indexes::Dict{String, Vector{Int64}};
+              penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int64}};
               penalty_factor::Vector{Float64}=ones(size(Estimation_X,2) - 1), intercept::Bool = true)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     Fits a Lasso regression model to the provided data and returns coefficients and residuals based on selected criteria.
@@ -72,7 +72,7 @@ end
     - `estimation_y::Vector{Fl}`: Vector of response values for estimation.
     - `α::Float64`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
     - `hyperparameter_selection::String`: Information Criteria method for hyperparameter selection (default: aic).
-    - `select_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
+    - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
     - `components_indexes::Dict{String, Vector{Int64}}`: Dictionary containing indexes for different components.
     - `penalty_factor::Vector{Float64}`: Penalty factors for each predictor (default: ones(size(Estimation_X, 2) - 1)).
     - `intercept::Bool`: Flag for intercept inclusion in the model (default: true).
@@ -81,12 +81,12 @@ end
     - `Tuple{Vector{Float64}, Vector{Float64}}`: Tuple containing coefficients and residuals of the fitted Lasso model.
 
 """
-function fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, hyperparameter_selection::String, select_exogenous::Bool, components_indexes::Dict{String, Vector{Int64}}; penalty_factor::Vector{Float64}=ones(size(Estimation_X,2) - 1), intercept::Bool = true)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+function fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, hyperparameter_selection::String, penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int64}}; penalty_factor::Vector{Float64}=ones(size(Estimation_X,2) - 1), intercept::Bool = true)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     outlier_duplicate_columns = get_outlier_duplicate_columns(Estimation_X, components_indexes)
     penalty_factor[outlier_duplicate_columns] .= Inf
 
-    !select_exogenous ? penalty_factor[components_indexes["Exogenous_X"] .- 1] .= 0 : nothing
+    !penalize_exogenous ? penalty_factor[components_indexes["Exogenous_X"] .- 1] .= 0 : nothing
     mean_y = mean(estimation_y); Lasso_y = intercept ? estimation_y : estimation_y .- mean_y
 
     coefs, ϵ =  fit_glmnet(Estimation_X[:, 2:end], Lasso_y, α; hyperparameter_selection=hyperparameter_selection, penalty_factor=penalty_factor, intercept = intercept)

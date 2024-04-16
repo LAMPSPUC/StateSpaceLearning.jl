@@ -1,8 +1,8 @@
 @testset "Function: fit_adalasso" begin
     Random.seed!(1234)
     Exogenous_X = hcat(rand(10, 3), vcat(ones(3), zeros(1), ones(6)))
-    components_indexes = StateSpaceLearning.get_components_indexes(10, 3, Exogenous_X, true, "Basic Structural", 0)
-    Estimation_X = StateSpaceLearning.create_X("Basic Structural", 10, 3, Exogenous_X, true, 0)
+    components_indexes = StateSpaceLearning.get_components_indexes_unobserved_components(10, 3, Exogenous_X, true, "Basic Structural", 0)
+    Estimation_X = StateSpaceLearning.create_X_unobserved_components("Basic Structural", 10, 3, Exogenous_X, true, 0)
 
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10).*5
 

@@ -49,7 +49,7 @@ end
 """
     fit_estimation_procedure(estimation_procedure::String, Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64,
                              hyperparameter_selection::String, components_indexes::Dict{String, Vector{Int64}},
-                             adalasso_coef::Float64, select_exogenous::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+                             ψ::Float64, penalize_exogenous::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     Fits the specified estimation procedure (currently Lasso or AdaLasso) to the provided data and returns coefficients and residuals.
 
@@ -60,8 +60,8 @@ end
     - `α::Float64`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
     - `hyperparameter_selection::String`: Information Criteria method for hyperparameter selection (default: aic).
     - `components_indexes::Dict{String, Vector{Int64}}`: Dictionary containing indexes for different components.
-    - `adalasso_coef::Float64`: AdaLasso adjustment coefficient (default: 0.1).
-    - `select_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
+    - `ψ::Float64`: AdaLasso adjustment coefficient (default: 0.1).
+    - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
     - `penalize_initial_states::Bool`: Flag to penalize initial states. When false the penalty factor for these variables will be set to 0.
 
     # Returns
@@ -70,11 +70,11 @@ end
 """
 function fit_estimation_procedure(estimation_procedure::String, Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, 
                                     hyperparameter_selection::String, components_indexes::Dict{String, Vector{Int64}}, 
-                                    adalasso_coef::Float64, select_exogenous::Bool, penalize_initial_states::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+                                    ψ::Float64, penalize_exogenous::Bool, penalize_initial_states::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
-    estimation_arguments     = Dict("Lasso" => (Estimation_X, estimation_y, α, hyperparameter_selection, select_exogenous, components_indexes),
+    estimation_arguments     = Dict("Lasso" => (Estimation_X, estimation_y, α, hyperparameter_selection, penalize_exogenous, components_indexes),
                                 "AdaLasso" => (Estimation_X, estimation_y, α, hyperparameter_selection, 
-                                               components_indexes, adalasso_coef, select_exogenous, penalize_initial_states))
+                                               components_indexes, ψ, penalize_exogenous, penalize_initial_states))
 
     available_estimation = Dict("Lasso" => fit_lasso,
                                 "AdaLasso" => fit_adalasso)

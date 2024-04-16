@@ -16,6 +16,7 @@
     - `outlier::Bool`: Boolean indicating the presence of outlier component.
     - `valid_indexes::Vector{Int64}`: Vector containing valid indexes of the time series.
     - `stabilize_ζ::Int64`: Stabilize_ζ parameter.
+    - `y::Vector{Fl}`: Vector of data.
 
 """
 mutable struct Output 
@@ -31,4 +32,5 @@ mutable struct Output
     outlier::Bool
     valid_indexes::Vector{Int64}
     stabilize_ζ::Int64
+    y::Vector
 end

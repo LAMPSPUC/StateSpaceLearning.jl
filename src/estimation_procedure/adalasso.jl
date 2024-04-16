@@ -2,7 +2,7 @@
     fit_adalasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64,
                  hyperparameter_selection::String,
                  components_indexes::Dict{String, Vector{Int64}},
-                 adalasso_coef::Float64, select_exogenous::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+                 ψ::Float64, penalize_exogenous::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     Fits an Adaptive Lasso (AdaLasso) regression model to the provided data and returns coefficients and residuals.
 
@@ -12,8 +12,8 @@
     - `α::Float64`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
     - `hyperparameter_selection::String`: Information Criteria method for hyperparameter selection (default: aic).
     - `components_indexes::Dict{String, Vector{Int64}}`: Dictionary containing indexes for different components.
-    - `adalasso_coef::Float64`: AdaLasso adjustment coefficient (default: 0.1).
-    - `select_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
+    - `ψ::Float64`: AdaLasso adjustment coefficient (default: 0.1).
+    - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
     - `penalize_initial_states::Bool`: Flag to penalize initial states. When false the penalty factor for these variables will be set to 0.
 
     # Returns
@@ -23,10 +23,10 @@
 function fit_adalasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, 
                         hyperparameter_selection::String, 
                         components_indexes::Dict{String, Vector{Int64}},
-                        adalasso_coef::Float64, select_exogenous::Bool, penalize_initial_states::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+                        ψ::Float64, penalize_exogenous::Bool, penalize_initial_states::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     penalty_factor = ones(size(Estimation_X, 2) - 1); penalty_factor[components_indexes["initial_states"][2:end] .- 1] .= 0
-    coefs, _  = fit_lasso(Estimation_X, estimation_y, α, hyperparameter_selection, select_exogenous, components_indexes; penalty_factor = penalty_factor, intercept = false)
+    coefs, _  = fit_lasso(Estimation_X, estimation_y, α, hyperparameter_selection, penalize_exogenous, components_indexes; penalty_factor = penalty_factor, intercept = false)
 
     #AdaLasso per component
     penalty_factor = zeros(size(Estimation_X, 2) - 1)
@@ -35,13 +35,13 @@ function fit_adalasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Fl
             component = components_indexes[key]
             if key != "Exogenous_X" && key != "o" && !(key in ["ν₁", "γ₁"])
                 κ = count(i -> i != 0, coefs[component]) < 1 ? 0 : std(coefs[component])
-                penalty_factor[component .- 1] .= (1 / (κ + adalasso_coef))
+                penalty_factor[component .- 1] .= (1 / (κ + ψ))
             else
-                penalty_factor[component .- 1]  = (1 ./ (abs.(coefs[component]) .+ adalasso_coef))
+                penalty_factor[component .- 1]  = (1 ./ (abs.(coefs[component]) .+ ψ))
             end
         end
     end 
     !penalize_initial_states ? penalty_factor[components_indexes["initial_states"][2:end] .- 1] .= 0 : nothing
-    return fit_lasso(Estimation_X, estimation_y, α, hyperparameter_selection, select_exogenous, components_indexes; penalty_factor=penalty_factor)
+    return fit_lasso(Estimation_X, estimation_y, α, hyperparameter_selection, penalize_exogenous, components_indexes; penalty_factor=penalty_factor)
 end
 
