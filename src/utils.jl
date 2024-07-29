@@ -81,3 +81,26 @@ create_o_matrix(T::Int64, steps_ahead::Int64)::Matrix
 function create_o_matrix(T::Int64, steps_ahead::Int64)::Matrix
     return vcat(Matrix(1.0 * I, T, T), zeros(steps_ahead, T))
 end
+
+"""
+handle_missing_values(X::Matrix{Tl}, y::Vector{Fl}) -> Tuple{Vector{Fl}, Matrix{Tl}} where {Tl, Fl}
+
+    Removes missing values from input data and returns the time series and matrix without missing values.
+
+    # Arguments
+    - `X::Matrix{Tl}`: Input matrix.
+    - `y::Vector{Fl}`: Time series.
+
+    # Returns
+    - Tuple containing:
+        - `y::Vector{Fl}`: Time series without missing values.
+        - `X::Matrix{Tl}`: Input matrix without missing values.
+        - `valid_indexes::Vector{Int64}`: Vector containing valid indexes of the time series.
+"""
+function handle_missing_values(X::Matrix{Tl}, y::Vector{Fl})::Tuple{Vector{Fl}, Matrix{Tl}, Vector{Int64}} where {Tl, Fl}
+
+    invalid_indexes = unique(vcat([i[1] for i in findall(i -> any(isnan, i), X)], findall(i -> isnan(i), y)))
+    valid_indexes   = setdiff(1:length(y), invalid_indexes)
+
+    return y[valid_indexes], X[valid_indexes, :], valid_indexes
+end

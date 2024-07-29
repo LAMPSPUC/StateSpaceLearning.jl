@@ -18,23 +18,31 @@ y = randn(100)
 output = StateSpaceLearning.fit_model(y)
 
 #Main output options 
-model_type = output.model_type # State Space Equivalent model utilized in the estimation (default = Basic Structural).
+model_type = output.model_input # State Space Equivalent model utilized in the estimation (default = Basic Structural).
 X                   = output.X # High Dimension Regression utilized in the estimation.
 coefs               = output.coefs # High Dimension Regression coefficients estimated in the estimation.
 ϵ                   = output.ϵ # Residuals of the model.
 fitted              = output.fitted # Fit in Sample of the model.
 components          = output.components # Dictionary containing information about each component of the model, each component has the keys: "Values" (The value of the component in each timestamp) , "Coefs" (The coefficients estimated for each element of the component) and "Indexes" (The indexes of the elements of the component in the high dimension regression "X").
 residuals_variances = output.residuals_variances # Dictionary containing the estimated variances for the innovations components (that is the information that can be utilized to initialize the state space model).
-s                   = ouotput.s # The seasonal frequency utilized in the model (default = 12).
 T                   = output.T # The length of the original time series.
 outlier             = output.outlier # Boolean indicating the presence of outlier component (default = false).
 valid_indexes       = output.valid_indexes # Vector containing valid indexes of the time series (non valid indexes represent NaN values in the time series).
-stabilize_ζ         = output.stabilize_ζ # Stabilize_ζ parameter (default = 0). A non 0 value for this parameter might be important in terms of forecast for some time series to lead to more stable predictions (we recommend stabilize_ζ = 11 for monthly series).
+ζ_ω_threshold         = output.ζ_ω_threshold # ζ_ω_threshold parameter (default = 0). A non 0 value for this parameter might be important in terms of forecast for some time series to lead to more stable predictions (we recommend ζ_ω_threshold = 11 for monthly series).
 
 #Forecast
 prediction = StateSpaceLearning.forecast(output, 12) #Gets a 12 steps ahead prediction
 
 ```
+
+## Fit Arguments
+
+* `y::Vector{Fl}`: Vector of data.
+* model_input::Dict: Dictionary containing the model input parameters (default: Dict("level" => true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12)).
+* estimation_input::Dict: Dictionary containing the estimation input parameters (default: Dict("α" => 0.1, "information_criteria" => "aic", ψ => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)).
+* `Exogenous_X::Union{Matrix{Fl}, Missing}`: Exogenous variables matrix (default: missing).
+* `outlier::Bool`: Flag for considering outlier component (default: true).
+* `ζ_ω_threshold::Int64`: ζ_ω_threshold parameter (default: 12).
 
 ## Features
 
@@ -57,9 +65,8 @@ Quick example of fit and forecast for the air passengers time-series.
 using CSV
 using DataFrames
 using Plots
-using StateSpaceModels
 
-airp = CSV.File(StateSpaceModels.AIR_PASSENGERS) |> DataFrame
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
 log_air_passengers = log.(airp.passengers)
 steps_ahead = 30
 
@@ -69,6 +76,7 @@ prediction = exp.(prediction_raw)
 
 plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
 plot!(vcat(ones(output.T).*NaN, prediction), lab = "Forcast", w=2, color = "blue")
+
 ```
 ![quick_example_airp](./docs/assets/quick_example_airp.PNG)
 
@@ -79,11 +87,9 @@ Quick example of completion of missing values for the air passengers time-series
 using CSV
 using DataFrames
 using Plots
-using StateSpaceModels
 
-airp = CSV.File(StateSpaceModels.AIR_PASSENGERS) |> DataFrame
-airpassengers = (airp.passengers).*1.0
-log_air_passengers = log.(airpassengers)
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
+log_air_passengers = log.(airp.passengers)
 
 log_air_passengers[60:72] .= NaN
 
