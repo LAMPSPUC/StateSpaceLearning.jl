@@ -131,12 +131,13 @@ end
         Any[false, 2, 2]
     ]
 
-    size_vec1=[(5, 22), (5, 18), (7, 18), (5, 17), (5, 13), (7, 13), (5, 12), (5, 12), (7, 12), (5, 7), (5, 7), (7, 7), (5, 16), (5, 14), (7, 14), (5, 11), (5, 9), (7, 9)]
-    size_vec2=[(5, 19), (5, 15), (7, 15), (5, 14), (5, 10), (7, 10), (5, 9), (5, 9), (7, 9), (5, 4), (5, 4), (7, 4), (5, 13), (5, 11), (7, 11), (5, 8), (5, 6), (7, 6)]
+    size_vec1=[(5, 22), (5, 18), (7, 18), (5, 17), (5, 13), (7, 13), (5, 12), (5, 12), (7, 12), (5, 7), (5, 7), (7, 7), (5, 16), (5, 14), (7, 14), (5, 11), (5, 9), (7, 9), (5, 13), (5, 11), (7, 11), (5, 8), (5, 6), (7, 6)]
+    size_vec2=[(5, 19), (5, 15), (7, 15), (5, 14), (5, 10), (7, 10), (5, 9), (5, 9), (7, 9), (5, 4), (5, 4), (7, 4), (5, 13), (5, 11), (7, 11), (5, 8), (5, 6), (7, 6), (5, 10), (5, 8), (7, 8), (5, 5), (5, 3), (7, 3)]
     counter = 1
     for model_input in [Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2),
                          Dict("stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2),
-                         Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2)]
+                         Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2),
+                         Dict("stochastic_level" => false, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2)]
         for param in param_combination
             if param[3] != 0
                 X1 = StateSpaceLearning.create_X_unobserved_components(model_input, Exogenous_X1, param[1], param[2], 5, param[3], Exogenous_forecast1)
