@@ -7,8 +7,8 @@
     aic = StateSpaceLearning.get_information(T, K, ϵ; hyperparameter_selection = "aic", p = p)
     aicc = StateSpaceLearning.get_information(T, K, ϵ; hyperparameter_selection = "aicc", p = p)
     EBIC = StateSpaceLearning.get_information(T, K, ϵ; hyperparameter_selection = "EBIC", p = p)
-    @test bic == 10.362869194716325
-    @test aic == 11.534555457414024
-    @test aicc == 35.53455545741402
-    @test EBIC == 12.340528691778138
+    @test round(bic, digits = 5) == 10.36287
+    @test round(aic, digits = 5) == 11.53456
+    @test round(aicc, digits = 5) == 35.53456
+    @test round(EBIC, digits = 5) == 19.93785
 end

@@ -15,20 +15,21 @@
     - `T::Int64`: Integer representing a parameter 'T'.
     - `outlier::Bool`: Boolean indicating the presence of outlier component.
     - `valid_indexes::Vector{Int64}`: Vector containing valid indexes of the time series.
-    - `stabilize_ζ::Int64`: Stabilize_ζ parameter.
+    - `ζ_ω_threshold::Int64`: ζ_ω_threshold parameter.
+    - `y::Vector{Fl}`: Vector of data.
 
 """
 mutable struct Output 
-    model_type::String
+    model_input::Dict
     X::Matrix
     coefs::Vector
     ϵ::Vector
     fitted::Vector
     components::Dict
     residuals_variances::Dict
-    s::Int64
     T::Int64
     outlier::Bool
     valid_indexes::Vector{Int64}
-    stabilize_ζ::Int64
+    ζ_ω_threshold::Int64
+    y::Vector
 end

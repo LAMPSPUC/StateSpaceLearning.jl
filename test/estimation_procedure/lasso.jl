@@ -30,8 +30,8 @@ end
 @testset "Function: fit_lasso" begin
     Random.seed!(1234)
     Exogenous_X = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
-    components_indexes = StateSpaceLearning.get_components_indexes(10, 3, Exogenous_X, true, "Basic Structural", 0)
-    Estimation_X = StateSpaceLearning.create_X("Basic Structural", 10, 3, Exogenous_X, true, 0)
+    components_indexes = StateSpaceLearning.get_components_indexes_unobserved_components(10, 3, Exogenous_X, true, "Basic Structural", 0)
+    Estimation_X = StateSpaceLearning.create_X_unobserved_components("Basic Structural", 10, 3, Exogenous_X, true, 0)
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10)
 
     coefs1, ϵ1 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes; intercept = true)

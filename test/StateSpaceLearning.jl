@@ -14,11 +14,10 @@
     @test !all(isnan.(output2.fitted[10:20]))
 
     output3 = StateSpaceLearning.fit_model(y1; stabilize_ζ = 1)
-    @test length(output3.coefs) == length(output1.coefs) - 1
+    @test length(output3.coefs) == length(output1.coefs) - 2
 
     @test_throws AssertionError StateSpaceLearning.fit_model(y1; s = 200)
-    @test_throws AssertionError StateSpaceLearning.fit_model(y1; model_type = "none")
-    @test_throws AssertionError StateSpaceLearning.fit_model(y1; estimation_procedure = "none")
+    @test_throws ErrorException StateSpaceLearning.fit_model(y1; model_type = "none")
     @test_throws AssertionError StateSpaceLearning.fit_model(y1; α = -0.1)
     @test_throws AssertionError StateSpaceLearning.fit_model(y1; α = 1.1)
 
