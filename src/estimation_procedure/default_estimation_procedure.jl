@@ -65,7 +65,7 @@ end
 """
 function get_path_information_criteria(model::GLMNetPath, Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, information_criteria::String; intercept::Bool = true)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
     path_size = length(model.lambda)
-    T, p      = size(Estimation_X)
+    T         = size(Estimation_X, 1)
     K         = count(i->i != 0, model.betas; dims = 1)'
 
     method_vec = Vector{Float64}(undef, path_size)
@@ -73,7 +73,7 @@ function get_path_information_criteria(model::GLMNetPath, Estimation_X::Matrix{T
         fit = Estimation_X*model.betas[:, i] .+ model.a0[i]
         ϵ   = estimation_y - fit
         
-        method_vec[i] = get_information(T, K[i], ϵ; information_criteria = information_criteria, p = p)
+        method_vec[i] = get_information(T, K[i], ϵ; information_criteria = information_criteria)
     end
 
     best_model_idx = argmin(method_vec)

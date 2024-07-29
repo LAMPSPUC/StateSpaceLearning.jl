@@ -133,7 +133,7 @@ end
 """
 function create_initial_states_Matrix(T::Int64, freq_seasonal::Int64, steps_ahead::Int64, trend::Bool, seasonal::Bool)::Matrix
 
-    initial_states_matrix = ones(T+steps_ahead)
+    initial_states_matrix = ones(T+steps_ahead, 1)
     trend ? initial_states_matrix = hcat(initial_states_matrix, vcat([0], collect(1:T+steps_ahead-1))) : nothing
 
     if seasonal
