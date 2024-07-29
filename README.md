@@ -38,8 +38,8 @@ prediction = StateSpaceLearning.forecast(output, 12) #Gets a 12 steps ahead pred
 ## Fit Arguments
 
 * `y::Vector{Fl}`: Vector of data.
-* model_input::Dict: Dictionary containing the model input parameters (default: Dict("level" => true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12)).
-* estimation_input::Dict: Dictionary containing the estimation input parameters (default: Dict("α" => 0.1, "information_criteria" => "aic", ψ => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)).
+* `model_input::Dict`: Dictionary containing the model input parameters (default: Dict("level" => true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12)).
+* `estimation_input::Dict`: Dictionary containing the estimation input parameters (default: Dict("α" => 0.1, "information_criteria" => "aic", ψ => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)).
 * `Exogenous_X::Union{Matrix{Fl}, Missing}`: Exogenous variables matrix (default: missing).
 * `outlier::Bool`: Flag for considering outlier component (default: true).
 * `ζ_ω_threshold::Int64`: ζ_ω_threshold parameter (default: 12).
