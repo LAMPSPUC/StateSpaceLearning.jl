@@ -1,117 +1,146 @@
-# Manual
+# StateSpaceLearning
 
-## Quick Start Guide
+| **Build Status** | **Coverage** |
+|:-----------------:|:-----------------:|
+| [![ci](https://github.com/LAMPSPUC/StateSpaceLearning/actions/workflows/ci.yml/badge.svg)](https://github.com/LAMPSPUC/StateSpaceLearning/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/LAMPSPUC/StateSpaceLearning/graph/badge.svg?token=VDpuXvPSI2)](https://codecov.io/gh/LAMPSPUC/StateSpaceLearning) |
 
-Although StateSpaceLearning.jl has a lot of functionalities, different models and interfaces 
-users usuallly just want to fit a model and analyse the residuals, components and make some forecasts.
-The following code is a quick start to perform these tasks
+
+StateSpaceLearning.jl is a package for modeling and forecasting time series in a high-dimension regression framework.
+
+## Quickstart
 
 ```julia
 using StateSpaceLearning
-using Plots
 
 y = randn(100)
 
+#Fit Model
 output = StateSpaceLearning.fit_model(y)
 
-prediction = StateSpaceLearning.forecast(output, 12)
+#Main output options 
+model_type = output.model_input # State Space Equivalent model utilized in the estimation (default = Basic Structural).
+X                   = output.X # High Dimension Regression utilized in the estimation.
+coefs               = output.coefs # High Dimension Regression coefficients estimated in the estimation.
+ϵ                   = output.ϵ # Residuals of the model.
+fitted              = output.fitted # Fit in Sample of the model.
+components          = output.components # Dictionary containing information about each component of the model, each component has the keys: "Values" (The value of the component in each timestamp) , "Coefs" (The coefficients estimated for each element of the component) and "Indexes" (The indexes of the elements of the component in the high dimension regression "X").
+residuals_variances = output.residuals_variances # Dictionary containing the estimated variances for the innovations components (that is the information that can be utilized to initialize the state space model).
+T                   = output.T # The length of the original time series.
+outlier             = output.outlier # Boolean indicating the presence of outlier component (default = false).
+valid_indexes       = output.valid_indexes # Vector containing valid indexes of the time series (non valid indexes represent NaN values in the time series).
+ζ_ω_threshold         = output.ζ_ω_threshold # ζ_ω_threshold parameter (default = 0). A non 0 value for this parameter might be important in terms of forecast for some time series to lead to more stable predictions (we recommend ζ_ω_threshold = 11 for monthly series).
 
-plot(y, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
-plot!(output.fitted, w=2 , color = "Black", lab = "Fit In Sample", legend = :outerbottom)
-plot!(vcat(ones(output.T).*NaN, prediction), lab = "Forcast", w=2, color = "blue")
-
-```
-### Completion of missing values
-Quick example of completion of missing values for the air passengers time-series (artificial NaN values are added to the original time-series).
-
-```julia
-
-y = rand(144)
-
-y[60:72] .= NaN
-
-output = StateSpaceLearning.fit_model(y)
-
-completed_values = output.fitted[60:72]
+#Forecast
+prediction = StateSpaceLearning.forecast(output, 12) #Gets a 12 steps ahead prediction
 
 ```
 
-### Component extraction
-Quick example of component extraction in a time series
+## Fit Arguments
+
+* `y::Vector{Fl}`: Vector of data.
+* `model_input::Dict`: Dictionary containing the model input parameters (default: Dict("level" => true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12)).
+* `estimation_input::Dict`: Dictionary containing the estimation input parameters (default: Dict("α" => 0.1, "information_criteria" => "aic", ψ => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)).
+* `Exogenous_X::Union{Matrix{Fl}, Missing}`: Exogenous variables matrix (default: missing).
+* `outlier::Bool`: Flag for considering outlier component (default: true).
+* `ζ_ω_threshold::Int64`: ζ_ω_threshold parameter (default: 12).
+
+## Features
+
+Current features include:
+* Estimation
+* Components decomposition
+* Forecasting
+* Completion of missing values
+* Predefined models, including:
+  * Basic Structural"
+  * Local Linear Trend
+  * Local Level
+
+## Quick Examples
+
+### Fitting and forecasting
+Quick example of fit and forecast for the air passengers time-series.
 
 ```julia
 using CSV
 using DataFrames
 using Plots
-using StateSpaceModels
 
-airp = CSV.File(StateSpaceModels.AIR_PASSENGERS) |> DataFrame
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
 log_air_passengers = log.(airp.passengers)
+steps_ahead = 30
+
+output = StateSpaceLearning.fit_model(log_air_passengers)
+prediction_raw = StateSpaceLearning.forecast(output, steps_ahead)
+prediction = exp.(prediction_raw)
+
+plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
+plot!(vcat(ones(output.T).*NaN, prediction), lab = "Forcast", w=2, color = "blue")
+
+```
+![quick_example_airp](./docs/assets/quick_example_airp.PNG)
+
+### Completion of missing values
+Quick example of completion of missing values for the air passengers time-series (artificial NaN values are added to the original time-series).
+
+```julia
+using CSV
+using DataFrames
+using Plots
+
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
+log_air_passengers = log.(airp.passengers)
+
+log_air_passengers[60:72] .= NaN
 
 output = StateSpaceLearning.fit_model(log_air_passengers)
 
-μ₁ = output.components["μ₁"]["Values"]
-ν₁ = output.components["ν₁"]["Values"]
-γ₁ = output.components["γ₁"]["Values"]
-ξ  = output.components["ξ"]["Values"]
-ζ  = output.components["ζ"]["Values"]
-ω  = output.components["ω"]["Values"]
+fitted_completed_missing_values = ones(144).*NaN; fitted_completed_missing_values[60:72] = exp.(output.fitted[60:72])
+real_removed_valued = ones(144).*NaN; real_removed_valued[60:72] = deepcopy(airpassengers[60:72])
+airpassengers[60:72] .= NaN
+
+plot(airpassengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
+plot!(real_removed_valued, lab = "Real Removed Values", w=2, color = "red")
+plot!(fitted_completed_missing_values, lab = "Fit in Sample completed values", w=2, color = "blue")
 
 ```
+![quick_example_completion_airp](./docs/assets/quick_example_completion_airp.PNG)
 
-### Models
+## Paper Results Reproducibility
 
-The package provides a variaty of pre-defined models. If there is any model that you wish was in the package, feel free to open an issue or pull request.
+The paper has two experiments (results for the M4 competition and a simulation study). To reproduce each experiment follow the instructions below:
 
-### Basic Structural Model
-The basic structural state-space model consists of a trend (level + slope) and a seasonal
-component. It is defined by:
+### M4 Experiment
 
-```math
-\begin{gather*}
-    \begin{aligned}
-        y_{t} &=  \mu_{t} + \gamma_{t} + \varepsilon_{t} \quad &\varepsilon_{t} \sim \mathcal{N}(0, \sigma^2_{\varepsilon})\\
-        \mu_{t+1} &= \mu_{t} + \nu_{t} + \xi_{t} \quad &\xi_{t} \sim \mathcal{N}(0, \sigma^2_{\xi})\\
-        \nu_{t+1} &= \nu_{t} + \zeta_{t} \quad &\zeta_{t} \sim \mathcal{N}(0, \sigma^2_{\zeta})\\
-        \gamma_{t+1} &= -\sum_{j=1}^{s-1} \gamma_{t+1-j} + \omega_{t} \quad & \omega_{t} \sim \mathcal{N}(0, \sigma^2_{\omega})\\
-    \end{aligned}
-\end{gather*}
+To reproduce M4 paper results you can clone the repository and run the following commands on terminal:
+
+```shell
+julia paper_tests/m4_test/m4_test.jl
+python paper_tests/m4_test/m4_test.py
+1
 ```
 
-#### References
- * Durbin, James, & Siem Jan Koopman. (2012). "Time Series Analysis by State Space Methods: Second Edition." Oxford University Press.
+The results for SSL model in terms of MASE and sMAPE for all 48000 series will be stored in folder ˜paper_tests/m4_test/results_SSL˜. The average results of MASE, sMAPE and OWA will be saved in file ˜paper_tests/m4_test/metric_results/SSL_METRICS_RESULTS.csv.
+The results for SS model in terms of MASE and sMAPE for all 48000 series will be stored in folder ˜paper_tests/m4_test/results_SS˜. The average results of MASE, sMAPE and OWA will be saved in file ˜paper_tests/m4_test/metric_results/SS_METRICS_RESULTS.csv.
 
+### Simulation Experiment
 
-### Local Level Model
+To reproduce the simulation results you can clone the repository and run the following commands on terminal:
 
-The local level model is defined by:
-```math
-\begin{gather*}
-    \begin{aligned}
-        y_{t} &=  \mu_{t} + \varepsilon_{t} \quad \varepsilon_{t} \sim \mathcal{N}(0, \sigma^2_{\varepsilon})\\
-        \mu_{t+1} &= \mu_{t} + \eta_{t} \quad \eta_{t} \sim \mathcal{N}(0, \sigma^2_{\eta})\\
-    \end{aligned}
-\end{gather*}
+```shell
+julia paper_tests/simulation_test/simulation.jl 0
 ```
-#### References
- * Durbin, James, & Siem Jan Koopman. (2012). "Time Series Analysis by State Space Methods: Second Edition." Oxford University Press. pp. 9
 
-### Local Linear Trend 
-The linear trend model is defined by:
-```math
-\begin{gather*}
-    \begin{aligned}
-        y_{t} &=  \mu_{t} + \gamma_{t} + \varepsilon_{t} \quad &\varepsilon_{t} \sim \mathcal{N}(0, \sigma^2_{\varepsilon})\\
-        \mu_{t+1} &= \mu_{t} + \nu_{t} + \xi_{t} \quad &\xi_{t} \sim \mathcal{N}(0, \sigma^2_{\xi})\\
-        \nu_{t+1} &= \nu_{t} + \zeta_{t} \quad &\zeta_{t} \sim \mathcal{N}(0, \sigma^2_{\zeta})\\
-    \end{aligned}
-\end{gather*}
+As this test takes a long time, you may want to run it in parallel, for that you can change the last argument to be number of workers to use in the parallelization:
+
+```shell
+julia paper_tests/simulation_test/simulation.jl 3
 ```
-#### References
- * Durbin, James, & Siem Jan Koopman. (2012). "Time Series Analysis by State Space Methods:
-    Second Edition." Oxford University Press. pp. 44
 
-### Implementing a custom model
+The results will be saved in two separated files: "paper_tests/simulation_test/results_metrics/metrics_confusion_matrix.csv" and "paper_tests/simulation_test/results_metrics/metrics_bias_mse.csv"
 
-Users are able to implement any custom user-defined model. For that, it is necessary to modify "model_utils.jl" file. More specificly, it is necessary to modify "create_X" function to be able to create the corresponding high dimension regression matrix and "get_components_indexes" function to assess the correct compenents in the new proposed model.
 
+## Contributing
+
+* PRs such as adding new models and fixing bugs are very welcome!
+* For nontrivial changes, you'll probably want to first discuss the changes via issue.
