@@ -106,6 +106,40 @@ plot!(fitted_completed_missing_values, lab = "Fit in Sample completed values", w
 ```
 ![quick_example_completion_airp](./docs/assets/quick_example_completion_airp.PNG)
 
+## Paper Results Reproducibility
+
+The paper has two experiments (results for the M4 competition and a simulation study). To reproduce each experiment follow the instructions below:
+
+### M4 Experiment
+
+To reproduce M4 paper results you can clone the repository and run the following commands on terminal:
+
+```shell
+julia paper_tests/m4_test/m4_test.jl
+python paper_tests/m4_test/m4_test.py
+1
+```
+
+The results for SSL model in terms of MASE and sMAPE for all 48000 series will be stored in folder ˜paper_tests/m4_test/results_SSL˜. The average results of MASE, sMAPE and OWA will be saved in file ˜paper_tests/m4_test/metric_results/SSL_METRICS_RESULTS.csv.
+The results for SS model in terms of MASE and sMAPE for all 48000 series will be stored in folder ˜paper_tests/m4_test/results_SS˜. The average results of MASE, sMAPE and OWA will be saved in file ˜paper_tests/m4_test/metric_results/SS_METRICS_RESULTS.csv.
+
+### Simulation Experiment
+
+To reproduce the simulation results you can clone the repository and run the following commands on terminal:
+
+```shell
+julia paper_tests/simulation_test/simulation.jl 0
+```
+
+As this test takes a long time, you may want to run it in parallel, for that you can change the last argument to be number of workers to use in the parallelization:
+
+```shell
+julia paper_tests/simulation_test/simulation.jl 3
+```
+
+The results will be saved in two separated files: "paper_tests/simulation_test/results_metrics/metrics_confusion_matrix.csv" and "paper_tests/simulation_test/results_metrics/metrics_bias_mse.csv"
+
+
 ## Contributing
 
 * PRs such as adding new models and fixing bugs are very welcome!
