@@ -69,12 +69,12 @@ end
 
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10).*5
 
-    estimation_input1 = Dict("α" => 0.1, "information_criteria" => "aic", "ψ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)
+    estimation_input1 = Dict("α" => 0.1, "information_criteria" => "aic", "ϵ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)
     coefs1, ϵ1 = StateSpaceLearning.default_estimation_procedure(Estimation_X, estimation_y, components_indexes, estimation_input1)
     @test length(coefs1) == 43
     @test length(ϵ1) == 10
 
-    estimation_input2 = Dict("α" => 0.1, "information_criteria" => "aic", "ψ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => false)
+    estimation_input2 = Dict("α" => 0.1, "information_criteria" => "aic", "ϵ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => false)
     coefs2, ϵ2 = StateSpaceLearning.default_estimation_procedure(Estimation_X, estimation_y, components_indexes, estimation_input2)
     @test length(coefs2) == 43
     @test length(ϵ2) == 10

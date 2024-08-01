@@ -146,7 +146,7 @@ end
     fit_adalasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64,
                  information_criteria::String,
                  components_indexes::Dict{String, Vector{Int64}},
-                 ψ::Float64, penalize_exogenous::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+                 ϵ::Float64, penalize_exogenous::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     Fits an Adaptive Lasso (AdaLasso) regression model to the provided data and returns coefficients and residuals.
 
@@ -163,8 +163,9 @@ end
 function default_estimation_procedure(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, 
                         components_indexes::Dict{String, Vector{Int64}}, estimation_input::Dict)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
+    @assert all([key in keys(estimation_input) for key in ["α", "information_criteria", "ϵ", "penalize_exogenous", "penalize_initial_states"]]) "All estimation input parameters must be set"
     α = estimation_input["α"]; information_criteria = estimation_input["information_criteria"]; 
-    ψ = estimation_input["ψ"]; penalize_exogenous = estimation_input["penalize_exogenous"]; 
+    ϵ = estimation_input["ϵ"]; penalize_exogenous = estimation_input["penalize_exogenous"]; 
     penalize_initial_states = estimation_input["penalize_initial_states"]
 
     @assert 0 <= α <= 1 "α must be in [0, 1]"
@@ -179,9 +180,9 @@ function default_estimation_procedure(Estimation_X::Matrix{Tl}, estimation_y::Ve
             component = components_indexes[key]
             if key != "Exogenous_X" && key != "o" && !(key in ["ν1", "γ1"])
                 κ = count(i -> i != 0, coefs[component]) < 1 ? 0 : std(coefs[component])
-                penalty_factor[component .- 1] .= (1 / (κ + ψ))
+                penalty_factor[component .- 1] .= (1 / (κ + ϵ))
             else
-                penalty_factor[component .- 1]  = (1 ./ (abs.(coefs[component]) .+ ψ))
+                penalty_factor[component .- 1]  = (1 ./ (abs.(coefs[component]) .+ ϵ))
             end
         end
     end 

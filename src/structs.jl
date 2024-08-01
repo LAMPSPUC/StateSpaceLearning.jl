@@ -4,7 +4,8 @@
     A mutable struct to store various components and results of a model estimation.
 
     # Fields
-    - `model_type::String`: Type of the model.
+    - `model_input::Dict`: Dictionary containing the model input parameters.
+    - `model_functions::Dict`: Dictionary containing the model functions.
     - `X::Matrix`: StateSpaceLearning Matrix data used in the model.
     - `coefs::Vector`: Coefficients obtained from the model.
     - `ϵ::Vector`: Residuals of the model.
@@ -21,6 +22,7 @@
 """
 mutable struct Output 
     model_input::Dict
+    model_functions::Dict
     X::Matrix
     coefs::Vector
     ϵ::Vector
