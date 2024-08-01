@@ -4,7 +4,12 @@ Pkg.instantiate()
 
 using StateSpaceLearning, CSV, DataFrames, Statistics, Revise
 
-df_train = CSV.read("paper_tests/m4_test/Monthly-train.csv", DataFrame)
+#df_train = CSV.read("paper_tests/m4_test/Monthly-train.csv", DataFrame)
+df_train1 = CSV.read("paper_tests/m4_test/Monthly-train1.csv", DataFrame)
+df_train2 = CSV.read("paper_tests/m4_test/Monthly-train2.csv", DataFrame)
+df_train3 = CSV.read("paper_tests/m4_test/Monthly-train3.csv", DataFrame)
+df_train4 = CSV.read("paper_tests/m4_test/Monthly-train4.csv", DataFrame)
+df_train = vcat(df_train1, df_train2, df_train3, df_train4) # so that files are not too big and can be uploaded to github
 df_test  = CSV.read("paper_tests/m4_test/Monthly-test.csv", DataFrame)
 
 include("metrics.jl")
@@ -38,7 +43,6 @@ function run_config(results_table::DataFrame, outlier::Bool, information_criteri
 
     for i in 1:48000
         if i in [10001, 20001, 30001, 40001] # Clear DataFrame to save memory
-            @info "Series $i"
             results_df = DataFrame()
             initialization_df = DataFrame()
         end
@@ -50,6 +54,9 @@ function run_config(results_table::DataFrame, outlier::Bool, information_criteri
             save_init ? append_results(init_filepath, initialization_df) : nothing
         end
     end
+
+    results_df = CSV.read(filepath, DataFrame)
+
     mase  = trunc(mean(results_df[:, :MASE]), digits = 3)
     smape = trunc(mean(results_df[:, :sMAPE]), digits = 3)
     owa   = trunc(mean([mean(results_df[:, :sMAPE])/NAIVE_sMAPE, mean(results_df[:, :MASE])/NAIVE_MASE]), digits = 3)
@@ -72,6 +79,6 @@ function main()
     CSV.write("paper_tests/m4_test/metrics_results/SSL_METRICS_RESULTS.csv", results_table)
 end 
 
-run_config(DataFrame(), false, "aic", 0.1, true, 2794)#max sample size
+main()
 
-#main()
+run_config(DataFrame(), false, "aic", 0.1, true, 2794)#max sample size
