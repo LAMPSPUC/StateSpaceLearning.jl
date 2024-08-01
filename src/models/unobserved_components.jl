@@ -275,26 +275,3 @@ function get_variances(ε::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Di
     variances["ε"] = var(ε)
     return variances
 end
-
-"""
-    forecast_unobserved_components(output::Output, steps_ahead::Int64, Exogenous_Forecast::Matrix{Fl})::Vector{Float64} where Fl
-
-    Returns the forecast for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
-
-    # Arguments
-    - `output::Output`: Output object obtained from model fitting.
-    - `steps_ahead::Int64`: Number of steps ahead for forecasting.
-    - `Exogenous_Forecast::Matrix{Fl}`: Exogenous forecast matrix.
-    - `model_dict::Dict`: Dictionary containing the model functions (default: unobserved_components_dict).
-    - `exog_model_args::Dict`: Dictionary containing the exogenous model arguments (default: Dict()).
-
-    # Returns
-    - `Vector{Float64}`: Vector containing forecasted values.
-
-"""
-function forecast_unobserved_components(output::Output, steps_ahead::Int64, Exogenous_Forecast::Matrix{Fl})::Vector{Float64} where Fl
-    Exogenous_X = output.X[:, output.components["Exogenous_X"]["Indexes"]]
-    complete_matrix = create_X_unobserved_components(output.model_input, Exogenous_X, output.outlier, output.ζ_ω_threshold, output.T, steps_ahead, Exogenous_Forecast)
-
-    return complete_matrix[end-steps_ahead+1:end, :]*output.coefs
-end

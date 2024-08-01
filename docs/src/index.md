@@ -18,3 +18,14 @@ This package is registered so you can simply `add` it using Julia's `Pkg` manage
 ```julia
 pkg> add StateSpaceLearning
 ```
+
+## Citing StateSpaceLearning.jl
+
+If you use StateSpaceLearning.jl in your work, we kindly ask you to cite the following paper ([pdf]()):
+
+@article{,
+title={},
+author={},
+journal={},
+year={}
+}

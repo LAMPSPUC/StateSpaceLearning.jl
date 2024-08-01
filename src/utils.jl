@@ -23,7 +23,9 @@ function build_components(X::Matrix{Tl}, coefs::Vector{Float64}, components_inde
         components[key]["Indexes"] = components_indexes[key]
         components[key]["Values"]  = X[:, components_indexes[key]]*coefs[components_indexes[key]]
     end
-    components["Exogenous_X"]["Selected"] = findall(i -> i != 0, components["Exogenous_X"]["Coefs"])
+    if haskey(components, "Exogenous_X")
+        components["Exogenous_X"]["Selected"] = findall(i -> i != 0, components["Exogenous_X"]["Coefs"])
+    end
     return components
 end
 

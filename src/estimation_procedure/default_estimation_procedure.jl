@@ -38,12 +38,17 @@ end
 
 """
 function get_outlier_duplicate_columns(Estimation_X::Matrix{Tl}, components_indexes::Dict{String, Vector{Int64}}) where{Tl}
-    o_indexes = components_indexes["o"]
-    exogenous_indexes = components_indexes["Exogenous_X"]
+    if !haskey(components_indexes, "o")
+        return []
+    else
+        o_indexes = components_indexes["o"]
+        exogenous_indexes = components_indexes["Exogenous_X"]
 
-    dummy_indexes = get_dummy_indexes(Estimation_X[:, exogenous_indexes])
+        dummy_indexes = get_dummy_indexes(Estimation_X[:, exogenous_indexes])
 
-    return o_indexes[dummy_indexes] .- 1
+        return o_indexes[dummy_indexes] .- 1
+    end
+    
 end
 
 """
