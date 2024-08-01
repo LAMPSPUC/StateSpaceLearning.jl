@@ -134,17 +134,19 @@ end
     size_vec1=[(5, 22), (5, 18), (7, 18), (5, 17), (5, 13), (7, 13), (5, 12), (5, 12), (7, 12), (5, 7), (5, 7), (7, 7), (5, 16), (5, 14), (7, 14), (5, 11), (5, 9), (7, 9), (5, 13), (5, 11), (7, 11), (5, 8), (5, 6), (7, 6)]
     size_vec2=[(5, 19), (5, 15), (7, 15), (5, 14), (5, 10), (7, 10), (5, 9), (5, 9), (7, 9), (5, 4), (5, 4), (7, 4), (5, 13), (5, 11), (7, 11), (5, 8), (5, 6), (7, 6), (5, 10), (5, 8), (7, 8), (5, 5), (5, 3), (7, 3)]
     counter = 1
-    for model_input in [Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2),
-                         Dict("stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2),
-                         Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2),
-                         Dict("stochastic_level" => false, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2)]
+    for model_input in [Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 12),
+                         Dict("stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 12),
+                         Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 12),
+                         Dict("stochastic_level" => false, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 12)]
         for param in param_combination
+            model_input["outlier"] = param[1]
+            model_input["ζ_ω_threshold"] = param[2]
             if param[3] != 0
-                X1 = StateSpaceLearning.create_X_unobserved_components(model_input, Exogenous_X1, param[1], param[2], 5, param[3], Exogenous_forecast1)
+                X1 = StateSpaceLearning.create_X(model_input, Exogenous_X1, param[3], Exogenous_forecast1)
             else
-                X1 = StateSpaceLearning.create_X_unobserved_components(model_input, Exogenous_X1, param[1], param[2], 5, param[3])
+                X1 = StateSpaceLearning.create_X(model_input, Exogenous_X1, param[3])
             end
-            X2 = StateSpaceLearning.create_X_unobserved_components(model_input, Exogenous_X2, param[1], param[2], 5, param[3])
+            X2 = StateSpaceLearning.create_X(model_input, Exogenous_X2, param[3])
             @test size(X1) == size_vec1[counter]
             @test size(X2) == size_vec2[counter]
             counter += 1
@@ -152,13 +154,13 @@ end
     end
 end
 
-@testset "Function: get_components_indexes_unobserved_components" begin
+@testset "Function: get_components" begin
     Exogenous_X1 = rand(10, 3)
     Exogenous_X2 = zeros(10, 0)
 
-    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2)
-    Local_Level = Dict("stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2)
-    Local_Linear_Trend = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2)
+    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Local_Level = Dict("stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Local_Linear_Trend = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
     parameter_combination = [
         [Basic_Structural, true, Exogenous_X1],
         [Local_Level, true, Exogenous_X1],
@@ -169,7 +171,9 @@ end
 
     for param in parameter_combination
         
-        components_indexes = StateSpaceLearning.get_components_indexes(10, param[3], param[1], param[2], 0)
+        param[1]["outlier"] = param[2]
+
+        components_indexes = StateSpaceLearning.get_components_indexes(param[3], param[1])
         
         for key in keys(components_indexes)
             if param[1] == "Basic Structural"
@@ -188,12 +192,12 @@ end
     end
 end
 
-@testset "Function: get_variances_unobserved_components" begin
+@testset "Function: get_variances" begin
     Exogenous_X2 = zeros(10, 0)
 
-    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2)
-    Local_Level = Dict("stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2)
-    Local_Linear_Trend = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2)
+    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Local_Level = Dict("stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Local_Linear_Trend = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
 
     parameter_combination = [
         [Basic_Structural, true, Exogenous_X2, ["ξ", "ζ", "ω", "ε"]],
@@ -201,7 +205,9 @@ end
         [Local_Linear_Trend, true, Exogenous_X2, ["ξ", "ζ", "ε"]]
     ]
     for param in parameter_combination
-        components_indexes = StateSpaceLearning.get_components_indexes(10, param[3], param[1], param[2], 0)
+        param[1]["outlier"] = param[2]
+
+        components_indexes = StateSpaceLearning.get_components_indexes(param[3], param[1])
         variances = StateSpaceLearning.get_variances(rand(100), rand(39), components_indexes)
         @test all([key in keys(variances) for key in param[4]])
     end

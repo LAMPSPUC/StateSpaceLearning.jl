@@ -5,33 +5,28 @@
 
     # Fields
     - `model_input::Dict`: Dictionary containing the model input parameters.
-    - `model_functions::Dict`: Dictionary containing the model functions.
+    - `Create_X::Function`: Function used to create the StateSpaceLearning Matrix.
     - `X::Matrix`: StateSpaceLearning Matrix data used in the model.
     - `coefs::Vector`: Coefficients obtained from the model.
     - `ϵ::Vector`: Residuals of the model.
     - `fitted::Vector`: Fitted values from the model.
     - `components::Dict`: Dictionary containing different components.
     - `residuals_variances::Dict`: Dictionary storing variances of residuals for different components.
-    - `s::Int64`: Integer representing a parameter 's'.
     - `T::Int64`: Integer representing a parameter 'T'.
     - `outlier::Bool`: Boolean indicating the presence of outlier component.
-    - `valid_indexes::Vector{Int64}`: Vector containing valid indexes of the time series.
+    - `valid_indexes::Vector{Int64}`: Vector containing valid indexes (non NaN) of the time series.
     - `ζ_ω_threshold::Int64`: ζ_ω_threshold parameter.
     - `y::Vector{Fl}`: Vector of data.
 
 """
 mutable struct Output 
     model_input::Dict
-    model_functions::Dict
+    Create_X::Function
     X::Matrix
     coefs::Vector
     ϵ::Vector
     fitted::Vector
     components::Dict
     residuals_variances::Dict
-    T::Int64
-    outlier::Bool
     valid_indexes::Vector{Int64}
-    ζ_ω_threshold::Int64
-    y::Vector
 end

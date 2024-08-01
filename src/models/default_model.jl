@@ -149,25 +149,24 @@ function create_initial_states_Matrix(T::Int64, freq_seasonal::Int64, steps_ahea
 end
 
 """
-create_X_unobserved_components(model_input::Dict, Exogenous_X::Matrix{Fl}, outlier::Bool, ζ_ω_threshold::Int64, T::Int64, steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
+create_X(model_input::Dict, Exogenous_X::Matrix{Fl}, steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
 
     Creates the StateSpaceLearning matrix X based on the model type and input parameters.
 
     # Arguments
     - `model_type::String`: Type of model.
     - `Exogenous_X::Matrix{Fl}`: Exogenous variables matrix.
-    - `outlier::Bool`: Flag for considering outlier component.
-    - `ζ_ω_threshold::Int64`: Stabilize parameter for ζ matrix.
-    - `T::Int64`: Length of the original time series.
     - `steps_ahead::Int64`: Number of steps ahead (default: 0).
     - `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast matrix (default: zeros).
 
     # Returns
     - `Matrix`: StateSpaceLearning matrix X constructed based on the input parameters.
 """
-function create_X_unobserved_components(model_input::Dict, Exogenous_X::Matrix{Fl}, outlier::Bool, ζ_ω_threshold::Int64, T::Int64,
+function create_X(model_input::Dict, Exogenous_X::Matrix{Fl},
                   steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
 
+    outlier = model_input["outlier"]; ζ_ω_threshold = model_input["ζ_ω_threshold"]; T = size(Exogenous_X, 1)
+    
     ξ_matrix = model_input["stochastic_level"] ? create_ξ(T, steps_ahead) : zeros(T+steps_ahead, 0)
     ζ_matrix = model_input["stochastic_trend"] ? create_ζ(T, steps_ahead, ζ_ω_threshold) : zeros(T+steps_ahead, 0)
     ω_matrix = model_input["stochastic_seasonal"] ? create_ω(T, model_input["freq_seasonal"], steps_ahead, ζ_ω_threshold) : zeros(T+steps_ahead, 0)
@@ -179,23 +178,22 @@ function create_X_unobserved_components(model_input::Dict, Exogenous_X::Matrix{F
 end
 
 """
-    get_components_indexes(T::Int64, s::Int64, Exogenous_X::Matrix{Fl}, outlier::Bool, model_type::String, ζ_ω_threshold::Int64)::Dict where Fl
+get_components_indexes(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dict where Fl
 
     Generates indexes dict for different components based on the model type and input parameters.
 
     # Arguments
-    - `T::Int64`: Length of the original time series.
     - `Exogenous_X::Matrix{Fl}`: Exogenous variables matrix.
     - `model_input`: Dictionary containing the model input parameters.
-    - `outlier::Bool`: Flag for considering outlier component.
-    - `ζ_ω_threshold::Int64`: Stabilize parameter for ζ matrix.
 
     # Returns
     - `Dict`: Dictionary containing the corresponding indexes for each component of the model.
 
 """
-function get_components_indexes(T::Int64, Exogenous_X::Matrix{Fl}, model_input::Dict, outlier::Bool, ζ_ω_threshold::Int64)::Dict where Fl
+function get_components_indexes(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dict where Fl
     
+    outlier = model_input["outlier"]; ζ_ω_threshold = model_input["ζ_ω_threshold"]; T = size(Exogenous_X, 1)
+
     μ1_indexes = [1]
     initial_states_indexes = [1]
     FINAL_INDEX = 1

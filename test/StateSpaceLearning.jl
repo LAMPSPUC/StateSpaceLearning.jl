@@ -13,10 +13,10 @@
     @test all(isnan.(output2.ϵ[10:20]))
     @test !all(isnan.(output2.fitted[10:20]))
 
-    output3 = StateSpaceLearning.fit_model(y1; ζ_ω_threshold = 1)
+    output3 = StateSpaceLearning.fit_model(y1; model_input = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12, "outlier" => true, "ζ_ω_threshold" => 1))
     @test length(output3.coefs) - 22 == length(output1.coefs)
 
-    @test_throws AssertionError StateSpaceLearning.fit_model(y1; model_input = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 1000))
+    @test_throws AssertionError StateSpaceLearning.fit_model(y1; model_input = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 1000, "outlier" => true, "ζ_ω_threshold" => 1))
    
     @test_throws AssertionError StateSpaceLearning.fit_model(y1; estimation_input = Dict("α" => -0.1, "information_criteria" => "aic", "ψ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true))
     @test_throws AssertionError StateSpaceLearning.fit_model(y1; estimation_input = Dict("α" => 1.1, "information_criteria" => "aic", "ψ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true))

@@ -2,9 +2,9 @@
     Exogenous_X1 = rand(10, 3)
     Exogenous_X2 = zeros(10, 0)
 
-    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2)
-    Local_Level = Dict("stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2)
-    Local_Linear_Trend = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2)
+    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Local_Level = Dict("stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Local_Linear_Trend = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
     parameter_combination = [
         [Basic_Structural, true, Exogenous_X1],
         [Local_Level, true, Exogenous_X1],
@@ -14,9 +14,10 @@
     ]
 
     for param in parameter_combination
-        X = StateSpaceLearning.create_X_unobserved_components(param[1], param[3], param[2], 0, 10, 0)
+        param[1]["outlier"] = param[2]
+        X = StateSpaceLearning.create_X(param[1], param[3])
 
-        components_indexes = StateSpaceLearning.get_components_indexes(10, param[3], param[1], param[2], 0)
+        components_indexes = StateSpaceLearning.get_components_indexes(param[3], param[1])
         coefs = rand(size(X, 2))
         components = StateSpaceLearning.build_components(X, coefs, components_indexes)
 

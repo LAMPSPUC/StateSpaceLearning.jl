@@ -14,11 +14,12 @@ model_input = Dict()
 ```
 
 ### create_X
-The create_X function constructs the matrices in the State Space Learning format. It must accept the following inputs: (model_input::Dict, Exogenous_X::Matrix{Fl}, outlier::Bool, ζ_ω_threshold::Int64, T::Int64, steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))). This function may not use parameters such as outlier, ζ_ω_threshold, or Exogenous_X. It must return a matrix.
+The create_X function constructs the matrices in the State Space Learning format. It must accept the following inputs: (model_input::Dict, Exogenous_X::Matrix{Fl}, steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}). It must return a matrix.
 
 ```julia
-function create_X_LocalLevel(model_input::Dict, Exogenous_X::Matrix{Fl}, outlier::Bool, ζ_ω_threshold::Int64, T::Int64,
+function create_X_LocalLevel(model_input::Dict, Exogenous_X::Matrix{Fl},
                   steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
+    T = size(Exogenous_X, 1)
     initial_states_matrix = ones(T+steps_ahead, 1)
     ξ_matrix = Matrix{Float64}(undef, T+steps_ahead, T - 1)
     for t in 1:T+steps_ahead
@@ -30,10 +31,11 @@ end
 ```
 
 ### get_components_indexes
-The get_components_indexes function outputs a dictionary indicating the indexes of each model component, including a set of indexes for all initial states. For the Local Level Model, the only components are the initial state μ1 and its innovations ξ. The function must accept the following inputs: (T::Int64, Exogenous_X::Matrix{Fl}, model_input::Dict, outlier::Bool, ζ_ω_threshold::Int64). This function may not use parameters such as outlier, ζ_ω_threshold, or Exogenous_X. It must return a dictionary.
+The get_components_indexes function outputs a dictionary indicating the indexes of each model component, including a set of indexes for all initial states. For the Local Level Model, the only components are the initial state μ1 and its innovations ξ. The function must accept the following inputs: (Exogenous_X::Matrix{Fl}, model_input::Dict). It must return a dictionary.
 
 ```julia
-function get_components_indexes_LocalLevel(T::Int64, Exogenous_X::Matrix{Fl}, model_input::Dict, outlier::Bool, ζ_ω_threshold::Int64)::Dict where Fl
+function get_components_indexes_LocalLevel(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dict where Fl
+    T = size(Exogenous_X, 1)
     μ1_indexes = [1]
     initial_states_indexes = [1]
     ξ_indexes = collect(2:T)

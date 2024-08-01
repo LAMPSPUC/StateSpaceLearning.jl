@@ -10,7 +10,14 @@ end
 function get_SSL_results(y_train::Vector{Float64}, true_features::Vector{Int64}, false_features::Vector{Int64}, X_train::Matrix{Float64}, inf_criteria::String, true_β::Vector{Float64})
     series_result=nothing
     
-    t = @elapsed output = StateSpaceLearning.fit_model(y_train; Exogenous_X=X_train, α=1.0, estimation_procedure="AdaLasso", outlier=false, hyperparameter_selection=inf_criteria, stabilize_ζ=12,ψ=0.05)
+    t = @elapsed output = StateSpaceLearning.fit_model(y_train; Exogenous_X=X_train,
+                                                                model_input = Dict("stochastic_level" => true, "trend" => true, 
+                                                                            "stochastic_trend" => true, 
+                                                                            "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12,
+                                                                            "outlier" => false, "ζ_ω_threshold" => 12), 
+                                                                estimation_input=Dict("α" => 1.0, "information_criteria" => inf_criteria, "ϵ" => 0.05, 
+                                                                            "penalize_exogenous" => true, "penalize_initial_states" => true))
+
     selected = output.components["Exogenous_X"]["Selected"]
     true_positives, false_positives, false_negatives, true_negatives = get_confusion_matrix(selected, true_features, false_features)
 

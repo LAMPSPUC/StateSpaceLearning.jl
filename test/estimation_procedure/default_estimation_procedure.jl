@@ -30,11 +30,11 @@ end
 @testset "Function: fit_lasso" begin
     Random.seed!(1234)
     Exogenous_X = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
-    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2)
+    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
 
-    components_indexes = StateSpaceLearning.get_components_indexes(10, Exogenous_X, Basic_Structural, true, 0)
+    components_indexes = StateSpaceLearning.get_components_indexes(Exogenous_X, Basic_Structural)
 
-    Estimation_X = StateSpaceLearning.create_X_unobserved_components(Basic_Structural, Exogenous_X, true, 0, 10)
+    Estimation_X = StateSpaceLearning.create_X(Basic_Structural, Exogenous_X)
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10)
 
     coefs1, ϵ1 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes; intercept = true)
@@ -61,11 +61,11 @@ end
 @testset "Function: default_estimation_procedure" begin
     Random.seed!(1234)
     Exogenous_X = hcat(rand(10, 3), vcat(ones(3), zeros(1), ones(6)))
-    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2)
+    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
 
-    components_indexes = StateSpaceLearning.get_components_indexes(10, Exogenous_X, Basic_Structural, true, 0)
+    components_indexes = StateSpaceLearning.get_components_indexes(Exogenous_X, Basic_Structural)
 
-    Estimation_X = StateSpaceLearning.create_X_unobserved_components(Basic_Structural, Exogenous_X, true, 0, 10)
+    Estimation_X = StateSpaceLearning.create_X(Basic_Structural, Exogenous_X)
 
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10).*5
 
@@ -97,16 +97,16 @@ end
     Exogenous_X1 = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
     Exogenous_X2 = rand(10, 3)
 
-    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2)
+    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
 
-    components_indexes1 = StateSpaceLearning.get_components_indexes(10, Exogenous_X1, Basic_Structural, true, 0)
-    components_indexes2 = StateSpaceLearning.get_components_indexes(10, Exogenous_X2, Basic_Structural, true, 0)
+    components_indexes1 = StateSpaceLearning.get_components_indexes(Exogenous_X1, Basic_Structural)
+    components_indexes2 = StateSpaceLearning.get_components_indexes(Exogenous_X2, Basic_Structural)
 
-    Estimation_X1 = StateSpaceLearning.create_X_unobserved_components(Basic_Structural, Exogenous_X1, true, 0, 10)
+    Estimation_X1 = StateSpaceLearning.create_X(Basic_Structural, Exogenous_X1)
     outlier_duplicate_columns1 = StateSpaceLearning.get_outlier_duplicate_columns(Estimation_X1, components_indexes1)
     @test outlier_duplicate_columns1 == [32]
 
-    Estimation_X2 = StateSpaceLearning.create_X_unobserved_components(Basic_Structural, Exogenous_X2, true, 0, 10)
+    Estimation_X2 = StateSpaceLearning.create_X(Basic_Structural, Exogenous_X2)
     outlier_duplicate_columns2 = StateSpaceLearning.get_outlier_duplicate_columns(Estimation_X2, components_indexes2)
     @test outlier_duplicate_columns2 == []
 end
