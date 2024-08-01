@@ -80,6 +80,36 @@ plot!(vcat(ones(output.T).*NaN, prediction), lab = "Forcast", w=2, color = "blue
 ```
 ![quick_example_airp](./docs/assets/quick_example_airp.PNG)
 
+### Best Subset Selection
+Quick example on how to perform best subset selection in time series utilizing StateSpaceLearning.
+
+```julia
+using StateSpaceLearning
+using CSV
+using DataFrames
+using Plots
+using Random
+
+Random.seed!(2024)
+
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
+log_air_passengers = log.(airp.passengers)
+X = rand(length(log_air_passengers), 10) # Create 10 exogenous features 
+β = rand(3)
+
+y = log_air_passengers + X[:, 1:3]*β # add to the log_air_passengers series a contribution from only 3 exogenous features.
+
+plot(y)
+
+output = StateSpaceLearning.fit_model(y; Exogenous_X = X, estimation_input = Dict("α" => 1.0, "information_criteria" => "bic", "ϵ" => 0.05, 
+                                                   "penalize_exogenous" => true, "penalize_initial_states" => true))
+
+Selected_exogenous = output.components["Exogenous_X"]["Selected"]
+
+```
+
+In this example, the selected exogenous features were 1, 2, 3, as expected.
+
 ### Completion of missing values
 Quick example of completion of missing values for the air passengers time-series (artificial NaN values are added to the original time-series).
 
@@ -105,6 +135,28 @@ plot!(fitted_completed_missing_values, lab = "Fit in Sample completed values", w
 
 ```
 ![quick_example_completion_airp](./docs/assets/quick_example_completion_airp.PNG)
+
+### StateSpaceModels initialization
+Quick example on how to use StateSpaceLearning to initialize  StateSpaceModels
+
+```julia
+using CSV
+using DataFrames
+using StateSpaceModels
+
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
+log_air_passengers = log.(airp.passengers)
+
+output = StateSpaceLearning.fit_model(log_air_passengers)
+residuals_variances = output.residuals_variances
+
+model = BasicStructural(log_air_passengers, 12)
+set_initial_hyperparameters!(model, Dict("sigma2_ε" => residuals_variances["ε"], 
+                                         "sigma2_ξ" =>residuals_variances["ξ"], 
+                                         "sigma2_ζ" =>residuals_variances["ζ"], 
+                                         "sigma2_ω" =>residuals_variances["ω"]))
+fit!(model)
+```
 
 ## Paper Results Reproducibility
 
