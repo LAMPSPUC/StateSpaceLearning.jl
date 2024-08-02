@@ -79,6 +79,31 @@ function main()
     CSV.write("paper_tests/m4_test/metrics_results/SSL_METRICS_RESULTS.csv", results_table)
 end 
 
+function create_dirs()
+    try
+        mkdir("paper_tests/m4_test/results_SSL")
+    catch
+        @warn "Directory already exists"
+    end
+    try
+        mkdir("paper_tests/m4_test/init_SSL")
+    catch
+        @warn "Directory already exists"
+    end
+    try
+        mkdir("paper_tests/m4_test/metrics_results")
+    catch
+        @warn "Directory already exists"
+    end
+    try
+        mkdir("paper_tests/m4_test/results_SS")
+    catch
+        @warn "Directory already exists"
+    end
+end
+
+create_dirs()
+
 main()
 
 run_config(DataFrame(), false, "aic", 0.1, true, 2794)#max sample size
