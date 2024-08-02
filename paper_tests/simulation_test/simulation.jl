@@ -12,7 +12,6 @@ include("metrics.jl")
 include("evaluate_models.jl")
 include("simulation_generator.jl")
 
-############################## forward ####################################################
 using Distributed
 import Pkg
 Pkg.activate(".")
@@ -36,6 +35,21 @@ end
     include("evaluate_models.jl")
     include("simulation_generator.jl")
 end
+
+function create_dirs()
+    try
+        mkdir("paper_tests/simulation_test/results_simulation_raw")
+    catch
+        @warn "Directory already exists"
+    end
+    try
+        mkdir("paper_tests/simulation_test/results_simulation")
+    catch
+        @warn "Directory already exists"
+    end
+end
+
+create_dirs()
 
 @everywhere begin
     function get_M_K_res(M_K_d)
