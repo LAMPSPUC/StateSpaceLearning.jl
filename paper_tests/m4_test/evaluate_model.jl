@@ -9,7 +9,7 @@ function evaluate_SSL(initialization_df::DataFrame, results_df::DataFrame, input
     T= length(normalized_y)
     normalized_y = normalized_y[max(1, T-sample_size+1):end]
     output = StateSpaceLearning.fit_model(normalized_y; 
-                                    model_input = Dict("stochastic_level" => true, "trend" => true, 
+                                    model_input = Dict("level" => true, "stochastic_level" => true, "trend" => true, 
                                             "stochastic_trend" => true, 
                                              "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12,
                                              "outlier" => outlier, "ζ_ω_threshold" => 12), 

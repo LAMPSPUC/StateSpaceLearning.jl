@@ -11,7 +11,7 @@ function get_SSL_results(y_train::Vector{Float64}, true_features::Vector{Int64},
     series_result=nothing
     
     t = @elapsed output = StateSpaceLearning.fit_model(y_train; Exogenous_X=X_train,
-                                                                model_input = Dict("stochastic_level" => true, "trend" => true, 
+                                                                model_input = Dict("level" => true, "stochastic_level" => true, "trend" => true, 
                                                                             "stochastic_trend" => true, 
                                                                             "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12,
                                                                             "outlier" => false, "ζ_ω_threshold" => 12), 
