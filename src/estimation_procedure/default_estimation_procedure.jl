@@ -225,5 +225,5 @@ function default_estimation_procedure(Estimation_X::Matrix{Tl}, estimation_y::Ve
         !penalize_initial_states ? ts_penalty_factor[components_indexes["initial_states"][2:end]] .= 0 : nothing
     end
 
-    return fit_lasso(Estimation_X, estimation_y, α, information_criteria, penalize_exogenous, components_indexes, penalty_factor; rm_average = false)
+    return fit_lasso(Estimation_X, estimation_y, α, information_criteria, penalize_exogenous, components_indexes, ts_penalty_factor; rm_average = false)
 end
