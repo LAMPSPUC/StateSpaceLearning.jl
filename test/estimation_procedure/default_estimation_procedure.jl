@@ -30,29 +30,36 @@ end
 @testset "Function: fit_lasso" begin
     Random.seed!(1234)
     Exogenous_X = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
-    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Basic_Structural = Dict("level" => true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Basic_Structural_w_level = Dict("level" => false, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
 
     components_indexes = StateSpaceLearning.get_components_indexes(Exogenous_X, Basic_Structural)
+    components_indexes2 = StateSpaceLearning.get_components_indexes(Exogenous_X, Basic_Structural_w_level)
 
     Estimation_X = StateSpaceLearning.create_X(Basic_Structural, Exogenous_X)
+    Estimation_X2 = StateSpaceLearning.create_X(Basic_Structural_w_level, Exogenous_X)
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10)
 
-    coefs1, ϵ1 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes; intercept = true)
+    coefs1, ϵ1 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes, ones(size(Estimation_X, 2) - 1); rm_average = true)
     @test length(coefs1) == 43
     @test length(ϵ1) == 10
 
-    coefs2, ϵ2 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes; intercept = false)
+    coefs1, ϵ1 = StateSpaceLearning.fit_lasso(Estimation_X2, estimation_y, 0.1, "aic", true, components_indexes2, ones(size(Estimation_X2, 2)); rm_average = false)
+    @test length(coefs1) == 42
+    @test length(ϵ1) == 10
+
+    coefs2, ϵ2 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes, ones(size(Estimation_X, 2) - 1); rm_average = true)
     @test coefs2[1] == mean(estimation_y)
     @test length(coefs2) == 43
     @test length(ϵ2) == 10
 
-    coefs3, ϵ3 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", false, components_indexes; intercept = true)
+    coefs3, ϵ3 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", false, components_indexes, ones(size(Estimation_X, 2) - 1); rm_average = true)
     @test coefs3[components_indexes["o"][4]] == 0
     @test all(coefs3[components_indexes["Exogenous_X"]] .!= 0)
     @test length(coefs3) == 43
     @test length(ϵ3) == 10
 
-    coefs4, ϵ4 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes; penalty_factor = vcat(ones(1), ones(size(Estimation_X,2) - 2).*Inf), intercept = true)
+    coefs4, ϵ4 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes, vcat(ones(1), ones(size(Estimation_X,2) - 2).*Inf); rm_average = true)
     @test all(coefs4[3:end] .== 0)
     @test length(coefs4) == 43
     @test length(ϵ4) == 10
@@ -61,17 +68,25 @@ end
 @testset "Function: default_estimation_procedure" begin
     Random.seed!(1234)
     Exogenous_X = hcat(rand(10, 3), vcat(ones(3), zeros(1), ones(6)))
-    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Basic_Structural = Dict("level" => true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Basic_Structural_w_level = Dict("level" => false, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
 
     components_indexes = StateSpaceLearning.get_components_indexes(Exogenous_X, Basic_Structural)
+    components_indexes2 = StateSpaceLearning.get_components_indexes(Exogenous_X, Basic_Structural_w_level)
 
     Estimation_X = StateSpaceLearning.create_X(Basic_Structural, Exogenous_X)
+    Estimation_X2 = StateSpaceLearning.create_X(Basic_Structural_w_level, Exogenous_X)
 
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10).*5
 
     estimation_input1 = Dict("α" => 0.1, "information_criteria" => "aic", "ϵ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)
     coefs1, ϵ1 = StateSpaceLearning.default_estimation_procedure(Estimation_X, estimation_y, components_indexes, estimation_input1)
     @test length(coefs1) == 43
+    @test length(ϵ1) == 10
+
+    estimation_input1 = Dict("α" => 0.1, "information_criteria" => "aic", "ϵ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)
+    coefs1, ϵ1 = StateSpaceLearning.default_estimation_procedure(Estimation_X2, estimation_y, components_indexes2, estimation_input1)
+    @test length(coefs1) == 42
     @test length(ϵ1) == 10
 
     estimation_input2 = Dict("α" => 0.1, "information_criteria" => "aic", "ϵ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => false)
@@ -97,7 +112,7 @@ end
     Exogenous_X1 = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
     Exogenous_X2 = rand(10, 3)
 
-    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Basic_Structural = Dict("level"=> true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
 
     components_indexes1 = StateSpaceLearning.get_components_indexes(Exogenous_X1, Basic_Structural)
     components_indexes2 = StateSpaceLearning.get_components_indexes(Exogenous_X2, Basic_Structural)

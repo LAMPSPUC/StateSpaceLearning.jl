@@ -9,21 +9,21 @@ include("estimation_procedure/default_estimation_procedure.jl")
 include("utils.jl")
 include("datasets.jl")
 
-const DEFAULT_COMPONENTS_PARAMETERS = ["stochastic_level", "trend", "stochastic_trend", "seasonal", "stochastic_seasonal", "freq_seasonal"]
+const DEFAULT_COMPONENTS_PARAMETERS = ["level", "stochastic_level", "trend", "stochastic_trend", "seasonal", "stochastic_seasonal", "freq_seasonal"]
 
 export fit_model, forecast
 
 """
 fit_model(y::Vector{Fl};
-                    model_input::Dict = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, 
-                                             "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12,
-                                             "outlier" => true, "ζ_ω_threshold" => 12),
-                    model_functions::Dict = Dict("create_X" => create_X, "get_components_indexes" => get_components_indexes,
-                                             "get_variances" => get_variances),
-                    estimation_input::Dict = Dict("α" => 0.1, "information_criteria" => "aic", "ϵ" => 0.05, 
-                                                   "penalize_exogenous" => true, "penalize_initial_states" => true),
-                    estimation_function::Function = default_estimation_procedure,
-                    Exogenous_X::Matrix{Fl} = zeros(length(y), 0))::Output where Fl
+            model_input::Dict = Dict("level" => true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, 
+                                        "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12,
+                                        "outlier" => true, "ζ_ω_threshold" => 12),
+            model_functions::Dict = Dict("create_X" => create_X, "get_components_indexes" => get_components_indexes,
+                                        "get_variances" => get_variances),
+            estimation_input::Dict = Dict("α" => 0.1, "information_criteria" => "aic", "ϵ" => 0.05, 
+                                            "penalize_exogenous" => true, "penalize_initial_states" => true),
+            estimation_function::Function = default_estimation_procedure,
+            Exogenous_X::Matrix{Fl} = zeros(length(y), 0))::Output where Fl
 
     Fits the StateSpaceLearning model using specified parameters and estimation procedures.
 
@@ -40,7 +40,7 @@ fit_model(y::Vector{Fl};
 
 """
 function fit_model(y::Vector{Fl};
-                    model_input::Dict = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, 
+                    model_input::Dict = Dict("level" => true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, 
                                              "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12,
                                              "outlier" => true, "ζ_ω_threshold" => 12),
                     model_functions::Dict = Dict("create_X" => create_X, "get_components_indexes" => get_components_indexes,
@@ -57,7 +57,14 @@ function fit_model(y::Vector{Fl};
         @assert all([key in keys(model_input) for key in DEFAULT_COMPONENTS_PARAMETERS]) "The default components model must have all the necessary parameters $(DEFAULT_COMPONENTS_PARAMETERS)"
     end
 
+    @assert !has_intercept(Exogenous_X) "Exogenous matrix must not have an intercept column"
+
     X = model_functions["create_X"](model_input, Exogenous_X)
+
+    if has_intercept(X)
+        @assert allequal(X[:, 1]) "Intercept column must be the first column"
+        @assert !has_intercept(X[:, 2:end]) "Matrix must not have more than one intercept column"
+    end
 
     estimation_y, Estimation_X, valid_indexes = handle_missing_values(X, y)
 
