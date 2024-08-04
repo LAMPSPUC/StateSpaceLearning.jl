@@ -106,3 +106,18 @@ function handle_missing_values(X::Matrix{Tl}, y::Vector{Fl})::Tuple{Vector{Fl}, 
 
     return y[valid_indexes], X[valid_indexes, :], valid_indexes
 end
+
+"""
+has_intercept(X::Matrix{Tl})::Bool where Tl
+
+    Checks if the input matrix has a constant column (intercept).
+
+    # Arguments
+    - `X::Matrix{Tl}`: Input matrix.
+
+    # Returns
+    - `Bool`: True if the input matrix has a constant column, false otherwise.
+"""
+function has_intercept(X::Matrix{Tl})::Bool where Tl
+    return any([all(X[:, i] .== 1) for i in 1:size(X, 2)])
+end

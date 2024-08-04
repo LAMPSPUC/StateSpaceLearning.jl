@@ -2,9 +2,9 @@
     Exogenous_X1 = rand(10, 3)
     Exogenous_X2 = zeros(10, 0)
 
-    Basic_Structural = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
-    Local_Level = Dict("stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
-    Local_Linear_Trend = Dict("stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Basic_Structural = Dict("level"=> true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Local_Level = Dict("level"=> true, "stochastic_level" => true, "trend" => false, "stochastic_trend" => false, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
+    Local_Linear_Trend = Dict("level"=> true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => false, "stochastic_seasonal" => false, "freq_seasonal" => 2, "outlier" => true, "ζ_ω_threshold" => 0)
     parameter_combination = [
         [Basic_Structural, true, Exogenous_X1],
         [Local_Level, true, Exogenous_X1],
@@ -49,4 +49,12 @@ end
     ϵ2, fitted2 = StateSpaceLearning.get_fit_and_residuals(estimation_ϵ2, coefs, X, valid_indexes2, T)
     @test !all(isnan.(ϵ2[valid_indexes2]))
     @test !all(isnan.(fitted2))
+end
+
+@testset "Function: has_intercept" begin
+    X = rand(10, 3)
+    @test !StateSpaceLearning.has_intercept(X)
+
+    X = [ones(10) rand(10, 2)]
+    @test StateSpaceLearning.has_intercept(X)
 end

@@ -52,15 +52,15 @@ function get_outlier_duplicate_columns(Estimation_X::Matrix{Tl}, components_inde
 end
 
 """
-    get_path_information_criteria(model::GLMNetPath, Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl},
+    get_path_information_criteria(model::GLMNetPath, Lasso_X::Matrix{Tl}, Lasso_y::Vector{Fl},
         information_criteria::String; intercept::Bool = true)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     Calculates the information criteria along the regularization path of a GLMNet model and returns coefficients and residuals of the best model based on the selected information criteria.
 
     # Arguments
     - `model::GLMNetPath`: Fitted GLMNetPath model object.
-    - `Estimation_X::Matrix{Tl}`: Matrix of predictors for estimation.
-    - `estimation_y::Vector{Fl}`: Vector of response values for estimation.
+    - `Lasso_X::Matrix{Tl}`: Matrix of predictors for estimation.
+    - `Lasso_y::Vector{Fl}`: Vector of response values for estimation.
     - `information_criteria::String`: Information Criteria method for hyperparameter selection.
     - `intercept::Bool`: Flag for intercept inclusion in the model (default: true).
 
@@ -68,55 +68,55 @@ end
     - `Tuple{Vector{Float64}, Vector{Float64}}`: Tuple containing coefficients and residuals of the best model.
 
 """
-function get_path_information_criteria(model::GLMNetPath, Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, information_criteria::String; intercept::Bool = true)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+function get_path_information_criteria(model::GLMNetPath, Lasso_X::Matrix{Tl}, Lasso_y::Vector{Fl}, information_criteria::String; intercept::Bool = true)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
     path_size = length(model.lambda)
-    T         = size(Estimation_X, 1)
+    T         = size(Lasso_X, 1)
     K         = count(i->i != 0, model.betas; dims = 1)'
 
     method_vec = Vector{Float64}(undef, path_size)
     for i in 1:path_size
-        fit = Estimation_X*model.betas[:, i] .+ model.a0[i]
-        ϵ   = estimation_y - fit
+        fit = Lasso_X*model.betas[:, i] .+ model.a0[i]
+        ϵ   = Lasso_y - fit
         
         method_vec[i] = get_information(T, K[i], ϵ; information_criteria = information_criteria)
     end
 
     best_model_idx = argmin(method_vec)
     coefs = intercept ? vcat(model.a0[best_model_idx], model.betas[:, best_model_idx]) : model.betas[:, best_model_idx]
-    fit   = intercept ? hcat(ones(T), Estimation_X)*coefs : Estimation_X*coefs
-    ϵ   = estimation_y - fit
+    fit   = intercept ? hcat(ones(T), Lasso_X)*coefs : Lasso_X*coefs
+    ϵ   = Lasso_y - fit
     return coefs, ϵ
 end
 
 """
-    fit_glmnet(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64;
+    fit_glmnet(Lasso_X::Matrix{Tl}, Lasso_y::Vector{Fl}, α::Float64;
                information_criteria::String = "aic",
-               penalty_factor::Vector{Float64}=ones(size(Estimation_X,2) - 1),
+               penalty_factor::Vector{Float64}=ones(size(Lasso_X,2) - 1),
                intercept::Bool = intercept)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     Fits a GLMNet model to the provided data and returns coefficients and residuals based on selected criteria.
 
     # Arguments
-    - `Estimation_X::Matrix{Tl}`: Matrix of predictors for estimation.
-    - `estimation_y::Vector{Fl}`: Vector of response values for estimation.
+    - `Lasso_X::Matrix{Tl}`: Matrix of predictors for estimation.
+    - `Lasso_y::Vector{Fl}`: Vector of response values for estimation.
     - `α::Float64`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
     - `information_criteria::String`: Information Criteria method for hyperparameter selection (default: aic).
-    - `penalty_factor::Vector{Float64}`: Penalty factors for each predictor (default: ones(size(Estimation_X, 2) - 1)).
+    - `penalty_factor::Vector{Float64}`: Penalty factors for each predictor (default: ones(size(Lasso_X, 2) - 1)).
     - `intercept::Bool`: Flag for intercept inclusion in the model (default: true).
 
     # Returns
     - `Tuple{Vector{Float64}, Vector{Float64}}`: Tuple containing coefficients and residuals of the best model.
 
 """
-function fit_glmnet(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64; information_criteria::String = "aic", penalty_factor::Vector{Float64}=ones(size(Estimation_X,2) - 1), intercept::Bool = intercept)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
-    model = glmnet(Estimation_X, estimation_y, alpha = α, penalty_factor = penalty_factor, intercept = intercept, dfmax=size(Estimation_X, 2), lambda_min_ratio=0.001)
-    return get_path_information_criteria(model, Estimation_X, estimation_y, information_criteria; intercept = intercept)
+function fit_glmnet(Lasso_X::Matrix{Tl}, Lasso_y::Vector{Fl}, α::Float64; information_criteria::String = "aic", penalty_factor::Vector{Float64}=ones(size(Lasso_X,2) - 1), intercept::Bool = intercept)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+    model = glmnet(Lasso_X, Lasso_y, alpha = α, penalty_factor = penalty_factor, intercept = intercept, dfmax=size(Lasso_X, 2), lambda_min_ratio=0.001)
+    return get_path_information_criteria(model, Lasso_X, Lasso_y, information_criteria; intercept = intercept)
 end
 
 """
     fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, information_criteria::String,
-              penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int64}};
-              penalty_factor::Vector{Float64}=ones(size(Estimation_X,2) - 1), intercept::Bool = true)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+              penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int64}}, penalty_factor::Vector{Float64};
+              rm_average::Bool = false)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     Fits a Lasso regression model to the provided data and returns coefficients and residuals based on selected criteria.
 
@@ -127,23 +127,41 @@ end
     - `information_criteria::String`: Information Criteria method for hyperparameter selection (default: aic).
     - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
     - `components_indexes::Dict{String, Vector{Int64}}`: Dictionary containing indexes for different components.
-    - `penalty_factor::Vector{Float64}`: Penalty factors for each predictor (default: ones(size(Estimation_X, 2) - 1)).
-    - `intercept::Bool`: Flag for intercept inclusion in the model (default: true).
+    - `penalty_factor::Vector{Float64}`: Penalty factors for each predictor.
+    - `rm_average::Bool`: Flag to consider if the intercept will be calculated is the average of the time series (default: false).
 
     # Returns
     - `Tuple{Vector{Float64}, Vector{Float64}}`: Tuple containing coefficients and residuals of the fitted Lasso model.
 
 """
-function fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, information_criteria::String, penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int64}}; penalty_factor::Vector{Float64}=ones(size(Estimation_X,2) - 1), intercept::Bool = true)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+function fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, information_criteria::String, penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int64}}, penalty_factor::Vector{Float64}; rm_average::Bool = false)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     outlier_duplicate_columns = get_outlier_duplicate_columns(Estimation_X, components_indexes)
     penalty_factor[outlier_duplicate_columns] .= Inf
 
-    !penalize_exogenous ? penalty_factor[components_indexes["Exogenous_X"] .- 1] .= 0 : nothing
-    mean_y = mean(estimation_y); Lasso_y = intercept ? estimation_y : estimation_y .- mean_y
+    hasintercept = has_intercept(Estimation_X)
+    if hasintercept
+        !penalize_exogenous ? penalty_factor[components_indexes["Exogenous_X"] .- 1] .= 0 : nothing
+        Lasso_X = Estimation_X[:, 2:end]
+    else
+        !penalize_exogenous ? penalty_factor[components_indexes["Exogenous_X"]] .= 0 : nothing
+        Lasso_X = Estimation_X
+        @assert !rm_average "Intercept must be included in the model if rm_average is set to true"
+    end
 
-    coefs, ϵ =  fit_glmnet(Estimation_X[:, 2:end], Lasso_y, α; information_criteria=information_criteria, penalty_factor=penalty_factor, intercept = intercept)
-    return !intercept ? (vcat(mean_y, coefs), ϵ) : (coefs, ϵ)
+    if rm_average
+        mean_y  = mean(estimation_y)
+        Lasso_y = estimation_y .- mean_y
+    else
+        Lasso_y = estimation_y
+    end
+
+    if hasintercept
+        coefs, ϵ =  fit_glmnet(Lasso_X, Lasso_y, α; information_criteria=information_criteria, penalty_factor=penalty_factor, intercept = !rm_average)
+    else
+        coefs, ϵ =  fit_glmnet(Lasso_X, Lasso_y, α; information_criteria=information_criteria, penalty_factor=penalty_factor, intercept = false)
+    end
+    return rm_average ? (vcat(mean_y, coefs), ϵ) : (coefs, ϵ)
     
 end
 
@@ -175,22 +193,37 @@ function default_estimation_procedure(Estimation_X::Matrix{Tl}, estimation_y::Ve
 
     @assert 0 <= α <= 1 "α must be in [0, 1]"
 
-    penalty_factor = ones(size(Estimation_X, 2) - 1); penalty_factor[components_indexes["initial_states"][2:end] .- 1] .= 0
-    coefs, _  = fit_lasso(Estimation_X, estimation_y, α, information_criteria, penalize_exogenous, components_indexes; penalty_factor = penalty_factor, intercept = false)
+    hasintercept = has_intercept(Estimation_X)
+
+    if hasintercept
+        penalty_factor = ones(size(Estimation_X, 2) - 1)
+        penalty_factor[components_indexes["initial_states"][2:end] .- 1] .= 0
+        coefs, _  = fit_lasso(Estimation_X, estimation_y, α, information_criteria, penalize_exogenous, components_indexes, penalty_factor; rm_average = true)
+    else
+        penalty_factor = ones(size(Estimation_X, 2))
+        penalty_factor[components_indexes["initial_states"][2:end]] .= 0
+        coefs, _  = fit_lasso(Estimation_X, estimation_y, α, information_criteria, penalize_exogenous, components_indexes, penalty_factor; rm_average = false)
+    end
 
     #AdaLasso per component
-    penalty_factor = zeros(size(Estimation_X, 2) - 1)
+    ts_penalty_factor = hasintercept ? zeros(size(Estimation_X, 2) - 1) : zeros(size(Estimation_X, 2))
     for key in keys(components_indexes)
         if key != "initial_states" && key != "μ1"
             component = components_indexes[key]
             if key != "Exogenous_X" && key != "o" && !(key in ["ν1", "γ1"])
                 κ = count(i -> i != 0, coefs[component]) < 1 ? 0 : std(coefs[component])
-                penalty_factor[component .- 1] .= (1 / (κ + ϵ))
+                hasintercept ? ts_penalty_factor[component .- 1] .= (1 / (κ + ϵ)) : ts_penalty_factor[component] .= (1 / (κ + ϵ))
             else
-                penalty_factor[component .- 1]  = (1 ./ (abs.(coefs[component]) .+ ϵ))
+                hasintercept ? ts_penalty_factor[component .- 1]  = (1 ./ (abs.(coefs[component]) .+ ϵ)) : ts_penalty_factor[component]  = (1 ./ (abs.(coefs[component]) .+ ϵ))
             end
         end
     end 
-    !penalize_initial_states ? penalty_factor[components_indexes["initial_states"][2:end] .- 1] .= 0 : nothing
-    return fit_lasso(Estimation_X, estimation_y, α, information_criteria, penalize_exogenous, components_indexes; penalty_factor=penalty_factor)
+
+    if hasintercept
+        !penalize_initial_states ? ts_penalty_factor[components_indexes["initial_states"][2:end] .- 1] .= 0 : nothing
+    else
+        !penalize_initial_states ? ts_penalty_factor[components_indexes["initial_states"][2:end]] .= 0 : nothing
+    end
+
+    return fit_lasso(Estimation_X, estimation_y, α, information_criteria, penalize_exogenous, components_indexes, penalty_factor; rm_average = false)
 end

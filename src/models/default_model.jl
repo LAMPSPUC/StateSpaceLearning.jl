@@ -116,7 +116,7 @@ function create_ω(T::Int64, freq_seasonal::Int64, steps_ahead::Int64, ζ_ω_thr
 end
 
 """
-    create_initial_states_Matrix(T::Int64, s::Int64, steps_ahead::Int64, trend::Bool, seasonal::Bool)::Matrix
+    create_initial_states_Matrix(T::Int64, s::Int64, steps_ahead::Int64, level::Bool, trend::Bool, seasonal::Bool)::Matrix
 
     Creates an initial states matrix based on the input parameters.
 
@@ -124,6 +124,7 @@ end
     - `T::Int64`: Length of the original time series.
     - `freq_seasonal::Int64`: Seasonal period.
     - `steps_ahead::Int64`: Number of steps ahead.
+    - `level::Bool`: Flag for considering level component.
     - `trend::Bool`: Flag for considering trend component.
     - `seasonal::Bool`: Flag for considering seasonal component.
 
@@ -131,9 +132,10 @@ end
     - `Matrix`: Initial states matrix constructed based on the input parameters.
 
 """
-function create_initial_states_Matrix(T::Int64, freq_seasonal::Int64, steps_ahead::Int64, trend::Bool, seasonal::Bool)::Matrix
+function create_initial_states_Matrix(T::Int64, freq_seasonal::Int64, steps_ahead::Int64, level::Bool, trend::Bool, seasonal::Bool)::Matrix
 
-    initial_states_matrix = ones(T+steps_ahead, 1)
+    initial_states_matrix = zeros(T+steps_ahead, 0)
+    level ? initial_states_matrix = hcat(initial_states_matrix, ones(T+steps_ahead, 1)) : nothing
     trend ? initial_states_matrix = hcat(initial_states_matrix, vcat([0], collect(1:T+steps_ahead-1))) : nothing
 
     if seasonal
@@ -172,7 +174,7 @@ function create_X(model_input::Dict, Exogenous_X::Matrix{Fl},
     ω_matrix = model_input["stochastic_seasonal"] ? create_ω(T, model_input["freq_seasonal"], steps_ahead, ζ_ω_threshold) : zeros(T+steps_ahead, 0)
     o_matrix = outlier ? create_o_matrix(T, steps_ahead) : zeros(T+steps_ahead, 0)
 
-    initial_states_matrix = create_initial_states_Matrix(T, model_input["freq_seasonal"], steps_ahead, model_input["trend"], model_input["seasonal"])
+    initial_states_matrix = create_initial_states_Matrix(T, model_input["freq_seasonal"], steps_ahead, model_input["level"], model_input["trend"], model_input["seasonal"])
     return hcat(initial_states_matrix, ξ_matrix, ζ_matrix, ω_matrix, o_matrix, vcat(Exogenous_X, Exogenous_Forecast))
     
 end
@@ -194,9 +196,16 @@ function get_components_indexes(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dic
     
     outlier = model_input["outlier"]; ζ_ω_threshold = model_input["ζ_ω_threshold"]; T = size(Exogenous_X, 1)
 
-    μ1_indexes = [1]
-    initial_states_indexes = [1]
-    FINAL_INDEX = 1
+    FINAL_INDEX = 0
+
+    if model_input["level"]
+        μ1_indexes = [1]
+        initial_states_indexes = [1]
+        FINAL_INDEX += length(μ1_indexes)
+    else
+        μ1_indexes = Int64[]
+        initial_states_indexes = Int64[]
+    end
 
     if model_input["trend"]
         ν1_indexes = [2]
@@ -213,7 +222,6 @@ function get_components_indexes(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dic
     else
         γ1_indexes = Int64[]
     end
-
 
     if model_input["stochastic_level"]
         ξ_indexes = collect(FINAL_INDEX+1:FINAL_INDEX+ξ_size(T))
