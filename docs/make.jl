@@ -15,7 +15,7 @@ makedocs(;
     authors="André Ramos",
     pages=[
         "Home" => "index.md",
-        "manual.md"
+        "manual.md", "adapting_package.md"
     ],
 )
 
