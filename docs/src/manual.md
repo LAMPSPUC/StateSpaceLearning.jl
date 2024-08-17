@@ -21,7 +21,7 @@ model_input         = output.model_input # Model inputs that were utilized to bu
 Create_X            = output.Create_X # The function utilized to build the regression matrix.
 X                   = output.X # High Dimension Regression utilized in the estimation.
 coefs               = output.coefs # High Dimension Regression coefficients estimated in the estimation.
-ϵ                   = output.ϵ # Residuals of the model.
+ε                   = output.ε # Residuals of the model.
 fitted              = output.fitted # Fit in Sample of the model.
 components          = output.components # Dictionary containing information about each component of the model, each component has the keys: "Values" (The value of the component in each timestamp) , "Coefs" (The coefficients estimated for each element of the component) and "Indexes" (The indexes of the elements of the component in the high dimension regression "X").
 residuals_variances = output.residuals_variances # Dictionary containing the estimated variances for the innovations components (that is the information that can be utilized to initialize the state space model).
@@ -52,7 +52,7 @@ Current features include:
 
 ## Quick Examples
 
-### Fitting and forecasting
+### Fitting, forecasting and simulating
 Quick example of fit and forecast for the air passengers time-series.
 
 ```julia
@@ -65,11 +65,20 @@ log_air_passengers = log.(airp.passengers)
 steps_ahead = 30
 
 output = StateSpaceLearning.fit_model(log_air_passengers)
-prediction_log = StateSpaceLearning.forecast(output, steps_ahead)
+prediction_log = StateSpaceLearning.forecast(output, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
 prediction = exp.(prediction_log)
 
 plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
-plot!(vcat(ones(output.T).*NaN, prediction), lab = "Forcast", w=2, color = "blue")
+plot!(vcat(ones(length(log_air_passengers)).*NaN, prediction), lab = "Forecast", w=2, color = "blue")
+
+N_scenarios = 1000
+simulation = StateSpaceLearning.simulate(output, steps_ahead, N_scenarios) # arguments are the output of the fitted model, number of steps ahead the user wants to forecast and number of scenario paths
+
+plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
+for s in 1:N_scenarios-1
+    plot!(vcat(ones(length(log_air_passengers)).*NaN, exp.(simulation[:, s])), lab = "", α = 0.1 , color = "red")
+end
+plot!(vcat(ones(length(log_air_passengers)).*NaN, exp.(simulation[:, N_scenarios])), lab = "Scenarios Paths", α = 0.1 , color = "red")
 
 ```
 ![quick_example_airp](./docs/assets/quick_example_airp.PNG)
@@ -119,7 +128,7 @@ X = rand(length(log_air_passengers), 10) # Create 10 exogenous features
 
 y = log_air_passengers + X[:, 1:3]*β # add to the log_air_passengers series a contribution from only 3 exogenous features.
 
-output = StateSpaceLearning.fit_model(y; Exogenous_X = X, estimation_input = Dict("α" => 1.0, "information_criteria" => "bic", "ϵ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true))
+output = StateSpaceLearning.fit_model(y; Exogenous_X = X, estimation_input = Dict("α" => 1.0, "information_criteria" => "bic", "ε" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true))
 
 Selected_exogenous = output.components["Exogenous_X"]["Selected"]
 
@@ -138,12 +147,13 @@ using Plots
 airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
 log_air_passengers = log.(airp.passengers)
 
+airpassengers = Float64.(airp.passengers)
 log_air_passengers[60:72] .= NaN
 
 output = StateSpaceLearning.fit_model(log_air_passengers)
 
 fitted_completed_missing_values = ones(144).*NaN; fitted_completed_missing_values[60:72] = exp.(output.fitted[60:72])
-real_removed_valued = ones(144).*NaN; real_removed_valued[60:72] = deepcopy(airpassengers[60:72])
+real_removed_valued = ones(144).*NaN; real_removed_valued[60:72] = deepcopy(airp.passengers[60:72])
 airpassengers[60:72] .= NaN
 
 plot(airpassengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)

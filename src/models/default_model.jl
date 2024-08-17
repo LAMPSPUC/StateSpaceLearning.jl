@@ -259,7 +259,7 @@ function get_components_indexes(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dic
 end
 
 """
-    get_variances(ϵ::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int64}})::Dict where Fl
+    get_variances(ε::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int64}})::Dict where Fl
 
     Calculates variances for each innovation component and for the residuals.
 

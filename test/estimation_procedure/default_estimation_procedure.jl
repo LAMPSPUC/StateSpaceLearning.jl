@@ -8,23 +8,23 @@ penalty_factor = ones(3)
     intercept2 = false
 
     model1 = glmnet(Estimation_X, estimation_y, alpha = α, penalty_factor = penalty_factor, intercept = intercept1, dfmax=size(Estimation_X, 2), lambda_min_ratio=0.001)
-    coefs1, ϵ1 = StateSpaceLearning.get_path_information_criteria(model1, Estimation_X, estimation_y, "aic"; intercept = intercept1)
+    coefs1, ε1 = StateSpaceLearning.get_path_information_criteria(model1, Estimation_X, estimation_y, "aic"; intercept = intercept1)
     @test length(coefs1) == 4
     @test coefs1[1] != 0
     @test all(coefs1[2:end] .== 0)
-    @test length(ϵ1) == 30
+    @test length(ε1) == 30
      
     model2 = glmnet(Estimation_X, estimation_y, alpha = α, penalty_factor = penalty_factor, intercept = intercept2, dfmax=size(Estimation_X, 2), lambda_min_ratio=0.001)
-    coefs2, ϵ2 = StateSpaceLearning.get_path_information_criteria(model2, Estimation_X, estimation_y, "aic"; intercept = intercept2)
+    coefs2, ε2 = StateSpaceLearning.get_path_information_criteria(model2, Estimation_X, estimation_y, "aic"; intercept = intercept2)
     @test length(coefs2) == 3
     @test all(coefs2 .== 0)
-    @test length(ϵ2) == 30
+    @test length(ε2) == 30
 end
 
 @testset "Function: fit_glmnet" begin
-    coefs, ϵ = StateSpaceLearning.fit_glmnet(Estimation_X, estimation_y, α; information_criteria="aic", penalty_factor=penalty_factor, intercept = true)
+    coefs, ε = StateSpaceLearning.fit_glmnet(Estimation_X, estimation_y, α; information_criteria="aic", penalty_factor=penalty_factor, intercept = true)
     @test length(coefs) == 4
-    @test length(ϵ) == 30
+    @test length(ε) == 30
 end
 
 @testset "Function: fit_lasso" begin
@@ -40,29 +40,29 @@ end
     Estimation_X2 = StateSpaceLearning.create_X(Basic_Structural_w_level, Exogenous_X)
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10)
 
-    coefs1, ϵ1 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes, ones(size(Estimation_X, 2) - 1); rm_average = true)
+    coefs1, ε1 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes, ones(size(Estimation_X, 2) - 1); rm_average = true)
     @test length(coefs1) == 43
-    @test length(ϵ1) == 10
+    @test length(ε1) == 10
 
-    coefs1, ϵ1 = StateSpaceLearning.fit_lasso(Estimation_X2, estimation_y, 0.1, "aic", true, components_indexes2, ones(size(Estimation_X2, 2)); rm_average = false)
+    coefs1, ε1 = StateSpaceLearning.fit_lasso(Estimation_X2, estimation_y, 0.1, "aic", true, components_indexes2, ones(size(Estimation_X2, 2)); rm_average = false)
     @test length(coefs1) == 42
-    @test length(ϵ1) == 10
+    @test length(ε1) == 10
 
-    coefs2, ϵ2 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes, ones(size(Estimation_X, 2) - 1); rm_average = true)
+    coefs2, ε2 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes, ones(size(Estimation_X, 2) - 1); rm_average = true)
     @test coefs2[1] == mean(estimation_y)
     @test length(coefs2) == 43
-    @test length(ϵ2) == 10
+    @test length(ε2) == 10
 
-    coefs3, ϵ3 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", false, components_indexes, ones(size(Estimation_X, 2) - 1); rm_average = true)
+    coefs3, ε3 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", false, components_indexes, ones(size(Estimation_X, 2) - 1); rm_average = true)
     @test coefs3[components_indexes["o"][4]] == 0
     @test all(coefs3[components_indexes["Exogenous_X"]] .!= 0)
     @test length(coefs3) == 43
-    @test length(ϵ3) == 10
+    @test length(ε3) == 10
 
-    coefs4, ϵ4 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes, vcat(ones(1), ones(size(Estimation_X,2) - 2).*Inf); rm_average = true)
+    coefs4, ε4 = StateSpaceLearning.fit_lasso(Estimation_X, estimation_y, 0.1, "aic", true, components_indexes, vcat(ones(1), ones(size(Estimation_X,2) - 2).*Inf); rm_average = true)
     @test all(coefs4[3:end] .== 0)
     @test length(coefs4) == 43
-    @test length(ϵ4) == 10
+    @test length(ε4) == 10
 end
 
 @testset "Function: default_estimation_procedure" begin
@@ -80,19 +80,19 @@ end
     estimation_y = Estimation_X*rand(size(Estimation_X, 2)) + rand(10).*5
 
     estimation_input1 = Dict("α" => 0.1, "information_criteria" => "aic", "ϵ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)
-    coefs1, ϵ1 = StateSpaceLearning.default_estimation_procedure(Estimation_X, estimation_y, components_indexes, estimation_input1)
+    coefs1, ε1 = StateSpaceLearning.default_estimation_procedure(Estimation_X, estimation_y, components_indexes, estimation_input1)
     @test length(coefs1) == 43
-    @test length(ϵ1) == 10
+    @test length(ε1) == 10
 
     estimation_input1 = Dict("α" => 0.1, "information_criteria" => "aic", "ϵ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)
-    coefs1, ϵ1 = StateSpaceLearning.default_estimation_procedure(Estimation_X2, estimation_y, components_indexes2, estimation_input1)
+    coefs1, ε1 = StateSpaceLearning.default_estimation_procedure(Estimation_X2, estimation_y, components_indexes2, estimation_input1)
     @test length(coefs1) == 42
-    @test length(ϵ1) == 10
+    @test length(ε1) == 10
 
     estimation_input2 = Dict("α" => 0.1, "information_criteria" => "aic", "ϵ" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => false)
-    coefs2, ϵ2 = StateSpaceLearning.default_estimation_procedure(Estimation_X, estimation_y, components_indexes, estimation_input2)
+    coefs2, ε2 = StateSpaceLearning.default_estimation_procedure(Estimation_X, estimation_y, components_indexes, estimation_input2)
     @test length(coefs2) == 43
-    @test length(ϵ2) == 10
+    @test length(ε2) == 10
     @test all(coefs2[components_indexes["initial_states"][2:end] .- 1] .!= 0)
 end
 

@@ -30,12 +30,12 @@ function build_components(X::Matrix{Tl}, coefs::Vector{Float64}, components_inde
 end
 
 """
-get_fit_and_residuals(estimation_ϵ::Vector{Float64}, coefs::Vector{Float64}, X::Matrix{Tl}, valid_indexes::Vector{Int64}, T::Int64) -> Tuple{Vector{Float64}, Vector{Float64}} where Tl
+get_fit_and_residuals(estimation_ε::Vector{Float64}, coefs::Vector{Float64}, X::Matrix{Tl}, valid_indexes::Vector{Int64}, T::Int64) -> Tuple{Vector{Float64}, Vector{Float64}} where Tl
 
     Builds complete residuals and fit in sample. Residuals will contain nan values for non valid indexes. Fit in Sample will be a vector of fitted values computed from input data and coefficients (non valid indexes will also be calculated via interpolation).
 
     # Arguments
-    - `estimation_ϵ::Vector{Float64}`: Vector of estimation errors.
+    - `estimation_ε::Vector{Float64}`: Vector of estimation errors.
     - `coefs::Vector{Float64}`: Coefficients.
     - `X::Matrix{Tl}`: Input matrix.
     - `valid_indexes::Vector{Int64}`: Valid indexes.
@@ -43,14 +43,14 @@ get_fit_and_residuals(estimation_ϵ::Vector{Float64}, coefs::Vector{Float64}, X:
 
     # Returns
     - Tuple containing:
-        - `ϵ::Vector{Float64}`: Vector containing NaN values filled with estimation errors at valid indexes.
+        - `ε::Vector{Float64}`: Vector containing NaN values filled with estimation errors at valid indexes.
         - `fitted::Vector{Float64}`: Vector of fitted values computed from input data and coefficients.
 
 """
-function get_fit_and_residuals(estimation_ϵ::Vector{Float64}, coefs::Vector{Float64}, X::Matrix{Tl}, valid_indexes::Vector{Int64}, T::Int64)::Tuple{Vector{Float64}, Vector{Float64}} where Tl
-    ϵ      = fill(NaN, T); ϵ[valid_indexes] = estimation_ϵ
+function get_fit_and_residuals(estimation_ε::Vector{Float64}, coefs::Vector{Float64}, X::Matrix{Tl}, valid_indexes::Vector{Int64}, T::Int64)::Tuple{Vector{Float64}, Vector{Float64}} where Tl
+    ε      = fill(NaN, T); ε[valid_indexes] = estimation_ε
     fitted = X*coefs
-    return ϵ, fitted
+    return ε, fitted
 end
 
 """
@@ -120,4 +120,24 @@ has_intercept(X::Matrix{Tl})::Bool where Tl
 """
 function has_intercept(X::Matrix{Tl})::Bool where Tl
     return any([all(X[:, i] .== 1) for i in 1:size(X, 2)])
+end
+
+"""
+fill_innovation_coefs(component::String, output::Output)::Vector{Float64}
+
+    Build the innovation coefficients for a given component with same length as the original time series and coefficients attributed to the first observation they are associated with.
+
+    # Arguments
+    - `component::String`: Component name.
+    - `output::Output`: Output object obtained from model fitting.
+
+    # Returns
+    - `Vector{Float64}`: Vector containing innovation coefficients for the given component.
+"""
+function fill_innovation_coefs(T::Int64, component::String, output::Output)::Vector{Float64}
+    inov_comp = zeros(T)
+    for (i, idx) in enumerate(output.components[component]["Indexes"])
+        inov_comp[findfirst(i -> i != 0, output.X[:, idx])] = output.components[component]["Coefs"][i]
+    end
+    return inov_comp
 end

@@ -8,7 +8,7 @@
     - `Create_X::Function`: Function used to create the StateSpaceLearning Matrix.
     - `X::Matrix`: StateSpaceLearning Matrix data used in the model.
     - `coefs::Vector`: Coefficients obtained from the model.
-    - `ϵ::Vector`: Residuals of the model.
+    - `ε::Vector`: Residuals of the model.
     - `fitted::Vector`: Fitted values from the model.
     - `components::Dict`: Dictionary containing different components.
     - `residuals_variances::Dict`: Dictionary storing variances of residuals for different components.
@@ -24,7 +24,7 @@ mutable struct Output
     Create_X::Function
     X::Matrix
     coefs::Vector
-    ϵ::Vector
+    ε::Vector
     fitted::Vector
     components::Dict
     residuals_variances::Dict
