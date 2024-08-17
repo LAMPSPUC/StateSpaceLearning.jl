@@ -76,16 +76,16 @@ function get_path_information_criteria(model::GLMNetPath, Lasso_X::Matrix{Tl}, L
     method_vec = Vector{Float64}(undef, path_size)
     for i in 1:path_size
         fit = Lasso_X*model.betas[:, i] .+ model.a0[i]
-        ϵ   = Lasso_y - fit
+        ε   = Lasso_y - fit
         
-        method_vec[i] = get_information(T, K[i], ϵ; information_criteria = information_criteria)
+        method_vec[i] = get_information(T, K[i], ε; information_criteria = information_criteria)
     end
 
     best_model_idx = argmin(method_vec)
     coefs = intercept ? vcat(model.a0[best_model_idx], model.betas[:, best_model_idx]) : model.betas[:, best_model_idx]
     fit   = intercept ? hcat(ones(T), Lasso_X)*coefs : Lasso_X*coefs
-    ϵ   = Lasso_y - fit
-    return coefs, ϵ
+    ε   = Lasso_y - fit
+    return coefs, ε
 end
 
 """
@@ -157,11 +157,11 @@ function fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float
     end
 
     if hasintercept
-        coefs, ϵ =  fit_glmnet(Lasso_X, Lasso_y, α; information_criteria=information_criteria, penalty_factor=penalty_factor, intercept = !rm_average)
+        coefs, ε =  fit_glmnet(Lasso_X, Lasso_y, α; information_criteria=information_criteria, penalty_factor=penalty_factor, intercept = !rm_average)
     else
-        coefs, ϵ =  fit_glmnet(Lasso_X, Lasso_y, α; information_criteria=information_criteria, penalty_factor=penalty_factor, intercept = false)
+        coefs, ε =  fit_glmnet(Lasso_X, Lasso_y, α; information_criteria=information_criteria, penalty_factor=penalty_factor, intercept = false)
     end
-    return rm_average ? (vcat(mean_y, coefs), ϵ) : (coefs, ϵ)
+    return rm_average ? (vcat(mean_y, coefs), ε) : (coefs, ε)
     
 end
 
@@ -169,7 +169,7 @@ end
     fit_adalasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64,
                  information_criteria::String,
                  components_indexes::Dict{String, Vector{Int64}},
-                 ϵ::Float64, penalize_exogenous::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+                 ε::Float64, penalize_exogenous::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     Fits an Adaptive Lasso (AdaLasso) regression model to the provided data and returns coefficients and residuals.
 

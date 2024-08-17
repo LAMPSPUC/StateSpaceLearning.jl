@@ -38,16 +38,16 @@ end
     T = 30
 
     valid_indexes1 = setdiff(collect(1:30), [11, 12])
-    estimation_ϵ1 = rand(length(valid_indexes1))
-    ϵ1, fitted1 = StateSpaceLearning.get_fit_and_residuals(estimation_ϵ1, coefs, X, valid_indexes1, T)
-    @test all(isnan.(ϵ1[11:12]))
-    @test !all(isnan.(ϵ1[valid_indexes1]))
+    estimation_ε1 = rand(length(valid_indexes1))
+    ε1, fitted1 = StateSpaceLearning.get_fit_and_residuals(estimation_ε1, coefs, X, valid_indexes1, T)
+    @test all(isnan.(ε1[11:12]))
+    @test !all(isnan.(ε1[valid_indexes1]))
     @test !all(isnan.(fitted1))
 
     valid_indexes2 = collect(1:30)
-    estimation_ϵ2 = rand(length(valid_indexes2))
-    ϵ2, fitted2 = StateSpaceLearning.get_fit_and_residuals(estimation_ϵ2, coefs, X, valid_indexes2, T)
-    @test !all(isnan.(ϵ2[valid_indexes2]))
+    estimation_ε2 = rand(length(valid_indexes2))
+    ε2, fitted2 = StateSpaceLearning.get_fit_and_residuals(estimation_ε2, coefs, X, valid_indexes2, T)
+    @test !all(isnan.(ε2[valid_indexes2]))
     @test !all(isnan.(fitted2))
 end
 

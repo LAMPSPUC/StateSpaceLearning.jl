@@ -1,6 +1,6 @@
 module StateSpaceLearning
 
-using LinearAlgebra, Statistics, GLMNet
+using LinearAlgebra, Statistics, GLMNet, Distributions
 
 include("structs.jl")
 include("models/default_model.jl")
@@ -104,6 +104,71 @@ function forecast(output::Output, steps_ahead::Int64; Exogenous_Forecast::Matrix
     complete_matrix = output.Create_X(output.model_input, Exogenous_X, steps_ahead, Exogenous_Forecast)
 
     return complete_matrix[end-steps_ahead+1:end, :]*output.coefs
+end
+
+"""
+simulate(output::Output, steps_ahead::Int64; N_scenarios::Int64 = 1000, simulate_outliers::Bool = true, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0))::Matrix{Float64} where Fl
+
+    Generate simulations for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
+
+    # Arguments
+    - `output::Output`: Output object obtained from model fitting.
+    - `steps_ahead::Int64`: Number of steps ahead for simulation.
+    - `N_scenarios::Int64`: Number of scenarios to simulate (default: 1000).
+    - `simulate_outliers::Bool`: If true, simulate outliers (default: true).
+    - `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast (default: zeros(steps_ahead, 0))
+
+    # Returns
+    - `Matrix{Float64}`: Matrix containing simulated values.
+"""
+function simulate(output::Output, steps_ahead::Int64, N_scenarios::Int64; simulate_outliers::Bool = true, 
+                  innovation_functions::Dict = Dict("stochastic_level" => Dict("create_X" => create_ξ, "component" => "ξ", "args" => (length(output.ε) + steps_ahead + 1, 0)),
+                                                "stochastic_trend" => Dict("create_X" => create_ζ, "component" => "ζ", "args" => (length(output.ε) + steps_ahead + 1, 0, 1)),
+                                                "stochastic_seasonal" => Dict("create_X" => create_ω, "component" => "ω", "args" => (length(output.ε) + steps_ahead + 1, output.model_input["freq_seasonal"], 0, 1))),
+                  Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0))::Matrix{Float64} where Fl
+
+    prediction = forecast(output, steps_ahead; Exogenous_Forecast = Exogenous_Forecast)
+
+    T = length(output.ε)
+    simulation_X = zeros(steps_ahead, 0)
+    components_matrix = zeros(length(output.valid_indexes), 0)
+    N_components = 1
+
+    for innovation in keys(innovation_functions)
+        if output.model_input[innovation]
+            innov_dict = innovation_functions[innovation]
+            simulation_X = hcat(simulation_X, innov_dict["create_X"](innov_dict["args"]...)[end-steps_ahead:end-1, end-steps_ahead+1:end])
+            comp = fill_innovation_coefs(T, innov_dict["component"], output)
+            components_matrix = hcat(components_matrix, comp[output.valid_indexes])
+            N_components += 1
+        end
+    end
+   
+    components_matrix = hcat(components_matrix, output.ε[output.valid_indexes])
+    simulation_X = hcat(simulation_X, Matrix(1.0 * I, steps_ahead, steps_ahead))
+    components_matrix += rand(Normal(0, 1), size(components_matrix)) ./ 1e9 # Make sure matrix is positive definite
+
+    ∑ = cov(components_matrix)
+    MV_dist = MvNormal(zeros(N_components), ∑)
+    o_noises = simulate_outliers && output.model_input["outlier"] ? rand(Normal(0, std(output.components["o"]["Coefs"])), steps_ahead, N_scenarios) : zeros(steps_ahead, N_scenarios)
+
+    simulation = hcat([prediction for _ in 1:N_scenarios]...)
+    for s in 1:N_scenarios
+        sim_coefs = ones(size(simulation_X, 2)) .* NaN
+        
+        for i in 1:steps_ahead
+            rand_inovs = rand(MV_dist)
+        
+            for comp in eachindex(rand_inovs)
+                sim_coefs[i + (comp - 1) * steps_ahead] = rand_inovs[comp]
+            end
+        end
+        
+        simulation[:, s] += (simulation_X * sim_coefs + o_noises[:, s])
+    end
+
+    return simulation
+
 end
 
 end # module StateSpaceLearning
