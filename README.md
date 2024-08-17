@@ -70,7 +70,10 @@ prediction = exp.(prediction_log)
 
 plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
 plot!(vcat(ones(length(log_air_passengers)).*NaN, prediction), lab = "Forecast", w=2, color = "blue")
+```
+![quick_example_airp](./docs/assets/quick_example_airp.PNG)
 
+```julia
 N_scenarios = 1000
 simulation = StateSpaceLearning.simulate(output, steps_ahead, N_scenarios) # arguments are the output of the fitted model, number of steps ahead the user wants to forecast and number of scenario paths
 
@@ -81,7 +84,7 @@ end
 plot!(vcat(ones(length(log_air_passengers)).*NaN, exp.(simulation[:, N_scenarios])), lab = "Scenarios Paths", α = 0.1 , color = "red")
 
 ```
-![quick_example_airp](./docs/assets/quick_example_airp.PNG)
+![airp_sim](./docs/assets/airp_sim.svg)
 
 ### Component Extraction
 Quick example on how to perform component extraction in time series utilizing StateSpaceLearning.
