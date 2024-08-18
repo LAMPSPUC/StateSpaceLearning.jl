@@ -16,7 +16,7 @@ makedocs(;
     sitename="StateSpaceLearning.jl",
     authors="André Ramos",
     pages=[
-        "Home" => "index.md",
+        "Home" => "index.md", "manual.md",
         "adapting_package.md"
     ],
 )
