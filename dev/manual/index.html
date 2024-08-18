@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>StateSpaceLearning · StateSpaceLearning.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">StateSpaceLearning.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>StateSpaceLearning</a><ul class="internal"><li><a class="tocitem" href="#Quickstart"><span>Quickstart</span></a></li><li><a class="tocitem" href="#Fit-Arguments"><span>Fit Arguments</span></a></li><li><a class="tocitem" href="#Features"><span>Features</span></a></li><li><a class="tocitem" href="#Quick-Examples"><span>Quick Examples</span></a></li><li><a class="tocitem" href="#Paper-Results-Reproducibility"><span>Paper Results Reproducibility</span></a></li><li><a class="tocitem" href="#Contributing"><span>Contributing</span></a></li></ul></li><li><a class="tocitem" href="../adapting_package/">Add New Models</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>StateSpaceLearning</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>StateSpaceLearning</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/LAMPSPUC/StateSpaceLearning.jl/blob/main/docs/src/manual.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="StateSpaceLearning"><a class="docs-heading-anchor" href="#StateSpaceLearning">StateSpaceLearning</a><a id="StateSpaceLearning-1"></a><a class="docs-heading-anchor-permalink" href="#StateSpaceLearning" title="Permalink"></a></h1><p>StateSpaceLearning.jl is a package for modeling and forecasting time series in a high-dimension regression framework.</p><h2 id="Quickstart"><a class="docs-heading-anchor" href="#Quickstart">Quickstart</a><a id="Quickstart-1"></a><a class="docs-heading-anchor-permalink" href="#Quickstart" title="Permalink"></a></h2><pre><code class="language-julia hljs">using StateSpaceLearning
+
+y = randn(100)
+
+#Fit Model
+output = StateSpaceLearning.fit_model(y)
+
+#Main output options 
+model_input         = output.model_input # Model inputs that were utilized to build the regression matrix.
+Create_X            = output.Create_X # The function utilized to build the regression matrix.
+X                   = output.X # High Dimension Regression utilized in the estimation.
+coefs               = output.coefs # High Dimension Regression coefficients estimated in the estimation.
+ε                   = output.ε # Residuals of the model.
+fitted              = output.fitted # Fit in Sample of the model.
+components          = output.components # Dictionary containing information about each component of the model, each component has the keys: &quot;Values&quot; (The value of the component in each timestamp) , &quot;Coefs&quot; (The coefficients estimated for each element of the component) and &quot;Indexes&quot; (The indexes of the elements of the component in the high dimension regression &quot;X&quot;).
+residuals_variances = output.residuals_variances # Dictionary containing the estimated variances for the innovations components (that is the information that can be utilized to initialize the state space model).
+valid_indexes       = output.valid_indexes # Vector containing valid indexes of the time series (non valid indexes represent NaN values in the time series).
+
+#Forecast
+prediction = StateSpaceLearning.forecast(output, 12) #Gets a 12 steps ahead prediction
+</code></pre><h2 id="Fit-Arguments"><a class="docs-heading-anchor" href="#Fit-Arguments">Fit Arguments</a><a id="Fit-Arguments-1"></a><a class="docs-heading-anchor-permalink" href="#Fit-Arguments" title="Permalink"></a></h2><ul><li><code>y::Vector{Fl}</code>: Vector of data.</li><li><code>model_input::Dict</code>: Dictionary containing the model input parameters (default: Dict(&quot;level&quot; =&gt; true, &quot;stochastic<em>level&quot; =&gt; true, &quot;trend&quot; =&gt; true, &quot;stochastic</em>trend&quot; =&gt; true, &quot;seasonal&quot; =&gt; true, &quot;stochastic<em>seasonal&quot; =&gt; true, &quot;freq</em>seasonal&quot; =&gt; 12, &quot;outlier&quot; =&gt; true, &quot;ζ<em>ω</em>threshold&quot; =&gt; 12)).</li><li><code>estimation_input::Dict</code>: Dictionary containing the estimation input parameters (default: Dict(&quot;α&quot; =&gt; 0.1, &quot;information<em>criteria&quot; =&gt; &quot;aic&quot;, ψ =&gt; 0.05, &quot;penalize</em>exogenous&quot; =&gt; true, &quot;penalize<em>initial</em>states&quot; =&gt; true)).</li><li><code>Exogenous_X::Union{Matrix{Fl}, Missing}</code>: Exogenous variables matrix (default: missing).</li></ul><h2 id="Features"><a class="docs-heading-anchor" href="#Features">Features</a><a id="Features-1"></a><a class="docs-heading-anchor-permalink" href="#Features" title="Permalink"></a></h2><p>Current features include:</p><ul><li>Estimation</li><li>Components decomposition</li><li>Forecasting</li><li>Completion of missing values</li><li>Predefined models, including:</li><li>Outlier detection</li><li>Outlier robust models</li></ul><h2 id="Quick-Examples"><a class="docs-heading-anchor" href="#Quick-Examples">Quick Examples</a><a id="Quick-Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Quick-Examples" title="Permalink"></a></h2><h3 id="Fitting,-forecasting-and-simulating"><a class="docs-heading-anchor" href="#Fitting,-forecasting-and-simulating">Fitting, forecasting and simulating</a><a id="Fitting,-forecasting-and-simulating-1"></a><a class="docs-heading-anchor-permalink" href="#Fitting,-forecasting-and-simulating" title="Permalink"></a></h3><p>Quick example of fit and forecast for the air passengers time-series.</p><pre><code class="language-julia hljs">using CSV
+using DataFrames
+using Plots
+
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |&gt; DataFrame
+log_air_passengers = log.(airp.passengers)
+steps_ahead = 30
+
+output = StateSpaceLearning.fit_model(log_air_passengers)
+prediction_log = StateSpaceLearning.forecast(output, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
+prediction = exp.(prediction_log)
+
+plot(airp.passengers, w=2 , color = &quot;Black&quot;, lab = &quot;Historical&quot;, legend = :outerbottom)
+plot!(vcat(ones(length(log_air_passengers)).*NaN, prediction), lab = &quot;Forecast&quot;, w=2, color = &quot;blue&quot;)</code></pre><p><img src="../assets/quick_example_airp.PNG" alt="quick_example_airp"/></p><pre><code class="language-julia hljs">N_scenarios = 1000
+simulation = StateSpaceLearning.simulate(output, steps_ahead, N_scenarios) # arguments are the output of the fitted model, number of steps ahead the user wants to forecast and number of scenario paths
+
+plot(airp.passengers, w=2 , color = &quot;Black&quot;, lab = &quot;Historical&quot;, legend = :outerbottom)
+for s in 1:N_scenarios-1
+    plot!(vcat(ones(length(log_air_passengers)).*NaN, exp.(simulation[:, s])), lab = &quot;&quot;, α = 0.1 , color = &quot;red&quot;)
+end
+plot!(vcat(ones(length(log_air_passengers)).*NaN, exp.(simulation[:, N_scenarios])), lab = &quot;Scenarios Paths&quot;, α = 0.1 , color = &quot;red&quot;)
+</code></pre><p><img src="../assets/airp_sim.svg" alt="airp_sim"/></p><h3 id="Component-Extraction"><a class="docs-heading-anchor" href="#Component-Extraction">Component Extraction</a><a id="Component-Extraction-1"></a><a class="docs-heading-anchor-permalink" href="#Component-Extraction" title="Permalink"></a></h3><p>Quick example on how to perform component extraction in time series utilizing StateSpaceLearning.</p><pre><code class="language-julia hljs">using CSV
+using DataFrames
+using Plots
+
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |&gt; DataFrame
+log_air_passengers = log.(airp.passengers)
+
+output = StateSpaceLearning.fit_model(log_air_passengers)
+
+level = output.components[&quot;μ1&quot;][&quot;Values&quot;] + output.components[&quot;ξ&quot;][&quot;Values&quot;]
+slope = output.components[&quot;ν1&quot;][&quot;Values&quot;] + output.components[&quot;ζ&quot;][&quot;Values&quot;]
+seasonal = output.components[&quot;γ1&quot;][&quot;Values&quot;] + output.components[&quot;ω&quot;][&quot;Values&quot;]
+trend = level + slope
+
+plot(trend, w=2 , color = &quot;Black&quot;, lab = &quot;Trend Component&quot;, legend = :outerbottom)
+plot(seasonal, w=2 , color = &quot;Black&quot;, lab = &quot;Seasonal Component&quot;, legend = :outerbottom)
+</code></pre><p>| <img src="../assets/trend.svg" alt="quick_example_trend"/> | <img src="../assets/seasonal.svg" alt="quick_example_seas"/>| |:–––––––––––––––:|:––––––––––––––-:|</p><h3 id="Best-Subset-Selection"><a class="docs-heading-anchor" href="#Best-Subset-Selection">Best Subset Selection</a><a id="Best-Subset-Selection-1"></a><a class="docs-heading-anchor-permalink" href="#Best-Subset-Selection" title="Permalink"></a></h3><p>Quick example on how to perform best subset selection in time series utilizing StateSpaceLearning.</p><pre><code class="language-julia hljs">using StateSpaceLearning
+using CSV
+using DataFrames
+using Random
+
+Random.seed!(2024)
+
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |&gt; DataFrame
+log_air_passengers = log.(airp.passengers)
+X = rand(length(log_air_passengers), 10) # Create 10 exogenous features 
+β = rand(3)
+
+y = log_air_passengers + X[:, 1:3]*β # add to the log_air_passengers series a contribution from only 3 exogenous features.
+
+output = StateSpaceLearning.fit_model(y; Exogenous_X = X, estimation_input = Dict(&quot;α&quot; =&gt; 1.0, &quot;information_criteria&quot; =&gt; &quot;bic&quot;, &quot;ε&quot; =&gt; 0.05, &quot;penalize_exogenous&quot; =&gt; true, &quot;penalize_initial_states&quot; =&gt; true))
+
+Selected_exogenous = output.components[&quot;Exogenous_X&quot;][&quot;Selected&quot;]
+</code></pre><p>In this example, the selected exogenous features were 1, 2, 3, as expected.</p><h3 id="Missing-values-imputation"><a class="docs-heading-anchor" href="#Missing-values-imputation">Missing values imputation</a><a id="Missing-values-imputation-1"></a><a class="docs-heading-anchor-permalink" href="#Missing-values-imputation" title="Permalink"></a></h3><p>Quick example of completion of missing values for the air passengers time-series (artificial NaN values are added to the original time-series).</p><pre><code class="language-julia hljs">using CSV
+using DataFrames
+using Plots
+
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |&gt; DataFrame
+log_air_passengers = log.(airp.passengers)
+
+airpassengers = Float64.(airp.passengers)
+log_air_passengers[60:72] .= NaN
+
+output = StateSpaceLearning.fit_model(log_air_passengers)
+
+fitted_completed_missing_values = ones(144).*NaN; fitted_completed_missing_values[60:72] = exp.(output.fitted[60:72])
+real_removed_valued = ones(144).*NaN; real_removed_valued[60:72] = deepcopy(airp.passengers[60:72])
+airpassengers[60:72] .= NaN
+
+plot(airpassengers, w=2 , color = &quot;Black&quot;, lab = &quot;Historical&quot;, legend = :outerbottom)
+plot!(real_removed_valued, lab = &quot;Real Removed Values&quot;, w=2, color = &quot;red&quot;)
+plot!(fitted_completed_missing_values, lab = &quot;Fit in Sample completed values&quot;, w=2, color = &quot;blue&quot;)
+</code></pre><p><img src="../assets/quick_example_completion_airp.PNG" alt="quick_example_completion_airp"/></p><h3 id="Outlier-Detection"><a class="docs-heading-anchor" href="#Outlier-Detection">Outlier Detection</a><a id="Outlier-Detection-1"></a><a class="docs-heading-anchor-permalink" href="#Outlier-Detection" title="Permalink"></a></h3><p>Quick example of outlier detection for an altered air passengers time-series (artificial NaN values are added to the original time-series).</p><pre><code class="language-julia hljs">using CSV
+using DataFrames
+using Plots
+
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |&gt; DataFrame
+log_air_passengers = log.(airp.passengers)
+
+log_air_passengers[60] = 10
+log_air_passengers[30] = 1
+log_air_passengers[100] = 2
+
+output = StateSpaceLearning.fit_model(log_air_passengers)
+detected_outliers = findall(i -&gt; i != 0, output.components[&quot;o&quot;][&quot;Coefs&quot;])
+
+plot(log_air_passengers, w=2 , color = &quot;Black&quot;, lab = &quot;Historical&quot;, legend = :outerbottom)
+scatter!([detected_outliers], log_air_passengers[detected_outliers], lab = &quot;Detected Outliers&quot;)
+</code></pre><p><img src="../assets/outlier.svg" alt="quick_example_completion_airp"/></p><h3 id="StateSpaceModels-initialization"><a class="docs-heading-anchor" href="#StateSpaceModels-initialization">StateSpaceModels initialization</a><a id="StateSpaceModels-initialization-1"></a><a class="docs-heading-anchor-permalink" href="#StateSpaceModels-initialization" title="Permalink"></a></h3><p>Quick example on how to use StateSpaceLearning to initialize  StateSpaceModels</p><pre><code class="language-julia hljs">using CSV
+using DataFrames
+using StateSpaceModels
+
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |&gt; DataFrame
+log_air_passengers = log.(airp.passengers)
+
+output = StateSpaceLearning.fit_model(log_air_passengers)
+residuals_variances = output.residuals_variances
+
+model = BasicStructural(log_air_passengers, 12)
+set_initial_hyperparameters!(model, Dict(&quot;sigma2_ε&quot; =&gt; residuals_variances[&quot;ε&quot;], 
+                                         &quot;sigma2_ξ&quot; =&gt;residuals_variances[&quot;ξ&quot;], 
+                                         &quot;sigma2_ζ&quot; =&gt;residuals_variances[&quot;ζ&quot;], 
+                                         &quot;sigma2_ω&quot; =&gt;residuals_variances[&quot;ω&quot;]))
+fit!(model)</code></pre><h2 id="Paper-Results-Reproducibility"><a class="docs-heading-anchor" href="#Paper-Results-Reproducibility">Paper Results Reproducibility</a><a id="Paper-Results-Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Paper-Results-Reproducibility" title="Permalink"></a></h2><p>The paper has two experiments (results for the M4 competition and a simulation study). To reproduce each experiment follow the instructions below:</p><h3 id="M4-Experiment"><a class="docs-heading-anchor" href="#M4-Experiment">M4 Experiment</a><a id="M4-Experiment-1"></a><a class="docs-heading-anchor-permalink" href="#M4-Experiment" title="Permalink"></a></h3><p>To reproduce M4 paper results you can clone the repository and run the following commands on terminal:</p><pre><code class="language-shell hljs">julia paper_tests/m4_test/m4_test.jl
+python paper_tests/m4_test/m4_test.py</code></pre><p>The results for SSL model in terms of MASE and sMAPE for all 48000 series will be stored in folder &quot;paper<em>tests/m4</em>test/results<em>SSL&quot;. The average results of MASE, sMAPE and OWA will be saved in file &quot;paper</em>tests/m4<em>test/metric</em>results/SSL<em>METRICS</em>RESULTS.csv&quot;.</p><p>The results for SS model in terms of MASE and sMAPE for all 48000 series will be stored in folder &quot;paper<em>tests/m4</em>test/results<em>SS&quot;. The average results of MASE, sMAPE and OWA will be saved in file &quot;paper</em>tests/m4<em>test/metric</em>results/SS<em>METRICS</em>RESULTS.csv&quot;.</p><h3 id="Simulation-Experiment"><a class="docs-heading-anchor" href="#Simulation-Experiment">Simulation Experiment</a><a id="Simulation-Experiment-1"></a><a class="docs-heading-anchor-permalink" href="#Simulation-Experiment" title="Permalink"></a></h3><p>To reproduce the simulation results you can clone the repository and run the following commands on terminal:</p><pre><code class="language-shell hljs">julia paper_tests/simulation_test/simulation.jl 0</code></pre><p>As this test takes a long time, you may want to run it in parallel, for that you can change the last argument to be number of workers to use in the parallelization:</p><pre><code class="language-shell hljs">julia paper_tests/simulation_test/simulation.jl 3</code></pre><p>The results will be saved in two separated files: &quot;paper<em>tests/simulation</em>test/results<em>metrics/metrics</em>confusion<em>matrix.csv&quot; and &quot;paper</em>tests/simulation<em>test/results</em>metrics/metrics<em>bias</em>mse.csv&quot;</p><h2 id="Contributing"><a class="docs-heading-anchor" href="#Contributing">Contributing</a><a id="Contributing-1"></a><a class="docs-heading-anchor-permalink" href="#Contributing" title="Permalink"></a></h2><ul><li>PRs such as adding new models and fixing bugs are very welcome!</li><li>For nontrivial changes, you&#39;ll probably want to first discuss the changes via issue.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../adapting_package/">Add New Models »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Sunday 18 August 2024 01:52">Sunday 18 August 2024</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
