@@ -67,7 +67,7 @@ prediction = exp.(prediction_log)
 plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
 plot!(vcat(ones(length(log_air_passengers)).*NaN, prediction), lab = "Forecast", w=2, color = "blue")
 ```
-![quick_example_airp](./docs/assets/quick_example_airp.PNG)
+![quick_example_airp](assets/quick_example_airp.PNG)
 
 ```julia
 N_scenarios = 1000
@@ -80,7 +80,7 @@ end
 plot!(vcat(ones(length(log_air_passengers)).*NaN, exp.(simulation[:, N_scenarios])), lab = "Scenarios Paths", α = 0.1 , color = "red")
 
 ```
-![airp_sim](./docs/assets/airp_sim.svg)
+![airp_sim](assets/airp_sim.svg)
 
 ### Component Extraction
 Quick example on how to perform component extraction in time series utilizing StateSpaceLearning.
@@ -105,7 +105,7 @@ plot(seasonal, w=2 , color = "Black", lab = "Seasonal Component", legend = :oute
 
 ```
 
-| ![quick_example_trend](./docs/assets/trend.svg) | ![quick_example_seas](./docs/assets/seasonal.svg)|
+| ![quick_example_trend](assets/trend.svg) | ![quick_example_seas](assets/seasonal.svg)|
 |:------------------------------:|:-----------------------------:|
 
 
@@ -160,7 +160,7 @@ plot!(real_removed_valued, lab = "Real Removed Values", w=2, color = "red")
 plot!(fitted_completed_missing_values, lab = "Fit in Sample completed values", w=2, color = "blue")
 
 ```
-![quick_example_completion_airp](./docs/assets/quick_example_completion_airp.PNG)
+![quick_example_completion_airp](assets/quick_example_completion_airp.PNG)
 
 ### Outlier Detection
 Quick example of outlier detection for an altered air passengers time-series (artificial NaN values are added to the original time-series).
@@ -184,7 +184,7 @@ plot(log_air_passengers, w=2 , color = "Black", lab = "Historical", legend = :ou
 scatter!([detected_outliers], log_air_passengers[detected_outliers], lab = "Detected Outliers")
 
 ```
-![quick_example_completion_airp](./docs/assets/outlier.svg)
+![quick_example_completion_airp](assets/outlier.svg)
 
 ### StateSpaceModels initialization
 Quick example on how to use StateSpaceLearning to initialize  StateSpaceModels

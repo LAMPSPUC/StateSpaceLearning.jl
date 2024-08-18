@@ -1,5 +1,6 @@
 using Documenter
-using StateSpaceLearning
+#using StateSpaceLearning
+include("../src/StateSpaceLearning.jl")
 
 # Set up to run docstrings with jldoctest
 DocMeta.setdocmeta!(
@@ -10,12 +11,13 @@ makedocs(;
     modules=[StateSpaceLearning],
     doctest=true,
     clean=true,
+    checkdocs=:none,
     format=Documenter.HTML(mathengine=Documenter.MathJax2()),
     sitename="StateSpaceLearning.jl",
     authors="André Ramos",
     pages=[
         "Home" => "index.md",
-        "manual.md", "adapting_package.md"
+        "adapting_package.md"
     ],
 )
 

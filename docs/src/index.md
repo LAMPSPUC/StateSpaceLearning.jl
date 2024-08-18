@@ -16,7 +16,7 @@ StateSpaceLearning.jl is a package for modeling and forecasting time series in a
 
 This package is registered so you can simply `add` it using Julia's `Pkg` manager:
 ```julia
-pkg> add StateSpaceLearning
+pkg.add("StateSpaceLearning")
 ```
 
 ## Citing StateSpaceLearning.jl
