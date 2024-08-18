@@ -4,7 +4,7 @@ The StateSpaceLearning framework supports any additive state space formulation. 
 
 ## Local Level Model
 
-Although the Local Level Model is already implemented within the scope of unobserved components, we use it here as an example. To incorporate a new model, it is necessary to create a dictionary containing the model inputs and another dictionary containing three functions (create_X, get_components_indexes, and get_variances).
+Although the Local Level Model is already implemented within the scope of unobserved components, we use it here as an example. To incorporate a new model, it is necessary to create a dictionary containing the model inputs and another dictionary containing three functions (create\_X, get\_components\_indexes, and get\_variances).
 
 ### Model Inputs
 For the Local Level Model, no parameters are needed. Thus, the model input can be created as:
@@ -13,8 +13,8 @@ For the Local Level Model, no parameters are needed. Thus, the model input can b
 model_input = Dict()
 ```
 
-### create_X
-The create_X function constructs the matrices in the State Space Learning format. It must accept the following inputs: (model_input::Dict, Exogenous_X::Matrix{Fl}, steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}). It must return a matrix.
+### create\_X
+The create\_X function constructs the matrices in the State Space Learning format. It must accept the following inputs: (model\_input::Dict, Exogenous\_X::Matrix{Fl}, steps\_ahead::Int64=0, Exogenous\_Forecast::Matrix{Fl}). It must return a matrix.
 
 ```julia
 function create_X_LocalLevel(model_input::Dict, Exogenous_X::Matrix{Fl},
@@ -30,8 +30,8 @@ function create_X_LocalLevel(model_input::Dict, Exogenous_X::Matrix{Fl},
 end
 ```
 
-### get_components_indexes
-The get_components_indexes function outputs a dictionary indicating the indexes of each model component, including a set of indexes for all initial states. For the Local Level Model, the only components are the initial state μ1 and its innovations ξ. The function must accept the following inputs: (Exogenous_X::Matrix{Fl}, model_input::Dict). It must return a dictionary.
+### get\_components\_indexes
+The get\_components\_indexes function outputs a dictionary indicating the indexes of each model component, including a set of indexes for all initial states. For the Local Level Model, the only components are the initial state μ1 and its innovations ξ. The function must accept the following inputs: (Exogenous\_X::Matrix{Fl}, model\_input::Dict). It must return a dictionary.
 
 ```julia
 function get_components_indexes_LocalLevel(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dict where Fl
@@ -42,8 +42,8 @@ function get_components_indexes_LocalLevel(Exogenous_X::Matrix{Fl}, model_input:
     return Dict("μ1" => μ1_indexes, "ξ" => ξ_indexes, "initial_states" => initial_states_indexes)
 end
 ```
-### get_variances
-The get_variances function calculates the variances of the innovations and residuals. It must accept the following inputs:(ε::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int64}}). It must return a dictionary.
+### get\_variances
+The get\_variances function calculates the variances of the innovations and residuals. It must accept the following inputs:(ε::Vector{Fl}, coefs::Vector{Fl}, components\_indexes::Dict{String, Vector{Int64}}). It must return a dictionary.
 
 ```julia
 function get_variances_LocalLevel(ε::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int64}})::Dict where Fl
@@ -56,7 +56,7 @@ end
 ```
 
 ### Running the new model
-To test the new model, run the fit_model function with the new inputs:
+To test the new model, run the fit\_model function with the new inputs:
 
 ```julia
 using StateSpaceLearning
@@ -70,7 +70,7 @@ output = StateSpaceLearning.fit_model(y; model_input = model_input, model_functi
 ```
 
 # Changing Estimation Procedure
-The current estimation procedure is based on an Adaptive Lasso. However, alternative methods can be chosen within the StateSpaceLearning framework. Below is an example of how to implement a simple model that minimizes the sum of squares of the residuals. This requires creating two variables: a dictionary estimation_input (which is empty in this case) and a function estimation_function with the following arguments:(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, components_indexes::Dict{String, Vector{Int64}}, estimation_input::Dict). The function should return a tuple containing the model coefficients and residuals.
+The current estimation procedure is based on an Adaptive Lasso. However, alternative methods can be chosen within the StateSpaceLearning framework. Below is an example of how to implement a simple model that minimizes the sum of squares of the residuals. This requires creating two variables: a dictionary estimation\_input (which is empty in this case) and a function estimation\_function with the following arguments:(Estimation_X::Matrix{Tl}, estimation\_y::Vector{Fl}, components\_indexes::Dict{String, Vector{Int64}}, estimation\_input::Dict). The function should return a tuple containing the model coefficients and residuals.
 
 ```julia
 estimation_input = Dict()

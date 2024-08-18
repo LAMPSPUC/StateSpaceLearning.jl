@@ -104,10 +104,8 @@ plot(trend, w=2 , color = "Black", lab = "Trend Component", legend = :outerbotto
 plot(seasonal, w=2 , color = "Black", lab = "Seasonal Component", legend = :outerbottom)
 
 ```
-
-| ![quick_example_trend](assets/trend.svg) | ![quick_example_seas](assets/seasonal.svg)|
-|:------------------------------:|:-----------------------------:|
-
+![quick_example_trend](assets/trend.svg)
+![quick_example_seas](assets/seasonal.svg)
 
 ### Best Subset Selection
 Quick example on how to perform best subset selection in time series utilizing StateSpaceLearning.
@@ -221,9 +219,9 @@ julia paper_tests/m4_test/m4_test.jl
 python paper_tests/m4_test/m4_test.py
 ```
 
-The results for SSL model in terms of MASE and sMAPE for all 48000 series will be stored in folder "paper_tests/m4_test/results_SSL". The average results of MASE, sMAPE and OWA will be saved in file "paper_tests/m4_test/metric_results/SSL_METRICS_RESULTS.csv".
+The results for SSL model in terms of MASE and sMAPE for all 48000 series will be stored in folder "paper\_tests/m4\_test/results\_SSL". The average results of MASE, sMAPE and OWA will be saved in file "paper\_tests/m4\_test/metric\_results/SSL\_METRICS\_RESULTS.csv".
 
-The results for SS model in terms of MASE and sMAPE for all 48000 series will be stored in folder "paper_tests/m4_test/results_SS". The average results of MASE, sMAPE and OWA will be saved in file "paper_tests/m4_test/metric_results/SS_METRICS_RESULTS.csv".
+The results for SS model in terms of MASE and sMAPE for all 48000 series will be stored in folder "paper\_tests/m4\_test/results\_SS". The average results of MASE, sMAPE and OWA will be saved in file "paper\_tests/m4\_test/metric\_results/SS\_METRICS\_RESULTS.csv".
 
 ### Simulation Experiment
 
@@ -239,7 +237,7 @@ As this test takes a long time, you may want to run it in parallel, for that you
 julia paper_tests/simulation_test/simulation.jl 3
 ```
 
-The results will be saved in two separated files: "paper_tests/simulation_test/results_metrics/metrics_confusion_matrix.csv" and "paper_tests/simulation_test/results_metrics/metrics_bias_mse.csv"
+The results will be saved in two separated files: "paper\_tests/simulation\_test/results\_metrics/metrics\_confusion\_matrix.csv" and "paper\_tests/simulation\_test/results\_metrics/metrics\_bias\_mse.csv"
 
 
 ## Contributing
