@@ -31,8 +31,10 @@ prediction = StateSpaceLearning.forecast(output, 12) #Gets a 12 steps ahead pred
 ## Fit Arguments
 
 * `y::Vector{Fl}`: Vector of data.
-* `model_input::Dict`: Dictionary containing the model input parameters (default: Dict("level" => true, "stochastic_level" => true, "trend" => true, "stochastic_trend" => true, "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12, "outlier" => true, "ζ_ω_threshold" => 12)).
-* `estimation_input::Dict`: Dictionary containing the estimation input parameters (default: Dict("α" => 0.1, "information_criteria" => "aic", ψ => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true)).
+*  `model_input::Dict`: Dictionary containing the model input parameters (default: Dict("level" => true, "stochastic\_level" => true, "trend" => true, "stochastic\_trend" => true, "seasonal" => true, "stochastic\_seasonal" => true, "freq\_seasonal" => 12, "outlier" => true, , "ζ\_ω\_threshold" => 12)).
+* `model_functions::Dict`: Dictionary containing the model functions (default: Dict("create\_X" => create\_X, "get\_components\_indexes" => get\_components\_indexes, "get\_variances" => get\_variances)).
+* `estimation_input::Dict`: Dictionary containing the estimation input parameters (default: Dict("α" => 0.1, "information\_criteria" => "aic", ψ => 0.05, "penalize\_exogenous" => true, "penalize\_initial\_states" => true)).
+* `estimation_function::Function`: Estimation function (default: default\_estimation\_procedure).
 * `Exogenous_X::Union{Matrix{Fl}, Missing}`: Exogenous variables matrix (default: missing).
 
 ## Features

@@ -21,11 +21,14 @@ pkg.add("StateSpaceLearning")
 
 ## Citing StateSpaceLearning.jl
 
-If you use StateSpaceLearning.jl in your work, we kindly ask you to cite the following paper ([pdf]()):
+If you use StateSpaceLearning.jl in your work, we kindly ask you to cite the following preprint ([pdf]()):
 
-@article{,
-title={},
-author={},
-journal={},
-year={}
+@misc{ramos2024timeseriesanalysisstate,
+      title={Time Series Analysis by State Space Learning}, 
+      author={André Ramos and Davi Valladão and Alexandre Street},
+      year={2024},
+      eprint={2408.09120},
+      archivePrefix={arXiv},
+      primaryClass={stat.ML},
+      url={https://arxiv.org/abs/2408.09120}, 
 }
