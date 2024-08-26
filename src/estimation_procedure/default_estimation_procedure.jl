@@ -25,19 +25,19 @@ function get_dummy_indexes(Exogenous_X::Matrix{Fl}) where{Fl}
 end
 
 """
-    get_outlier_duplicate_columns(Estimation_X::Matrix{Tl}, components_indexes::Dict{String, Vector{Int64}}) where{Tl}
+    get_outlier_duplicate_columns(Estimation_X::Matrix{Tl}, components_indexes::Dict{String, Vector{Int}}) where{Tl}
 
     Identifies and returns the indexes of outlier columns that are duplicates of dummy variables in the exogenous matrix.
 
     # Arguments
     - `Estimation_X::Matrix{Tl}`: Matrix used for estimation.
-    - `components_indexes::Dict{String, Vector{Int64}}`: Dictionary containing indexes for different components.
+    - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
 
     # Returns
     - `Vector{Int}`: Vector containing the indexes of outlier columns that are duplicates of dummy variables in the exogenous matrix.
 
 """
-function get_outlier_duplicate_columns(Estimation_X::Matrix{Tl}, components_indexes::Dict{String, Vector{Int64}}) where{Tl}
+function get_outlier_duplicate_columns(Estimation_X::Matrix{Tl}, components_indexes::Dict{String, Vector{Int}}) where{Tl}
     if !haskey(components_indexes, "o")
         return []
     else
@@ -115,7 +115,7 @@ end
 
 """
     fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, information_criteria::String,
-              penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int64}}, penalty_factor::Vector{Float64};
+              penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int}}, penalty_factor::Vector{Float64};
               rm_average::Bool = false)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     Fits a Lasso regression model to the provided data and returns coefficients and residuals based on selected criteria.
@@ -126,7 +126,7 @@ end
     - `α::Float64`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
     - `information_criteria::String`: Information Criteria method for hyperparameter selection (default: aic).
     - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
-    - `components_indexes::Dict{String, Vector{Int64}}`: Dictionary containing indexes for different components.
+    - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
     - `penalty_factor::Vector{Float64}`: Penalty factors for each predictor.
     - `rm_average::Bool`: Flag to consider if the intercept will be calculated is the average of the time series (default: false).
 
@@ -134,7 +134,7 @@ end
     - `Tuple{Vector{Float64}, Vector{Float64}}`: Tuple containing coefficients and residuals of the fitted Lasso model.
 
 """
-function fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, information_criteria::String, penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int64}}, penalty_factor::Vector{Float64}; rm_average::Bool = false)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+function fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, information_criteria::String, penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int}}, penalty_factor::Vector{Float64}; rm_average::Bool = false)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     outlier_duplicate_columns = get_outlier_duplicate_columns(Estimation_X, components_indexes)
     penalty_factor[outlier_duplicate_columns] .= Inf
@@ -168,7 +168,7 @@ end
 """
     fit_adalasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64,
                  information_criteria::String,
-                 components_indexes::Dict{String, Vector{Int64}},
+                 components_indexes::Dict{String, Vector{Int}},
                  ε::Float64, penalize_exogenous::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     Fits an Adaptive Lasso (AdaLasso) regression model to the provided data and returns coefficients and residuals.
@@ -176,7 +176,7 @@ end
     # Arguments
     - `Estimation_X::Matrix{Tl}`: Matrix of predictors for estimation.
     - `estimation_y::Vector{Fl}`: Vector of response values for estimation.
-    - `components_indexes::Dict{String, Vector{Int64}}`: Dictionary containing indexes for different components.
+    - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
     - `estimation_input::Dict`: Dictionary containing the estimation input parameters.
 
     # Returns
@@ -184,7 +184,7 @@ end
 
 """
 function default_estimation_procedure(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, 
-                        components_indexes::Dict{String, Vector{Int64}}, estimation_input::Dict)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+                        components_indexes::Dict{String, Vector{Int}}, estimation_input::Dict)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
 
     @assert all([key in keys(estimation_input) for key in ["α", "information_criteria", "ϵ", "penalize_exogenous", "penalize_initial_states"]]) "All estimation input parameters must be set"
     α = estimation_input["α"]; information_criteria = estimation_input["information_criteria"]; 

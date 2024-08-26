@@ -1,61 +1,61 @@
 """
-    ξ_size(T::Int64)::Int64
+    ξ_size(T::Int)::Int
 
     Calculates the size of ξ innovation matrix based on the input T.
 
     # Arguments
-    - `T::Int64`: Length of the original time series.
+    - `T::Int`: Length of the original time series.
 
     # Returns
-    - `Int64`: Size of ξ calculated from T.
+    - `Int`: Size of ξ calculated from T.
 
 """
-ξ_size(T::Int64)::Int64 = T - 2
+ξ_size(T::Int)::Int = T - 2
 
 """
-ζ_size(T::Int64, ζ_ω_threshold::Int64)::Int64
+ζ_size(T::Int, ζ_ω_threshold::Int)::Int
 
     Calculates the size of ζ innovation matrix based on the input T.
 
     # Arguments
-    - `T::Int64`: Length of the original time series.
-    - `ζ_ω_threshold::Int64`: Stabilize parameter ζ.
+    - `T::Int`: Length of the original time series.
+    - `ζ_ω_threshold::Int`: Stabilize parameter ζ.
 
     # Returns
-    - `Int64`: Size of ζ calculated from T.
+    - `Int`: Size of ζ calculated from T.
 
 """
-ζ_size(T::Int64, ζ_ω_threshold::Int64)::Int64 = T-ζ_ω_threshold-2
+ζ_size(T::Int, ζ_ω_threshold::Int)::Int = T-ζ_ω_threshold-2
 
 """
-ω_size(T::Int64, s::Int64)::Int64
+ω_size(T::Int, s::Int)::Int
 
     Calculates the size of ω innovation matrix based on the input T.
 
     # Arguments
-    - `T::Int64`: Length of the original time series.
-    - `s::Int64`: Seasonal period.
+    - `T::Int`: Length of the original time series.
+    - `s::Int`: Seasonal period.
 
     # Returns
-    - `Int64`: Size of ω calculated from T.
+    - `Int`: Size of ω calculated from T.
 
 """
-ω_size(T::Int64, s::Int64, ζ_ω_threshold::Int64)::Int64 = T - ζ_ω_threshold - s + 1
+ω_size(T::Int, s::Int, ζ_ω_threshold::Int)::Int = T - ζ_ω_threshold - s + 1
 
 """
-    create_ξ(T::Int64, steps_ahead::Int64)::Matrix
+    create_ξ(T::Int, steps_ahead::Int)::Matrix
 
     Creates a matrix of innovations ξ based on the input sizes, and the desired steps ahead (this is necessary for the forecast function)
 
     # Arguments
-    - `T::Int64`: Length of the original time series.
-    - `steps_ahead::Int64`: Number of steps ahead (for estimation purposes this should be set at 0).
+    - `T::Int`: Length of the original time series.
+    - `steps_ahead::Int`: Number of steps ahead (for estimation purposes this should be set at 0).
 
     # Returns
     - `Matrix`: Matrix of innovations ξ constructed based on the input sizes.
 
 """
-function create_ξ(T::Int64, steps_ahead::Int64)::Matrix
+function create_ξ(T::Int, steps_ahead::Int)::Matrix
     ξ_matrix = Matrix{Float64}(undef, T+steps_ahead, T - 1)
     for t in 1:T+steps_ahead
         ξ_matrix[t, :] = t < T ? vcat(ones(t-1), zeros(T-t)) : ones(T-1)
@@ -65,20 +65,20 @@ function create_ξ(T::Int64, steps_ahead::Int64)::Matrix
 end
 
 """
-create_ζ(T::Int64, steps_ahead::Int64, ζ_ω_threshold::Int64)::Matrix
+create_ζ(T::Int, steps_ahead::Int, ζ_ω_threshold::Int)::Matrix
 
     Creates a matrix of innovations ζ based on the input sizes, and the desired steps ahead (this is necessary for the forecast function).
 
     # Arguments
-    - `T::Int64`: Length of the original time series.
-    - `steps_ahead::Int64`: Number of steps ahead (for estimation purposes this should be set at 0).
-    - `ζ_ω_threshold::Int64`: Stabilize parameter ζ.
+    - `T::Int`: Length of the original time series.
+    - `steps_ahead::Int`: Number of steps ahead (for estimation purposes this should be set at 0).
+    - `ζ_ω_threshold::Int`: Stabilize parameter ζ.
 
     # Returns
     - `Matrix`: Matrix of innovations ζ constructed based on the input sizes.
 
 """
-function create_ζ(T::Int64, steps_ahead::Int64, ζ_ω_threshold::Int64)::Matrix
+function create_ζ(T::Int, steps_ahead::Int, ζ_ω_threshold::Int)::Matrix
     ζ_matrix = Matrix{Float64}(undef, T+steps_ahead, T - 2)
     for t in 1:T+steps_ahead
         ζ_matrix[t, :] = t < T ? vcat(collect(t-2:-1:1), zeros(T-2-length(collect(t-2:-1:1)))) : collect(t-2:-1:t-T+1)
@@ -87,25 +87,25 @@ function create_ζ(T::Int64, steps_ahead::Int64, ζ_ω_threshold::Int64)::Matrix
 end
 
 """
-create_ω(T::Int64, s::Int64, steps_ahead::Int64)::Matrix
+create_ω(T::Int, s::Int, steps_ahead::Int)::Matrix
 
     Creates a matrix of innovations ω based on the input sizes, and the desired steps ahead (this is necessary for the forecast function).
 
     # Arguments
-    - `T::Int64`: Length of the original time series.
-    - `freq_seasonal::Int64`: Seasonal period.
-    - `steps_ahead::Int64`: Number of steps ahead (for estimation purposes this should be set at 0).
+    - `T::Int`: Length of the original time series.
+    - `freq_seasonal::Int`: Seasonal period.
+    - `steps_ahead::Int`: Number of steps ahead (for estimation purposes this should be set at 0).
     
     # Returns
     - `Matrix`: Matrix of innovations ω constructed based on the input sizes.
 
 """
-function create_ω(T::Int64, freq_seasonal::Int64, steps_ahead::Int64, ζ_ω_threshold::Int64)::Matrix
+function create_ω(T::Int, freq_seasonal::Int, steps_ahead::Int, ζ_ω_threshold::Int)::Matrix
     ω_matrix_size = ω_size(T, freq_seasonal, ζ_ω_threshold) + ζ_ω_threshold
     ω_matrix = zeros(T+steps_ahead, ω_matrix_size)
     for t in freq_seasonal+1:T+steps_ahead
         ωₜ_coefs = zeros(ω_matrix_size)
-        Mₜ = Int64(floor((t-1)/freq_seasonal))
+        Mₜ = Int(floor((t-1)/freq_seasonal))
         lag₁ = [t - j*freq_seasonal for j in 0:Mₜ-1]
         lag₂ = [t - j*freq_seasonal - 1 for j in 0:Mₜ-1]
         ωₜ_coefs[lag₁[lag₁.<=ω_matrix_size+(freq_seasonal - 1)] .- (freq_seasonal - 1)] .= 1
@@ -116,14 +116,14 @@ function create_ω(T::Int64, freq_seasonal::Int64, steps_ahead::Int64, ζ_ω_thr
 end
 
 """
-    create_initial_states_Matrix(T::Int64, s::Int64, steps_ahead::Int64, level::Bool, trend::Bool, seasonal::Bool)::Matrix
+    create_initial_states_Matrix(T::Int, s::Int, steps_ahead::Int, level::Bool, trend::Bool, seasonal::Bool)::Matrix
 
     Creates an initial states matrix based on the input parameters.
 
     # Arguments
-    - `T::Int64`: Length of the original time series.
-    - `freq_seasonal::Int64`: Seasonal period.
-    - `steps_ahead::Int64`: Number of steps ahead.
+    - `T::Int`: Length of the original time series.
+    - `freq_seasonal::Int`: Seasonal period.
+    - `steps_ahead::Int`: Number of steps ahead.
     - `level::Bool`: Flag for considering level component.
     - `trend::Bool`: Flag for considering trend component.
     - `seasonal::Bool`: Flag for considering seasonal component.
@@ -132,7 +132,7 @@ end
     - `Matrix`: Initial states matrix constructed based on the input parameters.
 
 """
-function create_initial_states_Matrix(T::Int64, freq_seasonal::Int64, steps_ahead::Int64, level::Bool, trend::Bool, seasonal::Bool)::Matrix
+function create_initial_states_Matrix(T::Int, freq_seasonal::Int, steps_ahead::Int, level::Bool, trend::Bool, seasonal::Bool)::Matrix
 
     initial_states_matrix = zeros(T+steps_ahead, 0)
     level ? initial_states_matrix = hcat(initial_states_matrix, ones(T+steps_ahead, 1)) : nothing
@@ -151,21 +151,21 @@ function create_initial_states_Matrix(T::Int64, freq_seasonal::Int64, steps_ahea
 end
 
 """
-create_X(model_input::Dict, Exogenous_X::Matrix{Fl}, steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
+create_X(model_input::Dict, Exogenous_X::Matrix{Fl}, steps_ahead::Int=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
 
     Creates the StateSpaceLearning matrix X based on the model type and input parameters.
 
     # Arguments
     - `model_type::String`: Type of model.
     - `Exogenous_X::Matrix{Fl}`: Exogenous variables matrix.
-    - `steps_ahead::Int64`: Number of steps ahead (default: 0).
+    - `steps_ahead::Int`: Number of steps ahead (default: 0).
     - `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast matrix (default: zeros).
 
     # Returns
     - `Matrix`: StateSpaceLearning matrix X constructed based on the input parameters.
 """
 function create_X(model_input::Dict, Exogenous_X::Matrix{Fl},
-                  steps_ahead::Int64=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
+                  steps_ahead::Int=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
 
     outlier = model_input["outlier"]; ζ_ω_threshold = model_input["ζ_ω_threshold"]; T = size(Exogenous_X, 1)
     
@@ -203,8 +203,8 @@ function get_components_indexes(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dic
         initial_states_indexes = [1]
         FINAL_INDEX += length(μ1_indexes)
     else
-        μ1_indexes = Int64[]
-        initial_states_indexes = Int64[]
+        μ1_indexes = Int[]
+        initial_states_indexes = Int[]
     end
 
     if model_input["trend"]
@@ -212,7 +212,7 @@ function get_components_indexes(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dic
         initial_states_indexes = vcat(initial_states_indexes, ν1_indexes)
         FINAL_INDEX += length(ν1_indexes)
     else
-        ν1_indexes = Int64[]
+        ν1_indexes = Int[]
     end
     
     if model_input["seasonal"]
@@ -220,35 +220,35 @@ function get_components_indexes(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dic
         initial_states_indexes = vcat(initial_states_indexes, γ1_indexes)
         FINAL_INDEX += length(γ1_indexes)
     else
-        γ1_indexes = Int64[]
+        γ1_indexes = Int[]
     end
 
     if model_input["stochastic_level"]
         ξ_indexes = collect(FINAL_INDEX+1:FINAL_INDEX+ξ_size(T))
         FINAL_INDEX += length(ξ_indexes)
     else
-        ξ_indexes = Int64[]
+        ξ_indexes = Int[]
     end
 
     if model_input["stochastic_trend"]
         ζ_indexes = collect(FINAL_INDEX+1:FINAL_INDEX+ζ_size(T, ζ_ω_threshold))
         FINAL_INDEX += length(ζ_indexes)
     else
-        ζ_indexes = Int64[]
+        ζ_indexes = Int[]
     end
 
     if model_input["stochastic_seasonal"]
         ω_indexes = collect(FINAL_INDEX+1:FINAL_INDEX+ω_size(T, model_input["freq_seasonal"], ζ_ω_threshold))
         FINAL_INDEX += length(ω_indexes)
     else
-        ω_indexes = Int64[]
+        ω_indexes = Int[]
     end 
 
     if outlier
         o_indexes = collect(FINAL_INDEX+1:FINAL_INDEX+o_size(T))
         FINAL_INDEX += length(o_indexes)
     else
-        o_indexes = Int64[]
+        o_indexes = Int[]
     end
 
     exogenous_indexes = collect(FINAL_INDEX + 1:FINAL_INDEX + size(Exogenous_X, 2))
@@ -259,20 +259,20 @@ function get_components_indexes(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dic
 end
 
 """
-    get_variances(ε::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int64}})::Dict where Fl
+    get_variances(ε::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int}})::Dict where Fl
 
     Calculates variances for each innovation component and for the residuals.
 
     # Arguments
     - `ε::Vector{Fl}`: Vector of residuals.
     - `coefs::Vector{Fl}`: Vector of coefficients.
-    - `components_indexes::Dict{String, Vector{Int64}}`: Dictionary containing indexes for different components.
+    - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
 
     # Returns
     - `Dict`: Dictionary containing variances for each innovation component.
 
 """
-function get_variances(ε::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int64}})::Dict where Fl
+function get_variances(ε::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int}})::Dict where Fl
     
     variances = Dict()
     for component in ["ξ", "ζ", "ω"]
