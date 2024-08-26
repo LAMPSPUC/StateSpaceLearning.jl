@@ -11,7 +11,7 @@ include("datasets.jl")
 
 const DEFAULT_COMPONENTS_PARAMETERS = ["level", "stochastic_level", "trend", "stochastic_trend", "seasonal", "stochastic_seasonal", "freq_seasonal"]
 
-export fit_model, forecast
+export fit_model, forecast, simulate
 
 """
 fit_model(y::Vector{Fl};
