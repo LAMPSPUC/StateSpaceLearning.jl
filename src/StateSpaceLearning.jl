@@ -82,20 +82,20 @@ function fit_model(y::Vector{Fl};
 end
 
 """
-    forecast(output::Output, steps_ahead::Int64; Exogenous_Forecast::Union{Matrix{Fl}, Missing}=missing)::Vector{Float64} where Fl
+    forecast(output::Output, steps_ahead::Int; Exogenous_Forecast::Union{Matrix{Fl}, Missing}=missing)::Vector{Float64} where Fl
 
     Returns the forecast for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
 
     # Arguments
     - `output::Output`: Output object obtained from model fitting.
-    - `steps_ahead::Int64`: Number of steps ahead for forecasting.
+    - `steps_ahead::Int`: Number of steps ahead for forecasting.
     - `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast (default: zeros(steps_ahead, 0))
 
     # Returns
     - `Vector{Float64}`: Vector containing forecasted values.
 
 """
-function forecast(output::Output, steps_ahead::Int64; Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0))::Vector{Float64} where Fl
+function forecast(output::Output, steps_ahead::Int; Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0))::Vector{Float64} where Fl
     
     @assert length(output.components["Exogenous_X"]["Indexes"]) == size(Exogenous_Forecast, 2) "If an exogenous matrix was utilized in the estimation procedure, it must be provided its prediction for the forecast procedure. If no exogenous matrix was utilized, Exogenous_Forecast must be missing"
     @assert size(Exogenous_Forecast, 1) == steps_ahead "Exogenous_Forecast must have the same number of rows as steps_ahead"
@@ -107,21 +107,21 @@ function forecast(output::Output, steps_ahead::Int64; Exogenous_Forecast::Matrix
 end
 
 """
-simulate(output::Output, steps_ahead::Int64; N_scenarios::Int64 = 1000, simulate_outliers::Bool = true, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0))::Matrix{Float64} where Fl
+simulate(output::Output, steps_ahead::Int; N_scenarios::Int = 1000, simulate_outliers::Bool = true, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0))::Matrix{Float64} where Fl
 
     Generate simulations for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
 
     # Arguments
     - `output::Output`: Output object obtained from model fitting.
-    - `steps_ahead::Int64`: Number of steps ahead for simulation.
-    - `N_scenarios::Int64`: Number of scenarios to simulate (default: 1000).
+    - `steps_ahead::Int`: Number of steps ahead for simulation.
+    - `N_scenarios::Int`: Number of scenarios to simulate (default: 1000).
     - `simulate_outliers::Bool`: If true, simulate outliers (default: true).
     - `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast (default: zeros(steps_ahead, 0))
 
     # Returns
     - `Matrix{Float64}`: Matrix containing simulated values.
 """
-function simulate(output::Output, steps_ahead::Int64, N_scenarios::Int64; simulate_outliers::Bool = true, 
+function simulate(output::Output, steps_ahead::Int, N_scenarios::Int; simulate_outliers::Bool = true, 
                   innovation_functions::Dict = Dict("stochastic_level" => Dict("create_X" => create_ξ, "component" => "ξ", "args" => (length(output.ε) + steps_ahead + 1, 0)),
                                                 "stochastic_trend" => Dict("create_X" => create_ζ, "component" => "ζ", "args" => (length(output.ε) + steps_ahead + 1, 0, 1)),
                                                 "stochastic_seasonal" => Dict("create_X" => create_ω, "component" => "ω", "args" => (length(output.ε) + steps_ahead + 1, output.model_input["freq_seasonal"], 0, 1))),

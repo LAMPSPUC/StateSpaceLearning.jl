@@ -12,10 +12,10 @@
     - `fitted::Vector`: Fitted values from the model.
     - `components::Dict`: Dictionary containing different components.
     - `residuals_variances::Dict`: Dictionary storing variances of residuals for different components.
-    - `T::Int64`: Integer representing a parameter 'T'.
+    - `T::Int`: Integer representing a parameter 'T'.
     - `outlier::Bool`: Boolean indicating the presence of outlier component.
-    - `valid_indexes::Vector{Int64}`: Vector containing valid indexes (non NaN) of the time series.
-    - `ζ_ω_threshold::Int64`: ζ_ω_threshold parameter.
+    - `valid_indexes::Vector{Int}`: Vector containing valid indexes (non NaN) of the time series.
+    - `ζ_ω_threshold::Int`: ζ_ω_threshold parameter.
     - `y::Vector{Fl}`: Vector of data.
 
 """
@@ -28,5 +28,5 @@ mutable struct Output
     fitted::Vector
     components::Dict
     residuals_variances::Dict
-    valid_indexes::Vector{Int64}
+    valid_indexes::Vector{Int}
 end
