@@ -1,7 +1,7 @@
 name = "StateSpaceLearning"
 uuid = "971c4b7c-2c4e-4bac-8525-e842df3cde7b"
 authors = ["andreramosfc <andreramosfdc@gmail.com>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
