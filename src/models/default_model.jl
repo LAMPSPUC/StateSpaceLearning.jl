@@ -180,6 +180,34 @@ function create_X(model_input::Dict, Exogenous_X::Matrix{Fl},
 end
 
 """
+create_X(model_input::Dict, T::Int, steps_ahead::Int=0) where Fl
+
+    Creates the StateSpaceLearning matrix X based on the model type and input parameters.
+
+    # Arguments
+    - `model_type::String`: Type of model.
+    - `T::Int`: Length of the original time series.
+    - `steps_ahead::Int`: Number of steps ahead (default: 0).
+    
+    # Returns
+    - `Matrix`: StateSpaceLearning matrix X constructed based on the input parameters.
+"""
+function create_X(model_input::Dict, T::Int,
+                  steps_ahead::Int=0) 
+
+    outlier = model_input["outlier"]; ζ_ω_threshold = model_input["ζ_ω_threshold"]; 
+    
+    ξ_matrix = model_input["stochastic_level"] ? create_ξ(T, steps_ahead) : zeros(T+steps_ahead, 0)
+    ζ_matrix = model_input["stochastic_trend"] ? create_ζ(T, steps_ahead, ζ_ω_threshold) : zeros(T+steps_ahead, 0)
+    ω_matrix = model_input["stochastic_seasonal"] ? create_ω(T, model_input["freq_seasonal"], steps_ahead, ζ_ω_threshold) : zeros(T+steps_ahead, 0)
+    o_matrix = outlier ? create_o_matrix(T, steps_ahead) : zeros(T+steps_ahead, 0)
+
+    initial_states_matrix = create_initial_states_Matrix(T, model_input["freq_seasonal"], steps_ahead, model_input["level"], model_input["trend"], model_input["seasonal"])
+    return hcat(initial_states_matrix, ξ_matrix, ζ_matrix, ω_matrix, o_matrix)
+    
+end
+
+"""
 get_components_indexes(Exogenous_X::Matrix{Fl}, model_input::Dict)::Dict where Fl
 
     Generates indexes dict for different components based on the model type and input parameters.
