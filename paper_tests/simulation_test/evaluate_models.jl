@@ -7,31 +7,39 @@ function get_confusion_matrix(selected, true_features, false_features)
     return true_positives, false_positives, false_negatives, true_negatives
 end
 
-function get_SSL_results(y_train::Vector{Float64}, true_features::Vector{Int64}, false_features::Vector{Int64}, X_train::Matrix{Float64}, inf_criteria::String, true_β::Vector{Float64})
-    series_result=nothing
-    
-    t = @elapsed output = StateSpaceLearning.fit_model(y_train; Exogenous_X=X_train,
-                                                                model_input = Dict("level" => true, "stochastic_level" => true, "trend" => true, 
-                                                                            "stochastic_trend" => true, 
-                                                                            "seasonal" => true, "stochastic_seasonal" => true, "freq_seasonal" => 12,
-                                                                            "outlier" => false, "ζ_ω_threshold" => 12), 
-                                                                estimation_input=Dict("α" => 1.0, "information_criteria" => inf_criteria, "ϵ" => 0.05, 
-                                                                            "penalize_exogenous" => true, "penalize_initial_states" => true))
+function get_SSL_results(y_train::Vector{Float64}, true_features::Vector{Int64},
+                         false_features::Vector{Int64}, X_train::Matrix{Float64},
+                         inf_criteria::String, true_β::Vector{Float64})
+    series_result = nothing
 
-    selected = output.components["Exogenous_X"]["Selected"]
-    true_positives, false_positives, false_negatives, true_negatives = get_confusion_matrix(selected, true_features, false_features)
+    model = StateSpaceLearning.StructuralModel(y_train; level=true, stochastic_level=true,
+                                               trend=true, stochastic_trend=true,
+                                               seasonal=true, stochastic_seasonal=true,
+                                               freq_seasonal=12, outlier=false,
+                                               ζ_ω_threshold=12, Exogenous_X=X_train)
+    t = @elapsed StateSpaceLearning.fit!(model; α=1.0, information_criteria=inf_criteria,
+                                         ϵ=0.05, penalize_exogenous=true,
+                                         penalize_initial_states=true)
 
-    mse = mse_func(output.components["Exogenous_X"]["Coefs"], true_β)
-    bias = bias_func(output.components["Exogenous_X"]["Coefs"], true_β)
+    selected = model.output.components["Exogenous_X"]["Selected"]
+    true_positives, false_positives, false_negatives, true_negatives = get_confusion_matrix(selected,
+                                                                                            true_features,
+                                                                                            false_features)
 
-    series_result = DataFrame([[t], [mse], [bias], [true_positives], [false_positives], [false_negatives], [true_negatives]], [:time, :mse, :bias, :true_positives, :false_positives, :false_negatives, :true_negatives])
+    mse = mse_func(model.output.components["Exogenous_X"]["Coefs"], true_β)
+    bias = bias_func(model.output.components["Exogenous_X"]["Coefs"], true_β)
+
+    series_result = DataFrame([[t], [mse], [bias], [true_positives], [false_positives],
+                               [false_negatives], [true_negatives]],
+                              [:time, :mse, :bias, :true_positives, :false_positives,
+                               :false_negatives, :true_negatives])
 
     return series_result
 end
 
-
-function get_SS_res_results(y_train::Vector{Float64}, true_features::Vector{Int64}, false_features::Vector{Int64}, X_train::Matrix{Float64}, inf_criteria::String, true_β::Vector{Float64})
-    
+function get_SS_res_results(y_train::Vector{Float64}, true_features::Vector{Int64},
+                            false_features::Vector{Int64}, X_train::Matrix{Float64},
+                            inf_criteria::String, true_β::Vector{Float64})
     py"""
     import math
     import statsmodels.api as sm
@@ -49,20 +57,31 @@ function get_SS_res_results(y_train::Vector{Float64}, true_features::Vector{Int6
     t = @elapsed begin
         res, converged = py"evaluate_ss"(y_train)
 
-        lasso_path = glmnet(X_train, res, alpha = 1.0, intercept=false)
-        coefs1, _ = StateSpaceLearning.get_path_information_criteria(lasso_path, X_train, res, inf_criteria;intercept=false)
-        penalty_factor = 1 ./ (abs.(coefs1)); 
-        lasso_path2 = glmnet(X_train, res, alpha = 1.0, penalty_factor=penalty_factor, intercept=false)
-        lasso_coefs, _ = StateSpaceLearning.get_path_information_criteria(lasso_path2, X_train, res, inf_criteria;intercept=false)
+        lasso_path = glmnet(X_train, res; alpha=1.0, intercept=false)
+        coefs1, _ = StateSpaceLearning.get_path_information_criteria(lasso_path, X_train,
+                                                                     res, inf_criteria;
+                                                                     intercept=false)
+        penalty_factor = 1 ./ (abs.(coefs1))
+        lasso_path2 = glmnet(X_train, res; alpha=1.0, penalty_factor=penalty_factor,
+                             intercept=false)
+        lasso_coefs, _ = StateSpaceLearning.get_path_information_criteria(lasso_path2,
+                                                                          X_train, res,
+                                                                          inf_criteria;
+                                                                          intercept=false)
     end
     selected = findall(i -> i != 0, lasso_coefs)
 
-    true_positives, false_positives, false_negatives, true_negatives = get_confusion_matrix(selected, true_features, false_features)
-    
+    true_positives, false_positives, false_negatives, true_negatives = get_confusion_matrix(selected,
+                                                                                            true_features,
+                                                                                            false_features)
+
     mse = mse_func(lasso_coefs, true_β)
     bias = bias_func(lasso_coefs, true_β)
-    
-    series_result = DataFrame([[t], [mse], [bias], [true_positives], [false_positives], [false_negatives], [true_negatives]], [:time, :mse, :bias, :true_positives, :false_positives, :false_negatives, :true_negatives])
+
+    series_result = DataFrame([[t], [mse], [bias], [true_positives], [false_positives],
+                               [false_negatives], [true_negatives]],
+                              [:time, :mse, :bias, :true_positives, :false_positives,
+                               :false_negatives, :true_negatives])
 
     return series_result, converged
 end
@@ -85,8 +104,9 @@ function get_exogenous_ss_inf_criteria(y_train::Vector{Float64}, X_train::Matrix
     return py"evaluate_ss"(y_train, X_train)
 end
 
-function get_forward_ss(y_train::Vector{Float64}, true_features::Vector{Int64}, false_features::Vector{Int64}, X_train::Matrix{Float64}, inf_criteria::String, true_β::Vector{Float64})
-    
+function get_forward_ss(y_train::Vector{Float64}, true_features::Vector{Int64},
+                        false_features::Vector{Int64}, X_train::Matrix{Float64},
+                        inf_criteria::String, true_β::Vector{Float64})
     best_inf_crit = Inf
     current_inf_crit = 0
     coefs = nothing
@@ -95,15 +115,19 @@ function get_forward_ss(y_train::Vector{Float64}, true_features::Vector{Int64}, 
     stop = false
     last_converged = nothing
     converged = nothing
-    t = @elapsed begin 
+    t = @elapsed begin
         while !stop
             iteration_inf_vec = []
             iteration_coefs_vec = []
             for i in remaining_exogs
-                aic, bic, coefs_exog, converged = get_exogenous_ss_inf_criteria(y_train, X_train[:, sort(vcat(selected, i))])
+                aic, bic, coefs_exog, converged = get_exogenous_ss_inf_criteria(y_train,
+                                                                                X_train[:,
+                                                                                        sort(vcat(selected,
+                                                                                                  i))])
                 inf_crit = inf_criteria == "aic" ? aic : bic
                 push!(iteration_inf_vec, inf_crit)
-                push!(iteration_coefs_vec, coefs_exog[end - length(vcat(selected, i))+1:end])
+                push!(iteration_coefs_vec,
+                      coefs_exog[(end - length(vcat(selected, i)) + 1):end])
             end
             current_inf_crit = minimum(iteration_inf_vec)
             if current_inf_crit < best_inf_crit
@@ -121,12 +145,17 @@ function get_forward_ss(y_train::Vector{Float64}, true_features::Vector{Int64}, 
     estimated_coefs = zeros(size(X_train, 2))
     estimated_coefs[sort(selected)] = coefs
 
-    true_positives, false_positives, false_negatives, true_negatives = get_confusion_matrix(selected, true_features, false_features)
-    
+    true_positives, false_positives, false_negatives, true_negatives = get_confusion_matrix(selected,
+                                                                                            true_features,
+                                                                                            false_features)
+
     mse = mse_func(estimated_coefs, true_β)
     bias = bias_func(estimated_coefs, true_β)
-    
-    series_result = DataFrame([[t], [mse], [bias], [true_positives], [false_positives], [false_negatives], [true_negatives]], [:time, :mse, :bias, :true_positives, :false_positives, :false_negatives, :true_negatives])
+
+    series_result = DataFrame([[t], [mse], [bias], [true_positives], [false_positives],
+                               [false_negatives], [true_negatives]],
+                              [:time, :mse, :bias, :true_positives, :false_positives,
+                               :false_negatives, :true_negatives])
 
     return series_result, last_converged
 end

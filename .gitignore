@@ -1,2 +1,8 @@
 .DS_Store
 Manifest.toml
+
+local_test/
+paper_tests/m4_test/metrics_results/
+paper_tests/m4_test/results_ARIMA/
+paper_tests/m4_test/results_SSL/
+paper_tests/simulation_test/results_simulation_raw/
