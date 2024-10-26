@@ -15,16 +15,19 @@
         - "Values": Values computed from `X` and component coefficients.
 
 """
-function build_components(X::Matrix{Tl}, coefs::Vector{Float64}, components_indexes::Dict{String, Vector{Int}})::Dict where Tl
+function build_components(X::Matrix{Tl}, coefs::Vector{Float64},
+                          components_indexes::Dict{String,Vector{Int}})::Dict where {Tl}
     components = Dict()
     for key in keys(components_indexes)
         components[key] = Dict()
-        components[key]["Coefs"]   = coefs[components_indexes[key]]
+        components[key]["Coefs"] = coefs[components_indexes[key]]
         components[key]["Indexes"] = components_indexes[key]
-        components[key]["Values"]  = X[:, components_indexes[key]]*coefs[components_indexes[key]]
+        components[key]["Values"] = X[:, components_indexes[key]] *
+                                    coefs[components_indexes[key]]
     end
     if haskey(components, "Exogenous_X")
-        components["Exogenous_X"]["Selected"] = findall(i -> i != 0, components["Exogenous_X"]["Coefs"])
+        components["Exogenous_X"]["Selected"] = findall(i -> i != 0,
+                                                        components["Exogenous_X"]["Coefs"])
     end
     return components
 end
@@ -47,9 +50,12 @@ get_fit_and_residuals(estimation_ε::Vector{Float64}, coefs::Vector{Float64}, X:
         - `fitted::Vector{Float64}`: Vector of fitted values computed from input data and coefficients.
 
 """
-function get_fit_and_residuals(estimation_ε::Vector{Float64}, coefs::Vector{Float64}, X::Matrix{Tl}, valid_indexes::Vector{Int}, T::Int)::Tuple{Vector{Float64}, Vector{Float64}} where Tl
-    ε      = fill(NaN, T); ε[valid_indexes] = estimation_ε
-    fitted = X*coefs
+function get_fit_and_residuals(estimation_ε::Vector{Float64}, coefs::Vector{Float64},
+                               X::Matrix{Tl}, valid_indexes::Vector{Int},
+                               T::Int)::Tuple{Vector{Float64},Vector{Float64}} where {Tl}
+    ε = fill(NaN, T)
+    ε[valid_indexes] = estimation_ε
+    fitted = X * coefs
     return ε, fitted
 end
 
@@ -99,10 +105,12 @@ handle_missing_values(X::Matrix{Tl}, y::Vector{Fl}) -> Tuple{Vector{Fl}, Matrix{
         - `X::Matrix{Tl}`: Input matrix without missing values.
         - `valid_indexes::Vector{Int}`: Vector containing valid indexes of the time series.
 """
-function handle_missing_values(X::Matrix{Tl}, y::Vector{Fl})::Tuple{Vector{Fl}, Matrix{Tl}, Vector{Int}} where {Tl, Fl}
-
-    invalid_indexes = unique(vcat([i[1] for i in findall(i -> any(isnan, i), X)], findall(i -> isnan(i), y)))
-    valid_indexes   = setdiff(1:length(y), invalid_indexes)
+function handle_missing_values(X::Matrix{Tl},
+                               y::Vector{Fl})::Tuple{Vector{Fl},Matrix{Tl},
+                                                     Vector{Int}} where {Tl,Fl}
+    invalid_indexes = unique(vcat([i[1] for i in findall(i -> any(isnan, i), X)],
+                                  findall(i -> isnan(i), y)))
+    valid_indexes = setdiff(1:length(y), invalid_indexes)
 
     return y[valid_indexes], X[valid_indexes, :], valid_indexes
 end
@@ -118,26 +126,28 @@ has_intercept(X::Matrix{Tl})::Bool where Tl
     # Returns
     - `Bool`: True if the input matrix has a constant column, false otherwise.
 """
-function has_intercept(X::Matrix{Tl})::Bool where Tl
+function has_intercept(X::Matrix{Tl})::Bool where {Tl}
     return any([all(X[:, i] .== 1) for i in 1:size(X, 2)])
 end
 
 """
-fill_innovation_coefs(component::String, output::Output)::Vector{Float64}
+fill_innovation_coefs(model::StructuralModel, T::Int, component::String)::Vector{Float64}
 
     Build the innovation coefficients for a given component with same length as the original time series and coefficients attributed to the first observation they are associated with.
 
     # Arguments
+    - `model::StructuralModel`: Structural model.
+    - `T::Int`: Length of the original time series.
     - `component::String`: Component name.
-    - `output::Output`: Output object obtained from model fitting.
 
     # Returns
     - `Vector{Float64}`: Vector containing innovation coefficients for the given component.
 """
-function fill_innovation_coefs(T::Int, component::String, output::Output)::Vector{Float64}
+function fill_innovation_coefs(model::StructuralModel, component::String)::Vector{Float64}
+    T = length(model.y)
     inov_comp = zeros(T)
-    for (i, idx) in enumerate(output.components[component]["Indexes"])
-        inov_comp[findfirst(i -> i != 0, output.X[:, idx])] = output.components[component]["Coefs"][i]
+    for (i, idx) in enumerate(model.output.components[component]["Indexes"])
+        inov_comp[findfirst(i -> i != 0, model.X[:, idx])] = model.output.components[component]["Coefs"][i]
     end
     return inov_comp
 end

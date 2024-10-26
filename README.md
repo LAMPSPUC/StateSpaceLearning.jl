@@ -13,33 +13,31 @@ using StateSpaceLearning
 
 y = randn(100)
 
-#Fit Model
-output = StateSpaceLearning.fit_model(y)
+# Instantiate Model
+model = StructuralModel(y)
 
-#Main output options 
-model_input         = output.model_input # Model inputs that were utilized to build the regression matrix.
-Create_X            = output.Create_X # The function utilized to build the regression matrix.
-X                   = output.X # High Dimension Regression utilized in the estimation.
-coefs               = output.coefs # High Dimension Regression coefficients estimated in the estimation.
-ε                   = output.ε # Residuals of the model.
-fitted              = output.fitted # Fit in Sample of the model.
-components          = output.components # Dictionary containing information about each component of the model, each component has the keys: "Values" (The value of the component in each timestamp) , "Coefs" (The coefficients estimated for each element of the component) and "Indexes" (The indexes of the elements of the component in the high dimension regression "X").
-residuals_variances = output.residuals_variances # Dictionary containing the estimated variances for the innovations components (that is the information that can be utilized to initialize the state space model).
-valid_indexes       = output.valid_indexes # Vector containing valid indexes of the time series (non valid indexes represent NaN values in the time series).
+# Fit Model
+fit!(model)
 
-#Forecast
+# Point Forecast
 prediction = StateSpaceLearning.forecast(output, 12) #Gets a 12 steps ahead prediction
 
+# Scenarios Path Simulation
+simulation = StateSpaceLearning.simulate(output, 12, 1000) #Gets 1000 scenarios path of 12 steps ahead predictions
 ```
 
-## Fit Arguments
+## StructuralModel Arguments
 
-* `y::Vector{Fl}`: Vector of data.
-*  `model_input::Dict`: Dictionary containing the model input parameters (default: Dict("level" => true, "stochastic\_level" => true, "trend" => true, "stochastic\_trend" => true, "seasonal" => true, "stochastic\_seasonal" => true, "freq\_seasonal" => 12, "outlier" => true, , "ζ\_ω\_threshold" => 12)).
-* `model_functions::Dict`: Dictionary containing the model functions (default: Dict("create\_X" => create\_X, "get\_components\_indexes" => get\_components\_indexes, "get\_variances" => get\_variances)).
-* `estimation_input::Dict`: Dictionary containing the estimation input parameters (default: Dict("α" => 0.1, "information\_criteria" => "aic", ψ => 0.05, "penalize\_exogenous" => true, "penalize\_initial\_states" => true)).
-* `estimation_function::Function`: Estimation function (default: default\_estimation\_procedure).
-* `Exogenous_X::Union{Matrix{Fl}, Missing}`: Exogenous variables matrix (default: missing).
+* `y::Vector`: Vector of data.
+* `level::Bool`: Boolean where to consider intercept in the model (default: true)
+* `stochastic_level::Bool`: Boolean where to consider stochastic level component in the model (default: true)
+* `trend::Bool`: Boolean where to consider trend component in the model (default: true)
+* `stochastic_trend::Bool`: Boolean where to consider stochastic trend component in the model (default: true)
+* `seasonal::Bool`: Boolean where to consider seasonal component in the model (default: true)
+* `stochastic_seasonal::Bool`: Boolean where to consider stochastic seasonal component in the model (default: true)
+* `freq_seasonal::Int`: Seasonal frequency to be considered in the model (default: 12)
+* `outlier::Bool`: Boolean where to consider outlier component in the model (default: true)
+* `ζ_ω_threshold::Int`: Argument to stabilize `stochastic trend` and `stochastic seasonal` components (default: 12)
 
 ## Features
 
@@ -66,8 +64,9 @@ airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
 log_air_passengers = log.(airp.passengers)
 steps_ahead = 30
 
-output = StateSpaceLearning.fit_model(log_air_passengers)
-prediction_log = StateSpaceLearning.forecast(output, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
+model = StructuralModel(log_air_passengers)
+fit!(model)
+prediction_log = StateSpaceLearning.forecast(model, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
 prediction = exp.(prediction_log)
 
 plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
@@ -77,7 +76,7 @@ plot!(vcat(ones(length(log_air_passengers)).*NaN, prediction), lab = "Forecast",
 
 ```julia
 N_scenarios = 1000
-simulation = StateSpaceLearning.simulate(output, steps_ahead, N_scenarios) # arguments are the output of the fitted model, number of steps ahead the user wants to forecast and number of scenario paths
+simulation = StateSpaceLearning.simulate(model, steps_ahead, N_scenarios) # arguments are the output of the fitted model, number of steps ahead the user wants to forecast and number of scenario paths
 
 plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
 for s in 1:N_scenarios-1
@@ -99,11 +98,12 @@ using Plots
 airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
 log_air_passengers = log.(airp.passengers)
 
-output = StateSpaceLearning.fit_model(log_air_passengers)
+model = StructuralModel(log_air_passengers)
+fit!(model)
 
-level = output.components["μ1"]["Values"] + output.components["ξ"]["Values"]
-slope = output.components["ν1"]["Values"] + output.components["ζ"]["Values"]
-seasonal = output.components["γ1"]["Values"] + output.components["ω"]["Values"]
+level = model.output.components["μ1"]["Values"] + model.output.components["ξ"]["Values"]
+slope = model.output.components["ν1"]["Values"] + model.output.components["ζ"]["Values"]
+seasonal = model.output.components["γ1"]["Values"] + model.output.components["ω"]["Values"]
 trend = level + slope
 
 plot(trend, w=2 , color = "Black", lab = "Trend Component", legend = :outerbottom)
@@ -133,9 +133,10 @@ X = rand(length(log_air_passengers), 10) # Create 10 exogenous features
 
 y = log_air_passengers + X[:, 1:3]*β # add to the log_air_passengers series a contribution from only 3 exogenous features.
 
-output = StateSpaceLearning.fit_model(y; Exogenous_X = X, estimation_input = Dict("α" => 1.0, "information_criteria" => "bic", "ε" => 0.05, "penalize_exogenous" => true, "penalize_initial_states" => true))
+model = StructuralModel(y; Exogenous_X = X)
+fit!(model; α = 1.0, information_criteria = "bic", ϵ = 0.05, penalize_exogenous = true, penalize_initial_states = true)
 
-Selected_exogenous = output.components["Exogenous_X"]["Selected"]
+Selected_exogenous = model.output.components["Exogenous_X"]["Selected"]
 
 ```
 
@@ -155,9 +156,10 @@ log_air_passengers = log.(airp.passengers)
 airpassengers = Float64.(airp.passengers)
 log_air_passengers[60:72] .= NaN
 
-output = StateSpaceLearning.fit_model(log_air_passengers)
+model = StructuralModel(log_air_passengers)
+fit!(model)
 
-fitted_completed_missing_values = ones(144).*NaN; fitted_completed_missing_values[60:72] = exp.(output.fitted[60:72])
+fitted_completed_missing_values = ones(144).*NaN; fitted_completed_missing_values[60:72] = exp.(model.output.fitted[60:72])
 real_removed_valued = ones(144).*NaN; real_removed_valued[60:72] = deepcopy(airp.passengers[60:72])
 airpassengers[60:72] .= NaN
 
@@ -183,8 +185,10 @@ log_air_passengers[60] = 10
 log_air_passengers[30] = 1
 log_air_passengers[100] = 2
 
-output = StateSpaceLearning.fit_model(log_air_passengers)
-detected_outliers = findall(i -> i != 0, output.components["o"]["Coefs"])
+model = StructuralModel(log_air_passengers)
+fit!(model)
+
+detected_outliers = findall(i -> i != 0, model.output.components["o"]["Coefs"])
 
 plot(log_air_passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
 scatter!([detected_outliers], log_air_passengers[detected_outliers], lab = "Detected Outliers")
@@ -203,15 +207,17 @@ using StateSpaceModels
 airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
 log_air_passengers = log.(airp.passengers)
 
-output = StateSpaceLearning.fit_model(log_air_passengers)
-residuals_variances = output.residuals_variances
+model = StructuralModel(log_air_passengers)
+fit!(model)
 
-model = BasicStructural(log_air_passengers, 12)
-set_initial_hyperparameters!(model, Dict("sigma2_ε" => residuals_variances["ε"], 
+residuals_variances = model.output.residuals_variances
+
+ss_model = BasicStructural(log_air_passengers, 12)
+set_initial_hyperparameters!(ss_model, Dict("sigma2_ε" => residuals_variances["ε"], 
                                          "sigma2_ξ" =>residuals_variances["ξ"], 
                                          "sigma2_ζ" =>residuals_variances["ζ"], 
                                          "sigma2_ω" =>residuals_variances["ω"]))
-fit!(model)
+StateSpaceModels.fit!(ss_model)
 ```
 
 ## Paper Results Reproducibility
