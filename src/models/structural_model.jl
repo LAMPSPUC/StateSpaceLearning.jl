@@ -212,8 +212,8 @@ function create_initial_states_Matrix(
     end
     if trend
         initial_states_matrix = hcat(
-        initial_states_matrix, vcat([0], collect(1:(T + steps_ahead - 1)))
-    )
+            initial_states_matrix, vcat([0], collect(1:(T + steps_ahead - 1)))
+        )
     else
         nothing
     end
