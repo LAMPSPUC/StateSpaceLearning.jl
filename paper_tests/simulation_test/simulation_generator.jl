@@ -56,15 +56,22 @@ function generate_sarima_exog(T::Int64, M::Int64)
             end
         end
 
-        data = vcat(rand(Normal(0, 1), max(p, q, P * s, Q * s)),
-                    zeros(T - max(p, q, P * s, Q * s)))
+        data = vcat(
+            rand(Normal(0, 1), max(p, q, P * s, Q * s)), zeros(T - max(p, q, P * s, Q * s))
+        )
         for i in (max(p, q, P * s, Q * s) + 1):T
             seasonal_comp = 0
             if i > s
-                P_term = P == 0 ? 0 :
-                         sum(sar_params .* data[(i - s * P):(i - s):(i - s * P + 1)])
-                Q_term = Q == 0 ? 0 :
-                         sum(sma_params .* data[(i - s * Q):(i - s):(i - s * Q + 1)])
+                P_term = if P == 0
+                    0
+                else
+                    sum(sar_params .* data[(i - s * P):(i - s):(i - s * P + 1)])
+                end
+                Q_term = if Q == 0
+                    0
+                else
+                    sum(sma_params .* data[(i - s * Q):(i - s):(i - s * Q + 1)])
+                end
                 seasonal_comp = P_term + Q_term
             end
             p_term = sum(ar_params .* data[(i - p):(i - 1)])

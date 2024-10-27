@@ -22,8 +22,8 @@ nprocs = parse(Int, ARGS[1])
 nprocs > 1 ? addprocs(nprocs) : nothing
 @everywhere begin
     using Pkg: Pkg
-    using CSV, DataFrames, StateSpaceModels, Statistics, PyCall, Distributions, GLMNet,
-          Polynomials
+    using CSV,
+        DataFrames, StateSpaceModels, Statistics, PyCall, Distributions, GLMNet, Polynomials
 end
 
 @everywhere begin
@@ -71,26 +71,54 @@ create_dirs()
             X = M_K_d["p_vec_M_K"][i]["X"]
             true_β = M_K_d["p_vec_M_K"][i]["true_β"]
             @info(i)
-            series_result1 = get_SSL_results(y_featured, collect(1:K),
-                                             setdiff(collect(1:M), collect(1:K)), X, "aic",
-                                             true_β)
-            series_result2 = get_SSL_results(y_featured, collect(1:K),
-                                             setdiff(collect(1:M), collect(1:K)), X, "bic",
-                                             true_β)
-            series_result3, converged3 = get_forward_ss(y_featured, collect(1:K),
-                                                        setdiff(collect(1:M), collect(1:K)),
-                                                        X, "aic", true_β)
-            series_result4, converged4 = get_forward_ss(y_featured, collect(1:K),
-                                                        setdiff(collect(1:M), collect(1:K)),
-                                                        X, "bic", true_β)
-            series_result5, converged5 = get_SS_res_results(y_featured, collect(1:K),
-                                                            setdiff(collect(1:M),
-                                                                    collect(1:K)), X, "aic",
-                                                            true_β)
-            series_result6, converged6 = get_SS_res_results(y_featured, collect(1:K),
-                                                            setdiff(collect(1:M),
-                                                                    collect(1:K)), X, "bic",
-                                                            true_β)
+            series_result1 = get_SSL_results(
+                y_featured,
+                collect(1:K),
+                setdiff(collect(1:M), collect(1:K)),
+                X,
+                "aic",
+                true_β,
+            )
+            series_result2 = get_SSL_results(
+                y_featured,
+                collect(1:K),
+                setdiff(collect(1:M), collect(1:K)),
+                X,
+                "bic",
+                true_β,
+            )
+            series_result3, converged3 = get_forward_ss(
+                y_featured,
+                collect(1:K),
+                setdiff(collect(1:M), collect(1:K)),
+                X,
+                "aic",
+                true_β,
+            )
+            series_result4, converged4 = get_forward_ss(
+                y_featured,
+                collect(1:K),
+                setdiff(collect(1:M), collect(1:K)),
+                X,
+                "bic",
+                true_β,
+            )
+            series_result5, converged5 = get_SS_res_results(
+                y_featured,
+                collect(1:K),
+                setdiff(collect(1:M), collect(1:K)),
+                X,
+                "aic",
+                true_β,
+            )
+            series_result6, converged6 = get_SS_res_results(
+                y_featured,
+                collect(1:K),
+                setdiff(collect(1:M), collect(1:K)),
+                X,
+                "bic",
+                true_β,
+            )
             rr1 = vcat(rr1, series_result1)
             rr2 = vcat(rr2, series_result2)
             rr3 = vcat(rr3, series_result3)
@@ -102,18 +130,28 @@ create_dirs()
             @info(mean(rr2[!, "true_positives"]))
             @info(mean(rr2[!, "false_positives"]))
         end
-        CSV.write("paper_tests/simulation_test/results_simulation_raw/SSL_aic_$(M)$(K)_$N.csv",
-                  rr1)
-        CSV.write("paper_tests/simulation_test/results_simulation_raw/SSL_bic_$(M)$(K)_$N.csv",
-                  rr2)
-        CSV.write("paper_tests/simulation_test/results_simulation_raw/SS_aic_f$(M)$(K)_$N.csv",
-                  rr3)
-        CSV.write("paper_tests/simulation_test/results_simulation_raw/SS_bic_f$(M)$(K)_$N.csv",
-                  rr4)
-        CSV.write("paper_tests/simulation_test/results_simulation_raw/SS_aic_$(M)$(K)_$N.csv",
-                  rr5)
-        return CSV.write("paper_tests/simulation_test/results_simulation_raw/SS_bic_$(M)$(K)_$N.csv",
-                         rr6)
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation_raw/SSL_aic_$(M)$(K)_$N.csv",
+            rr1,
+        )
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation_raw/SSL_bic_$(M)$(K)_$N.csv",
+            rr2,
+        )
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation_raw/SS_aic_f$(M)$(K)_$N.csv",
+            rr3,
+        )
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation_raw/SS_bic_f$(M)$(K)_$N.csv",
+            rr4,
+        )
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation_raw/SS_aic_$(M)$(K)_$N.csv", rr5
+        )
+        return CSV.write(
+            "paper_tests/simulation_test/results_simulation_raw/SS_bic_$(M)$(K)_$N.csv", rr6
+        )
     end
 end
 
@@ -137,8 +175,9 @@ for M in [50, 100]
 end
 
 function robust_pmap(f::Function, a; num_retries::Int=3)
-    return pmap(f, a; on_error=e -> rethrow(),
-                retry_delays=ExponentialBackOff(; n=num_retries))
+    return pmap(
+        f, a; on_error=e -> rethrow(), retry_delays=ExponentialBackOff(; n=num_retries)
+    )
 end
 
 robust_pmap(get_M_K_res, p_vec)
@@ -152,18 +191,30 @@ for M in [50, 100]
         last_df5 = DataFrame()
         last_df6 = DataFrame()
         for i in 1:10
-            df1 = CSV.read("paper_tests/simulation_test/results_simulation_raw/SSL_aic_$(M)$(K)_$i.csv",
-                           DataFrame)
-            df2 = CSV.read("paper_tests/simulation_test/results_simulation_raw/SSL_bic_$(M)$(K)_$i.csv",
-                           DataFrame)
-            df3 = CSV.read("paper_tests/simulation_test/results_simulation_raw/SS_aic_$(M)$(K)_$i.csv",
-                           DataFrame)
-            df4 = CSV.read("paper_tests/simulation_test/results_simulation_raw/SS_bic_$(M)$(K)_$i.csv",
-                           DataFrame)
-            df5 = CSV.read("paper_tests/simulation_test/results_simulation_raw/SS_aic_f$(M)$(K)_$i.csv",
-                           DataFrame)
-            df6 = CSV.read("paper_tests/simulation_test/results_simulation_raw/SS_bic_f$(M)$(K)_$i.csv",
-                           DataFrame)
+            df1 = CSV.read(
+                "paper_tests/simulation_test/results_simulation_raw/SSL_aic_$(M)$(K)_$i.csv",
+                DataFrame,
+            )
+            df2 = CSV.read(
+                "paper_tests/simulation_test/results_simulation_raw/SSL_bic_$(M)$(K)_$i.csv",
+                DataFrame,
+            )
+            df3 = CSV.read(
+                "paper_tests/simulation_test/results_simulation_raw/SS_aic_$(M)$(K)_$i.csv",
+                DataFrame,
+            )
+            df4 = CSV.read(
+                "paper_tests/simulation_test/results_simulation_raw/SS_bic_$(M)$(K)_$i.csv",
+                DataFrame,
+            )
+            df5 = CSV.read(
+                "paper_tests/simulation_test/results_simulation_raw/SS_aic_f$(M)$(K)_$i.csv",
+                DataFrame,
+            )
+            df6 = CSV.read(
+                "paper_tests/simulation_test/results_simulation_raw/SS_bic_f$(M)$(K)_$i.csv",
+                DataFrame,
+            )
             last_df1 = vcat(last_df1, df1)
             last_df2 = vcat(last_df2, df2)
             last_df3 = vcat(last_df3, df3)
@@ -171,18 +222,24 @@ for M in [50, 100]
             last_df5 = vcat(last_df5, df5)
             last_df6 = vcat(last_df6, df6)
         end
-        CSV.write("paper_tests/simulation_test/results_simulation/SSL_aic_$(M)$(K).csv",
-                  last_df1)
-        CSV.write("paper_tests/simulation_test/results_simulation/SSL_bic_$(M)$(K).csv",
-                  last_df2)
-        CSV.write("paper_tests/simulation_test/results_simulation/SS_aic_$(M)$(K).csv",
-                  last_df3)
-        CSV.write("paper_tests/simulation_test/results_simulation/SS_bic_$(M)$(K).csv",
-                  last_df4)
-        CSV.write("paper_tests/simulation_test/results_simulation/SS_aic_f$(M)$(K).csv",
-                  last_df5)
-        CSV.write("paper_tests/simulation_test/results_simulation/SS_bic_f$(M)$(K).csv",
-                  last_df6)
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation/SSL_aic_$(M)$(K).csv", last_df1
+        )
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation/SSL_bic_$(M)$(K).csv", last_df2
+        )
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation/SS_aic_$(M)$(K).csv", last_df3
+        )
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation/SS_bic_$(M)$(K).csv", last_df4
+        )
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation/SS_aic_f$(M)$(K).csv", last_df5
+        )
+        CSV.write(
+            "paper_tests/simulation_test/results_simulation/SS_bic_f$(M)$(K).csv", last_df6
+        )
     end
 end
 
@@ -196,8 +253,10 @@ function get_metrics(df, q, n)
     false_positive_rate = 0
     for i in 1:T
         i_df = df[i, :]
-        if i_df["true_positives"] == q && i_df["true_negatives"] == n - q &&
-           i_df["false_positives"] == 0 && i_df["false_negatives"] == 0
+        if i_df["true_positives"] == q &&
+            i_df["true_negatives"] == n - q &&
+            i_df["false_positives"] == 0 &&
+            i_df["false_negatives"] == 0
             true_model_rate += 1 / T
         end
         if i_df["true_positives"] == q
@@ -208,8 +267,9 @@ function get_metrics(df, q, n)
         positive_rate += (i_df["true_positives"] + i_df["false_positives"]) / T
         false_positive_rate += (i_df["false_positives"]) / T
     end
-    return true_model_rate, all_true_positives_rate, true_positive_rate, true_negative_rate,
-           positive_rate, false_positive_rate
+    return true_model_rate,
+    all_true_positives_rate, true_positive_rate, true_negative_rate, positive_rate,
+    false_positive_rate
 end
 
 df_dict = Dict()
@@ -222,18 +282,24 @@ df_dict["SSL_bic"] = Dict()
 
 for n in [50, 100]
     for q in [3, 5, 8, 10]
-        df_SS_aic = CSV.read("paper_tests/simulation_test/results_simulation/SS_aic_$n$(q).csv",
-                             DataFrame)
-        df_SS_bic = CSV.read("paper_tests/simulation_test/results_simulation/SS_bic_$n$(q).csv",
-                             DataFrame)
-        df_SS_aicf = CSV.read("paper_tests/simulation_test/results_simulation/SS_aic_f$n$(q).csv",
-                              DataFrame)
-        df_SS_bicf = CSV.read("paper_tests/simulation_test/results_simulation/SS_bic_f$n$(q).csv",
-                              DataFrame)
-        df_SSL_aic = CSV.read("paper_tests/simulation_test/results_simulation/SSL_aic_$n$(q).csv",
-                              DataFrame)
-        df_SSL_bic = CSV.read("paper_tests/simulation_test/results_simulation/SSL_bic_$n$(q).csv",
-                              DataFrame)
+        df_SS_aic = CSV.read(
+            "paper_tests/simulation_test/results_simulation/SS_aic_$n$(q).csv", DataFrame
+        )
+        df_SS_bic = CSV.read(
+            "paper_tests/simulation_test/results_simulation/SS_bic_$n$(q).csv", DataFrame
+        )
+        df_SS_aicf = CSV.read(
+            "paper_tests/simulation_test/results_simulation/SS_aic_f$n$(q).csv", DataFrame
+        )
+        df_SS_bicf = CSV.read(
+            "paper_tests/simulation_test/results_simulation/SS_bic_f$n$(q).csv", DataFrame
+        )
+        df_SSL_aic = CSV.read(
+            "paper_tests/simulation_test/results_simulation/SSL_aic_$n$(q).csv", DataFrame
+        )
+        df_SSL_bic = CSV.read(
+            "paper_tests/simulation_test/results_simulation/SSL_bic_$n$(q).csv", DataFrame
+        )
         df_dict["SS_aic"][n, q] = get_metrics(df_SS_aic, q, n)
         df_dict["SS_bic"][n, q] = get_metrics(df_SS_bic, q, n)
         df_dict["SS_f_aic"][n, q] = get_metrics(df_SS_aicf, q, n)
@@ -282,8 +348,10 @@ for name in ["SSL_aic_", "SSL_bic_", "SS_aic_", "SS_bic_", "SS_aic_f", "SS_bic_f
         column = []
         for i in 1:5
             for q in [3, 5, 8, 10]
-                df_name = CSV.read("paper_tests/simulation_test/results_simulation/$(name)$n$(q).csv",
-                                   DataFrame)
+                df_name = CSV.read(
+                    "paper_tests/simulation_test/results_simulation/$(name)$n$(q).csv",
+                    DataFrame,
+                )
                 if i == 1
                     num = round(mean(df_name[:, "mse"]); digits=3)
                     if num > 10
@@ -337,5 +405,6 @@ for name in ["SSL_aic_", "SSL_bic_", "SS_aic_", "SS_bic_", "SS_aic_f", "SS_bic_f
         df_mse_bias[!, Symbol(name * "_" * string(n))] = column
     end
 end
-CSV.write("paper_tests/simulation_test/results_simulation/metrics_bias_mse.csv",
-          df_mse_bias)
+CSV.write(
+    "paper_tests/simulation_test/results_simulation/metrics_bias_mse.csv", df_mse_bias
+)

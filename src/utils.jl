@@ -15,19 +15,21 @@
         - "Values": Values computed from `X` and component coefficients.
 
 """
-function build_components(X::Matrix{Tl}, coefs::Vector{Float64},
-                          components_indexes::Dict{String,Vector{Int}})::Dict where {Tl}
+function build_components(
+    X::Matrix{Tl}, coefs::Vector{Float64}, components_indexes::Dict{String,Vector{Int}}
+)::Dict where {Tl}
     components = Dict()
     for key in keys(components_indexes)
         components[key] = Dict()
         components[key]["Coefs"] = coefs[components_indexes[key]]
         components[key]["Indexes"] = components_indexes[key]
-        components[key]["Values"] = X[:, components_indexes[key]] *
-                                    coefs[components_indexes[key]]
+        components[key]["Values"] =
+            X[:, components_indexes[key]] * coefs[components_indexes[key]]
     end
     if haskey(components, "Exogenous_X")
-        components["Exogenous_X"]["Selected"] = findall(i -> i != 0,
-                                                        components["Exogenous_X"]["Coefs"])
+        components["Exogenous_X"]["Selected"] = findall(
+            i -> i != 0, components["Exogenous_X"]["Coefs"]
+        )
     end
     return components
 end
@@ -50,9 +52,13 @@ get_fit_and_residuals(estimation_ε::Vector{Float64}, coefs::Vector{Float64}, X:
         - `fitted::Vector{Float64}`: Vector of fitted values computed from input data and coefficients.
 
 """
-function get_fit_and_residuals(estimation_ε::Vector{Float64}, coefs::Vector{Float64},
-                               X::Matrix{Tl}, valid_indexes::Vector{Int},
-                               T::Int)::Tuple{Vector{Float64},Vector{Float64}} where {Tl}
+function get_fit_and_residuals(
+    estimation_ε::Vector{Float64},
+    coefs::Vector{Float64},
+    X::Matrix{Tl},
+    valid_indexes::Vector{Int},
+    T::Int,
+)::Tuple{Vector{Float64},Vector{Float64}} where {Tl}
     ε = fill(NaN, T)
     ε[valid_indexes] = estimation_ε
     fitted = X * coefs
@@ -105,11 +111,12 @@ handle_missing_values(X::Matrix{Tl}, y::Vector{Fl}) -> Tuple{Vector{Fl}, Matrix{
         - `X::Matrix{Tl}`: Input matrix without missing values.
         - `valid_indexes::Vector{Int}`: Vector containing valid indexes of the time series.
 """
-function handle_missing_values(X::Matrix{Tl},
-                               y::Vector{Fl})::Tuple{Vector{Fl},Matrix{Tl},
-                                                     Vector{Int}} where {Tl,Fl}
-    invalid_indexes = unique(vcat([i[1] for i in findall(i -> any(isnan, i), X)],
-                                  findall(i -> isnan(i), y)))
+function handle_missing_values(
+    X::Matrix{Tl}, y::Vector{Fl}
+)::Tuple{Vector{Fl},Matrix{Tl},Vector{Int}} where {Tl,Fl}
+    invalid_indexes = unique(
+        vcat([i[1] for i in findall(i -> any(isnan, i), X)], findall(i -> isnan(i), y))
+    )
     valid_indexes = setdiff(1:length(y), invalid_indexes)
 
     return y[valid_indexes], X[valid_indexes, :], valid_indexes

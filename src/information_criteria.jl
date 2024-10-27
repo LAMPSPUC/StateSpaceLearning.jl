@@ -14,8 +14,9 @@
     - `Float64`: Information criterion value.
 
 """
-function get_information(T::Int, K::Int, ε::Vector{Float64};
-                         information_criteria::String="aic")::Float64
+function get_information(
+    T::Int, K::Int, ε::Vector{Float64}; information_criteria::String="aic"
+)::Float64
     if information_criteria == "bic"
         return T * log(var(ε)) + K * log(T)
     elseif information_criteria == "aic"

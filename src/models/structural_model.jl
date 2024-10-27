@@ -13,24 +13,51 @@ mutable struct StructuralModel <: StateSpaceLearningModel
     n_exogenous::Int
     output::Union{Output,Nothing}
 
-    function StructuralModel(y::Vector{Fl};
-                             level::Bool=true, stochastic_level::Bool=true,
-                             trend::Bool=true, stochastic_trend::Bool=true,
-                             seasonal::Bool=true, stochastic_seasonal::Bool=true,
-                             freq_seasonal::Int=12, outlier::Bool=true,
-                             ζ_ω_threshold::Int=12,
-                             Exogenous_X::Matrix{Fl}=zeros(length(y), 0)) where {Fl}
+    function StructuralModel(
+        y::Vector{Fl};
+        level::Bool=true,
+        stochastic_level::Bool=true,
+        trend::Bool=true,
+        stochastic_trend::Bool=true,
+        seasonal::Bool=true,
+        stochastic_seasonal::Bool=true,
+        freq_seasonal::Int=12,
+        outlier::Bool=true,
+        ζ_ω_threshold::Int=12,
+        Exogenous_X::Matrix{Fl}=zeros(length(y), 0),
+    ) where {Fl}
         n_exogenous = size(Exogenous_X, 2)
         @assert !has_intercept(Exogenous_X) "Exogenous matrix must not have an intercept column"
         @assert seasonal ? length(y) > freq_seasonal : true "Time series must be longer than the seasonal period"
 
-        X = create_X(level, stochastic_level, trend, stochastic_trend, seasonal,
-                     stochastic_seasonal, freq_seasonal, outlier, ζ_ω_threshold,
-                     Exogenous_X)
+        X = create_X(
+            level,
+            stochastic_level,
+            trend,
+            stochastic_trend,
+            seasonal,
+            stochastic_seasonal,
+            freq_seasonal,
+            outlier,
+            ζ_ω_threshold,
+            Exogenous_X,
+        )
 
-        return new(y, X, level, stochastic_level, trend, stochastic_trend, seasonal,
-                   stochastic_seasonal, freq_seasonal, outlier, ζ_ω_threshold, n_exogenous,
-                   nothing)
+        return new(
+            y,
+            X,
+            level,
+            stochastic_level,
+            trend,
+            stochastic_trend,
+            seasonal,
+            stochastic_seasonal,
+            freq_seasonal,
+            outlier,
+            ζ_ω_threshold,
+            n_exogenous,
+            nothing,
+        )
     end
 end
 
@@ -117,10 +144,11 @@ create_ζ(T::Int, steps_ahead::Int, ζ_ω_threshold::Int)::Matrix
 function create_ζ(T::Int, steps_ahead::Int, ζ_ω_threshold::Int)::Matrix
     ζ_matrix = Matrix{Float64}(undef, T + steps_ahead, T - 2)
     for t in 1:(T + steps_ahead)
-        ζ_matrix[t, :] = t < T ?
-                         vcat(collect((t - 2):-1:1),
-                              zeros(T - 2 - length(collect((t - 2):-1:1)))) :
-                         collect((t - 2):-1:(t - T + 1))
+        ζ_matrix[t, :] = if t < T
+            vcat(collect((t - 2):-1:1), zeros(T - 2 - length(collect((t - 2):-1:1))))
+        else
+            collect((t - 2):-1:(t - T + 1))
+        end
     end
     return ζ_matrix[:, 1:(end - ζ_ω_threshold)]
 end
@@ -147,8 +175,10 @@ function create_ω(T::Int, freq_seasonal::Int, steps_ahead::Int, ζ_ω_threshold
         Mₜ = Int(floor((t - 1) / freq_seasonal))
         lag₁ = [t - j * freq_seasonal for j in 0:(Mₜ - 1)]
         lag₂ = [t - j * freq_seasonal - 1 for j in 0:(Mₜ - 1)]
-        ωₜ_coefs[lag₁[lag₁ .<= ω_matrix_size + (freq_seasonal - 1)] .- (freq_seasonal - 1)] .= 1
-        ωₜ_coefs[lag₂[0 .< lag₂ .<= ω_matrix_size + (freq_seasonal - 1)] .- (freq_seasonal - 1)] .= -1
+        ωₜ_coefs[lag₁[lag₁ .<= ω_matrix_size + (freq_seasonal - 1)] .- (freq_seasonal - 1)] .=
+            1
+        ωₜ_coefs[lag₂[0 .< lag₂ .<= ω_matrix_size + (freq_seasonal - 1)] .- (freq_seasonal - 1)] .=
+            -1
         ω_matrix[t, :] = ωₜ_coefs
     end
     return ω_matrix[:, 1:(end - ζ_ω_threshold)]
@@ -171,14 +201,22 @@ end
     - `Matrix`: Initial states matrix constructed based on the input parameters.
 
 """
-function create_initial_states_Matrix(T::Int, freq_seasonal::Int, steps_ahead::Int,
-                                      level::Bool, trend::Bool, seasonal::Bool)::Matrix
+function create_initial_states_Matrix(
+    T::Int, freq_seasonal::Int, steps_ahead::Int, level::Bool, trend::Bool, seasonal::Bool
+)::Matrix
     initial_states_matrix = zeros(T + steps_ahead, 0)
-    level ? initial_states_matrix = hcat(initial_states_matrix, ones(T + steps_ahead, 1)) :
-    nothing
-    trend ?
-    initial_states_matrix = hcat(initial_states_matrix,
-                                 vcat([0], collect(1:(T + steps_ahead - 1)))) : nothing
+    if level
+        initial_states_matrix = hcat(initial_states_matrix, ones(T + steps_ahead, 1))
+    else
+        nothing
+    end
+    if trend
+        initial_states_matrix = hcat(
+        initial_states_matrix, vcat([0], collect(1:(T + steps_ahead - 1)))
+    )
+    else
+        nothing
+    end
 
     if seasonal
         γ1_matrix = zeros(T + steps_ahead, freq_seasonal)
@@ -215,25 +253,46 @@ create_X(level::Bool, stochastic_level::Bool, trend::Bool, stochastic_trend::Boo
     # Returns
     - `Matrix`: StateSpaceLearning matrix X constructed based on the input parameters.
 """
-function create_X(level::Bool, stochastic_level::Bool, trend::Bool, stochastic_trend::Bool,
-                  seasonal::Bool, stochastic_seasonal::Bool, freq_seasonal::Int,
-                  outlier::Bool, ζ_ω_threshold::Int, Exogenous_X::Matrix{Fl},
-                  steps_ahead::Int=0,
-                  Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where {Fl}
+function create_X(
+    level::Bool,
+    stochastic_level::Bool,
+    trend::Bool,
+    stochastic_trend::Bool,
+    seasonal::Bool,
+    stochastic_seasonal::Bool,
+    freq_seasonal::Int,
+    outlier::Bool,
+    ζ_ω_threshold::Int,
+    Exogenous_X::Matrix{Fl},
+    steps_ahead::Int=0,
+    Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2)),
+) where {Fl}
     T = size(Exogenous_X, 1)
 
     ξ_matrix = stochastic_level ? create_ξ(T, steps_ahead) : zeros(T + steps_ahead, 0)
-    ζ_matrix = stochastic_trend ? create_ζ(T, steps_ahead, ζ_ω_threshold) :
-               zeros(T + steps_ahead, 0)
-    ω_matrix = stochastic_seasonal ?
-               create_ω(T, freq_seasonal, steps_ahead, ζ_ω_threshold) :
-               zeros(T + steps_ahead, 0)
+    ζ_matrix = if stochastic_trend
+        create_ζ(T, steps_ahead, ζ_ω_threshold)
+    else
+        zeros(T + steps_ahead, 0)
+    end
+    ω_matrix = if stochastic_seasonal
+        create_ω(T, freq_seasonal, steps_ahead, ζ_ω_threshold)
+    else
+        zeros(T + steps_ahead, 0)
+    end
     o_matrix = outlier ? create_o_matrix(T, steps_ahead) : zeros(T + steps_ahead, 0)
 
-    initial_states_matrix = create_initial_states_Matrix(T, freq_seasonal, steps_ahead,
-                                                         level, trend, seasonal)
-    return hcat(initial_states_matrix, ξ_matrix, ζ_matrix, ω_matrix, o_matrix,
-                vcat(Exogenous_X, Exogenous_Forecast))
+    initial_states_matrix = create_initial_states_Matrix(
+        T, freq_seasonal, steps_ahead, level, trend, seasonal
+    )
+    return hcat(
+        initial_states_matrix,
+        ξ_matrix,
+        ζ_matrix,
+        ω_matrix,
+        o_matrix,
+        vcat(Exogenous_X, Exogenous_Forecast),
+    )
 end
 
 """
@@ -286,15 +345,20 @@ function get_components_indexes(model::StructuralModel)::Dict
     end
 
     if model.stochastic_trend
-        ζ_indexes = collect((FINAL_INDEX + 1):(FINAL_INDEX + ζ_size(T, model.ζ_ω_threshold)))
+        ζ_indexes = collect(
+            (FINAL_INDEX + 1):(FINAL_INDEX + ζ_size(T, model.ζ_ω_threshold))
+        )
         FINAL_INDEX += length(ζ_indexes)
     else
         ζ_indexes = Int[]
     end
 
     if model.stochastic_seasonal
-        ω_indexes = collect((FINAL_INDEX + 1):(FINAL_INDEX + ω_size(T, model.freq_seasonal,
-                                                                    model.ζ_ω_threshold)))
+        ω_indexes = collect(
+            (FINAL_INDEX + 1):(FINAL_INDEX + ω_size(
+                T, model.freq_seasonal, model.ζ_ω_threshold
+            )),
+        )
         FINAL_INDEX += length(ω_indexes)
     else
         ω_indexes = Int[]
@@ -309,10 +373,17 @@ function get_components_indexes(model::StructuralModel)::Dict
 
     exogenous_indexes = collect((FINAL_INDEX + 1):(FINAL_INDEX + model.n_exogenous))
 
-    return Dict("μ1" => μ1_indexes, "ν1" => ν1_indexes, "γ1" => γ1_indexes,
-                "ξ" => ξ_indexes, "ζ" => ζ_indexes, "ω" => ω_indexes, "o" => o_indexes,
-                "Exogenous_X" => exogenous_indexes,
-                "initial_states" => initial_states_indexes)
+    return Dict(
+        "μ1" => μ1_indexes,
+        "ν1" => ν1_indexes,
+        "γ1" => γ1_indexes,
+        "ξ" => ξ_indexes,
+        "ζ" => ζ_indexes,
+        "ω" => ω_indexes,
+        "o" => o_indexes,
+        "Exogenous_X" => exogenous_indexes,
+        "initial_states" => initial_states_indexes,
+    )
 end
 
 """
@@ -330,8 +401,12 @@ end
     - `Dict`: Dictionary containing variances for each innovation component.
 
 """
-function get_variances(model::StructuralModel, ε::Vector{Fl}, coefs::Vector{Fl},
-                       components_indexes::Dict{String,Vector{Int}})::Dict where {Fl}
+function get_variances(
+    model::StructuralModel,
+    ε::Vector{Fl},
+    coefs::Vector{Fl},
+    components_indexes::Dict{String,Vector{Int}},
+)::Dict where {Fl}
     model_innovations = get_model_innovations(model)
 
     variances = Dict()
@@ -383,8 +458,9 @@ end
     # Returns
 
 """
-function get_innovation_simulation_X(model::StructuralModel, innovation::String,
-                                     steps_ahead::Int)
+function get_innovation_simulation_X(
+    model::StructuralModel, innovation::String, steps_ahead::Int
+)
     if innovation == "ξ"
         return create_ξ(length(model.y) + steps_ahead + 1, 0)
     elseif innovation == "ζ"
