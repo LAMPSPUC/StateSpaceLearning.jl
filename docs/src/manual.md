@@ -16,10 +16,10 @@ model = StructuralModel(y)
 fit!(model)
 
 # Point Forecast
-prediction = StateSpaceLearning.forecast(output, 12) #Gets a 12 steps ahead prediction
+prediction = StateSpaceLearning.forecast(model, 12) #Gets a 12 steps ahead prediction
 
 # Scenarios Path Simulation
-simulation = StateSpaceLearning.simulate(output, 12, 1000) #Gets 1000 scenarios path of 12 steps ahead predictions
+simulation = StateSpaceLearning.simulate(model, 12, 1000) #Gets 1000 scenarios path of 12 steps ahead predictions
 ```
 
 ## StructuralModel Arguments

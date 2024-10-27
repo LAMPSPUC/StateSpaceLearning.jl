@@ -1,8 +1,8 @@
 # StateSpaceLearning
 
-| **Build Status** | **Coverage** | **Documentation** |
+| **Build Status** | **Coverage** | **Documentation** | **CodeStyle** |
 |:-----------------:|:-----------------:|:-----------------:|
-| [![ci](https://github.com/LAMPSPUC/StateSpaceLearning.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/LAMPSPUC/StateSpaceLearning.jl/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/LAMPSPUC/StateSpaceLearning.jl/graph/badge.svg?token=VDpuXvPSI2)](https://codecov.io/gh/LAMPSPUC/StateSpaceLearning.jl) | [![](https://img.shields.io/badge/docs-latest-blue.svg)]( https://lampspuc.github.io/StateSpaceLearning.jl/)
+| [![ci](https://github.com/LAMPSPUC/StateSpaceLearning.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/LAMPSPUC/StateSpaceLearning.jl/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/LAMPSPUC/StateSpaceLearning.jl/graph/badge.svg?token=VDpuXvPSI2)](https://codecov.io/gh/LAMPSPUC/StateSpaceLearning.jl) | [![](https://img.shields.io/badge/docs-latest-blue.svg)]( https://lampspuc.github.io/StateSpaceLearning.jl/) | [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
 StateSpaceLearning.jl is a package for modeling and forecasting time series in a high-dimension regression framework.
 
@@ -20,10 +20,10 @@ model = StructuralModel(y)
 fit!(model)
 
 # Point Forecast
-prediction = StateSpaceLearning.forecast(output, 12) #Gets a 12 steps ahead prediction
+prediction = StateSpaceLearning.forecast(model, 12) #Gets a 12 steps ahead prediction
 
 # Scenarios Path Simulation
-simulation = StateSpaceLearning.simulate(output, 12, 1000) #Gets 1000 scenarios path of 12 steps ahead predictions
+simulation = StateSpaceLearning.simulate(model, 12, 1000) #Gets 1000 scenarios path of 12 steps ahead predictions
 ```
 
 ## StructuralModel Arguments

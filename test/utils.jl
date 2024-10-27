@@ -2,44 +2,60 @@
     Exogenous_X1 = rand(10, 3)
     Exogenous_X2 = zeros(10, 0)
 
-    Basic_Structural = StateSpaceLearning.StructuralModel(rand(10); level=true,
-                                                          stochastic_level=true, trend=true,
-                                                          stochastic_trend=true,
-                                                          seasonal=true,
-                                                          stochastic_seasonal=true,
-                                                          freq_seasonal=2, outlier=true,
-                                                          ζ_ω_threshold=0,
-                                                          Exogenous_X=Exogenous_X1)
-    Local_Level = StateSpaceLearning.StructuralModel(rand(10); level=true,
-                                                     stochastic_level=true, trend=false,
-                                                     stochastic_trend=false, seasonal=false,
-                                                     stochastic_seasonal=false,
-                                                     freq_seasonal=2, outlier=true,
-                                                     ζ_ω_threshold=0,
-                                                     Exogenous_X=Exogenous_X1)
-    Local_Linear_Trend1 = StateSpaceLearning.StructuralModel(rand(10); level=true,
-                                                             stochastic_level=true,
-                                                             trend=true,
-                                                             stochastic_trend=true,
-                                                             seasonal=false,
-                                                             stochastic_seasonal=false,
-                                                             freq_seasonal=2, outlier=false,
-                                                             ζ_ω_threshold=0,
-                                                             Exogenous_X=Exogenous_X1)
-    Local_Linear_Trend2 = StateSpaceLearning.StructuralModel(rand(10); level=true,
-                                                             stochastic_level=true,
-                                                             trend=true,
-                                                             stochastic_trend=true,
-                                                             seasonal=false,
-                                                             stochastic_seasonal=false,
-                                                             freq_seasonal=2, outlier=false,
-                                                             ζ_ω_threshold=0,
-                                                             Exogenous_X=Exogenous_X2)
+    Basic_Structural = StateSpaceLearning.StructuralModel(
+        rand(10);
+        level=true,
+        stochastic_level=true,
+        trend=true,
+        stochastic_trend=true,
+        seasonal=true,
+        stochastic_seasonal=true,
+        freq_seasonal=2,
+        outlier=true,
+        ζ_ω_threshold=0,
+        Exogenous_X=Exogenous_X1,
+    )
+    Local_Level = StateSpaceLearning.StructuralModel(
+        rand(10);
+        level=true,
+        stochastic_level=true,
+        trend=false,
+        stochastic_trend=false,
+        seasonal=false,
+        stochastic_seasonal=false,
+        freq_seasonal=2,
+        outlier=true,
+        ζ_ω_threshold=0,
+        Exogenous_X=Exogenous_X1,
+    )
+    Local_Linear_Trend1 = StateSpaceLearning.StructuralModel(
+        rand(10);
+        level=true,
+        stochastic_level=true,
+        trend=true,
+        stochastic_trend=true,
+        seasonal=false,
+        stochastic_seasonal=false,
+        freq_seasonal=2,
+        outlier=false,
+        ζ_ω_threshold=0,
+        Exogenous_X=Exogenous_X1,
+    )
+    Local_Linear_Trend2 = StateSpaceLearning.StructuralModel(
+        rand(10);
+        level=true,
+        stochastic_level=true,
+        trend=true,
+        stochastic_trend=true,
+        seasonal=false,
+        stochastic_seasonal=false,
+        freq_seasonal=2,
+        outlier=false,
+        ζ_ω_threshold=0,
+        Exogenous_X=Exogenous_X2,
+    )
 
-    models = [Basic_Structural,
-              Local_Level,
-              Local_Linear_Trend1,
-              Local_Linear_Trend2]
+    models = [Basic_Structural, Local_Level, Local_Linear_Trend1, Local_Linear_Trend2]
 
     for idx in eachindex(models)
         model = models[idx]
@@ -65,16 +81,18 @@ end
 
     valid_indexes1 = setdiff(collect(1:30), [11, 12])
     estimation_ε1 = rand(length(valid_indexes1))
-    ε1, fitted1 = StateSpaceLearning.get_fit_and_residuals(estimation_ε1, coefs, X,
-                                                           valid_indexes1, T)
+    ε1, fitted1 = StateSpaceLearning.get_fit_and_residuals(
+        estimation_ε1, coefs, X, valid_indexes1, T
+    )
     @test all(isnan.(ε1[11:12]))
     @test !all(isnan.(ε1[valid_indexes1]))
     @test !all(isnan.(fitted1))
 
     valid_indexes2 = collect(1:30)
     estimation_ε2 = rand(length(valid_indexes2))
-    ε2, fitted2 = StateSpaceLearning.get_fit_and_residuals(estimation_ε2, coefs, X,
-                                                           valid_indexes2, T)
+    ε2, fitted2 = StateSpaceLearning.get_fit_and_residuals(
+        estimation_ε2, coefs, X, valid_indexes2, T
+    )
     @test !all(isnan.(ε2[valid_indexes2]))
     @test !all(isnan.(fitted2))
 end
