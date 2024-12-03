@@ -327,7 +327,7 @@ CSV.write("paper_tests/simulation_test/results_metrics/metrics_confusion_matrix.
 
 df_mse_bias = DataFrame()
 
-function convert_to_sci_notation(num::Float64)
+function convert_to_sci_notation(num::AbstractFloat)
     # Get the exponent part of the number in scientific notation
     exp_part = floor(log10(abs(num)))
 

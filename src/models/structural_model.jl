@@ -1,5 +1,5 @@
 mutable struct StructuralModel <: StateSpaceLearningModel
-    y::Vector
+    y::Union{Vector,Matrix}
     X::Matrix
     level::Bool
     stochastic_level::Bool
@@ -11,10 +11,10 @@ mutable struct StructuralModel <: StateSpaceLearningModel
     outlier::Bool
     ζ_ω_threshold::Int
     n_exogenous::Int
-    output::Union{Output,Nothing}
+    output::Union{Vector{Output},Output,Nothing}
 
     function StructuralModel(
-        y::Vector{Fl};
+        y::Union{Vector{Fl},Matrix{Fl}};
         level::Bool=true,
         stochastic_level::Bool=true,
         trend::Bool=true,
@@ -24,12 +24,19 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         freq_seasonal::Int=12,
         outlier::Bool=true,
         ζ_ω_threshold::Int=12,
-        Exogenous_X::Matrix{Fl}=zeros(length(y), 0),
+        Exogenous_X::Matrix{Fl}=if typeof(y) <: Vector
+            zeros(length(y), 0)
+        else
+            zeros(size(y, 1), 0)
+        end,
     ) where {Fl}
         n_exogenous = size(Exogenous_X, 2)
         @assert !has_intercept(Exogenous_X) "Exogenous matrix must not have an intercept column"
-        @assert seasonal ? length(y) > freq_seasonal : true "Time series must be longer than the seasonal period"
-
+        if typeof(y) <: Vector
+            @assert seasonal ? length(y) > freq_seasonal : true "Time series must be longer than the seasonal period"
+        else
+            @assert seasonal ? size(y, 1) > freq_seasonal : true "Time series must be longer than the seasonal period"
+        end
         X = create_X(
             level,
             stochastic_level,
@@ -119,7 +126,7 @@ end
 
 """
 function create_ξ(T::Int, steps_ahead::Int)::Matrix
-    ξ_matrix = Matrix{Float64}(undef, T + steps_ahead, T - 1)
+    ξ_matrix = Matrix{AbstractFloat}(undef, T + steps_ahead, T - 1)
     for t in 1:(T + steps_ahead)
         ξ_matrix[t, :] = t < T ? vcat(ones(t - 1), zeros(T - t)) : ones(T - 1)
     end
@@ -142,7 +149,7 @@ create_ζ(T::Int, steps_ahead::Int, ζ_ω_threshold::Int)::Matrix
 
 """
 function create_ζ(T::Int, steps_ahead::Int, ζ_ω_threshold::Int)::Matrix
-    ζ_matrix = Matrix{Float64}(undef, T + steps_ahead, T - 2)
+    ζ_matrix = Matrix{AbstractFloat}(undef, T + steps_ahead, T - 2)
     for t in 1:(T + steps_ahead)
         ζ_matrix[t, :] = if t < T
             vcat(collect((t - 2):-1:1), zeros(T - 2 - length(collect((t - 2):-1:1))))
@@ -230,9 +237,20 @@ function create_initial_states_Matrix(
 end
 
 """
-create_X(level::Bool, stochastic_level::Bool, trend::Bool, stochastic_trend::Bool,
-                  seasonal::Bool, stochastic_seasonal::Bool, freq_seasonal::Int, outlier::Bool, ζ_ω_threshold::Int, Exogenous_X::Matrix{Fl},
-                  steps_ahead::Int=0, Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2))) where Fl
+create_X(
+    level::Bool,
+    stochastic_level::Bool,
+    trend::Bool,
+    stochastic_trend::Bool,
+    seasonal::Bool,
+    stochastic_seasonal::Bool,
+    freq_seasonal::Int,
+    outlier::Bool,
+    ζ_ω_threshold::Int,
+    Exogenous_X::Matrix{Fl},
+    steps_ahead::Int=0,
+    Exogenous_Forecast::Matrix{Tl}=zeros(steps_ahead, size(Exogenous_X, 2)),
+) where {Fl <: AbstractFloat, Tl <: AbstractFloat}
 
     Creates the StateSpaceLearning matrix X based on the model type and input parameters.
 
@@ -265,8 +283,8 @@ function create_X(
     ζ_ω_threshold::Int,
     Exogenous_X::Matrix{Fl},
     steps_ahead::Int=0,
-    Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, size(Exogenous_X, 2)),
-) where {Fl}
+    Exogenous_Forecast::Matrix{Tl}=zeros(steps_ahead, size(Exogenous_X, 2)),
+) where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     T = size(Exogenous_X, 1)
 
     ξ_matrix = stochastic_level ? create_ξ(T, steps_ahead) : zeros(T + steps_ahead, 0)
@@ -296,7 +314,7 @@ function create_X(
 end
 
 """
-function get_components_indexes(model::StructuralModel)::Dict where Fl
+function get_components_indexes(model::StructuralModel)::Dict
 
     Generates indexes dict for different components based on the model type and input parameters.
 
@@ -308,7 +326,7 @@ function get_components_indexes(model::StructuralModel)::Dict where Fl
 
 """
 function get_components_indexes(model::StructuralModel)::Dict
-    T = length(model.y)
+    T = typeof(model.y) <: Vector ? length(model.y) : size(model.y, 1)
 
     FINAL_INDEX = 0
 
@@ -387,7 +405,12 @@ function get_components_indexes(model::StructuralModel)::Dict
 end
 
 """
-    function get_variances(model::StructuralModel, ε::Vector{Fl}, coefs::Vector{Fl}, components_indexes::Dict{String, Vector{Int}})::Dict where Fl
+get_variances(
+    model::StructuralModel,
+    ε::Vector{Fl},
+    coefs::Vector{Tl},
+    components_indexes::Dict{String,Vector{Int}},
+)::Dict where {Fl, Tl}
 
     Calculates variances for each innovation component and for the residuals.
 
@@ -404,9 +427,9 @@ end
 function get_variances(
     model::StructuralModel,
     ε::Vector{Fl},
-    coefs::Vector{Fl},
+    coefs::Vector{Tl},
     components_indexes::Dict{String,Vector{Int}},
-)::Dict where {Fl}
+)::Dict where {Fl,Tl}
     model_innovations = get_model_innovations(model)
 
     variances = Dict()
@@ -415,6 +438,47 @@ function get_variances(
     end
     variances["ε"] = var(ε)
     return variances
+end
+
+"""
+get_variances(
+    model::StructuralModel,
+    ε::Vector{Vector{Fl}},
+    coefs::Vector{Vector{Tl}},
+    components_indexes::Dict{String,Vector{Int}},
+)::Vector{Dict} where {Fl, Tl}
+
+    Calculates variances for each innovation component and for the residuals.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `ε::Vector{Vector{Fl}}`: Vector of residuals.
+    - `coefs::Vector{Vector{Fl}}`: Vector of coefficients.
+    - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
+
+    # Returns
+    - `Vector{Dict}`: Dictionary containing variances for each innovation component.
+
+"""
+function get_variances(
+    model::StructuralModel,
+    ε::Vector{Vector{Fl}},
+    coefs::Vector{Vector{Tl}},
+    components_indexes::Dict{String,Vector{Int}},
+)::Vector{Dict} where {Fl,Tl}
+    model_innovations = get_model_innovations(model)
+
+    variances_vec = Dict[]
+
+    for i in eachindex(coefs)
+        variances = Dict()
+        for component in model_innovations
+            variances[component] = var(coefs[i][components_indexes[component]])
+        end
+        variances["ε"] = var(ε[i])
+        push!(variances_vec, variances)
+    end
+    return variances_vec
 end
 
 """

@@ -24,12 +24,12 @@ function get_dummy_indexes(Exogenous_X::Matrix{Fl}) where {Fl}
 end
 
 """
-    get_outlier_duplicate_columns(Estimation_X::Matrix{Tl}, components_indexes::Dict{String, Vector{Int}}) where{Tl}
+    get_outlier_duplicate_columns(Estimation_X::Matrix{Fl}, components_indexes::Dict{String, Vector{Int}}) where{Fl}
 
     Identifies and returns the indexes of outlier columns that are duplicates of dummy variables in the exogenous matrix.
 
     # Arguments
-    - `Estimation_X::Matrix{Tl}`: Matrix used for estimation.
+    - `Estimation_X::Matrix{Fl}`: Matrix used for estimation.
     - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
 
     # Returns
@@ -37,8 +37,8 @@ end
 
 """
 function get_outlier_duplicate_columns(
-    Estimation_X::Matrix{Tl}, components_indexes::Dict{String,Vector{Int}}
-) where {Tl}
+    Estimation_X::Matrix{Fl}, components_indexes::Dict{String,Vector{Int}}
+) where {Fl}
     if !haskey(components_indexes, "o")
         return []
     else
@@ -52,8 +52,13 @@ function get_outlier_duplicate_columns(
 end
 
 """
-    get_path_information_criteria(model::GLMNetPath, Lasso_X::Matrix{Tl}, Lasso_y::Vector{Fl},
-        information_criteria::String; intercept::Bool = true)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+    get_path_information_criteria(
+    model::GLMNetPath,
+    Lasso_X::Matrix{Tl},
+    Lasso_y::Vector{Fl},
+    information_criteria::String;
+    intercept::Bool=true,
+)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
 
     Calculates the information criteria along the regularization path of a GLMNet model and returns coefficients and residuals of the best model based on the selected information criteria.
 
@@ -65,7 +70,7 @@ end
     - `intercept::Bool`: Flag for intercept inclusion in the model (default: true).
 
     # Returns
-    - `Tuple{Vector{Float64}, Vector{Float64}}`: Tuple containing coefficients and residuals of the best model.
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple containing coefficients and residuals of the best model.
 
 """
 function get_path_information_criteria(
@@ -74,12 +79,14 @@ function get_path_information_criteria(
     Lasso_y::Vector{Fl},
     information_criteria::String;
     intercept::Bool=true,
-)::Tuple{Vector{Float64},Vector{Float64}} where {Tl,Fl}
+)::Tuple{
+    Vector{AbstractFloat},Vector{AbstractFloat}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     path_size = length(model.lambda)
     T = size(Lasso_X, 1)
     K = count(i -> i != 0, model.betas; dims=1)'
 
-    method_vec = Vector{Float64}(undef, path_size)
+    method_vec = Vector{AbstractFloat}(undef, path_size)
     for i in 1:path_size
         fit = Lasso_X * model.betas[:, i] .+ model.a0[i]
         ε = Lasso_y - fit
@@ -101,33 +108,39 @@ function get_path_information_criteria(
 end
 
 """
-    fit_glmnet(Lasso_X::Matrix{Tl}, Lasso_y::Vector{Fl}, α::Float64;
-               information_criteria::String = "aic",
-               penalty_factor::Vector{Float64}=ones(size(Lasso_X,2) - 1),
-               intercept::Bool = intercept)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+    fit_glmnet(
+    Lasso_X::Matrix{Tl},
+    Lasso_y::Vector{Fl},
+    α::AbstractFloat;
+    information_criteria::String="aic",
+    penalty_factor::Vector{Pl}=ones(size(Lasso_X, 2) - 1),
+    intercept::Bool=intercept,
+)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat, Pl <: AbstractFloat}
 
     Fits a GLMNet model to the provided data and returns coefficients and residuals based on selected criteria.
 
     # Arguments
     - `Lasso_X::Matrix{Tl}`: Matrix of predictors for estimation.
     - `Lasso_y::Vector{Fl}`: Vector of response values for estimation.
-    - `α::Float64`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
+    - `α::AbstractFloat`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
     - `information_criteria::String`: Information Criteria method for hyperparameter selection (default: aic).
-    - `penalty_factor::Vector{Float64}`: Penalty factors for each predictor (default: ones(size(Lasso_X, 2) - 1)).
+    - `penalty_factor::Vector{Pl}`: Penalty factors for each predictor (default: ones(size(Lasso_X, 2) - 1)).
     - `intercept::Bool`: Flag for intercept inclusion in the model (default: true).
 
     # Returns
-    - `Tuple{Vector{Float64}, Vector{Float64}}`: Tuple containing coefficients and residuals of the best model.
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple containing coefficients and residuals of the best model.
 
 """
 function fit_glmnet(
     Lasso_X::Matrix{Tl},
     Lasso_y::Vector{Fl},
-    α::Float64;
+    α::AbstractFloat;
     information_criteria::String="aic",
-    penalty_factor::Vector{Float64}=ones(size(Lasso_X, 2) - 1),
+    penalty_factor::Vector{Pl}=ones(size(Lasso_X, 2) - 1),
     intercept::Bool=intercept,
-)::Tuple{Vector{Float64},Vector{Float64}} where {Tl,Fl}
+)::Tuple{
+    Vector{AbstractFloat},Vector{AbstractFloat}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat,Pl<:AbstractFloat}
     model = glmnet(
         Lasso_X,
         Lasso_y;
@@ -143,36 +156,45 @@ function fit_glmnet(
 end
 
 """
-    fit_lasso(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, α::Float64, information_criteria::String,
-              penalize_exogenous::Bool, components_indexes::Dict{String, Vector{Int}}, penalty_factor::Vector{Float64};
-              rm_average::Bool = false)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+    fit_lasso(
+    Estimation_X::Matrix{Tl},
+    estimation_y::Vector{Fl},
+    α::AbstractFloat,
+    information_criteria::String,
+    penalize_exogenous::Bool,
+    components_indexes::Dict{String,Vector{Int}},
+    penalty_factor::Vector{Pl};
+    rm_average::Bool=false,
+)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat, Pl <: AbstractFloat}
 
     Fits a Lasso regression model to the provided data and returns coefficients and residuals based on selected criteria.
 
     # Arguments
-    - `Estimation_X::Matrix{Tl}`: Matrix of predictors for estimation.
+    - `Estimation_X::Matrix{Fl}`: Matrix of predictors for estimation.
     - `estimation_y::Vector{Fl}`: Vector of response values for estimation.
-    - `α::Float64`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
+    - `α::AbstractFloat`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
     - `information_criteria::String`: Information Criteria method for hyperparameter selection (default: aic).
     - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
     - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
-    - `penalty_factor::Vector{Float64}`: Penalty factors for each predictor.
+    - `penalty_factor::Vector{Fl}`: Penalty factors for each predictor.
     - `rm_average::Bool`: Flag to consider if the intercept will be calculated is the average of the time series (default: false).
 
     # Returns
-    - `Tuple{Vector{Float64}, Vector{Float64}}`: Tuple containing coefficients and residuals of the fitted Lasso model.
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple containing coefficients and residuals of the fitted Lasso model.
 
 """
 function fit_lasso(
     Estimation_X::Matrix{Tl},
     estimation_y::Vector{Fl},
-    α::Float64,
+    α::AbstractFloat,
     information_criteria::String,
     penalize_exogenous::Bool,
     components_indexes::Dict{String,Vector{Int}},
-    penalty_factor::Vector{Float64};
+    penalty_factor::Vector{Pl};
     rm_average::Bool=false,
-)::Tuple{Vector{Float64},Vector{Float64}} where {Tl,Fl}
+)::Tuple{
+    Vector{AbstractFloat},Vector{AbstractFloat}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat,Pl<:AbstractFloat}
     outlier_duplicate_columns = get_outlier_duplicate_columns(
         Estimation_X, components_indexes
     )
@@ -226,39 +248,45 @@ function fit_lasso(
 end
 
 """
-    estimation_procedure(Estimation_X::Matrix{Tl}, estimation_y::Vector{Fl}, 
-                        components_indexes::Dict{String, Vector{Int}}, α::Float64, 
-                        information_criteria::String, 
-                        ϵ::Float64, 
-                        penalize_exogenous::Bool, 
-                        penalize_initial_states::Bool)::Tuple{Vector{Float64}, Vector{Float64}} where {Tl, Fl}
+    estimation_procedure(
+    Estimation_X::Matrix{Tl},
+    estimation_y::Vector{Fl},
+    components_indexes::Dict{String,Vector{Int}},
+    α::AbstractFloat,
+    information_criteria::String,
+    ϵ::AbstractFloat,
+    penalize_exogenous::Bool,
+    penalize_initial_states::Bool,
+)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
 
     Fits an Adaptive Lasso (AdaLasso) regression model to the provided data and returns coefficients and residuals.
 
     # Arguments
-    - `Estimation_X::Matrix{Tl}`: Matrix of predictors for estimation.
+    - `Estimation_X::Matrix{Fl}`: Matrix of predictors for estimation.
     - `estimation_y::Vector{Fl}`: Vector of response values for estimation.
     - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
-    - `α::Float64`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
+    - `α::AbstractFloat`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
     - `information_criteria::String`: Information Criteria method for hyperparameter selection (default: aic).
-    - `ϵ::Float64`: Non negative value to handle 0 coefs on the first lasso step (default: 0.05).
+    - `ϵ::AbstractFloat`: Non negative value to handle 0 coefs on the first lasso step (default: 0.05).
     - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
     - `penalize_initial_states::Bool`: Flag for selecting initial states. When false the penalty factor for these variables will be set to 0.
 
     # Returns
-    - `Tuple{Vector{Float64}, Vector{Float64}}`: Tuple containing coefficients and residuals of the fitted AdaLasso model.
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple containing coefficients and residuals of the fitted AdaLasso model.
 
 """
 function estimation_procedure(
     Estimation_X::Matrix{Tl},
     estimation_y::Vector{Fl},
     components_indexes::Dict{String,Vector{Int}},
-    α::Float64,
+    α::AbstractFloat,
     information_criteria::String,
-    ϵ::Float64,
+    ϵ::AbstractFloat,
     penalize_exogenous::Bool,
     penalize_initial_states::Bool,
-)::Tuple{Vector{Float64},Vector{Float64}} where {Tl,Fl}
+)::Tuple{
+    Vector{AbstractFloat},Vector{AbstractFloat}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     @assert 0 <= α <= 1 "α must be in [0, 1]"
     @assert ϵ > 0 "ϵ must be positive"
 
@@ -279,7 +307,7 @@ function estimation_procedure(
         )
     else
         penalty_factor = ones(size(Estimation_X, 2))
-        penalty_factor[components_indexes["initial_states"][2:end]] .= 0
+        penalty_factor[components_indexes["initial_states"][1:end]] .= 0
         coefs, _ = fit_lasso(
             Estimation_X,
             estimation_y,
@@ -323,7 +351,7 @@ function estimation_procedure(
         end
     else
         if !penalize_initial_states
-            ts_penalty_factor[components_indexes["initial_states"][2:end]] .= 0
+            ts_penalty_factor[components_indexes["initial_states"][1:end]] .= 0
         else
             nothing
         end
@@ -339,4 +367,65 @@ function estimation_procedure(
         ts_penalty_factor;
         rm_average=false,
     )
+end
+
+"""
+    estimation_procedure(
+    Estimation_X::Matrix{Tl},
+    estimation_y::Matrix{Fl},
+    components_indexes::Dict{String,Vector{Int}},
+    α::AbstractFloat,
+    information_criteria::String,
+    ϵ::AbstractFloat,
+    penalize_exogenous::Bool,
+    penalize_initial_states::Bool,
+)::Tuple{Vector{Vector{AbstractFloat}},Vector{Vector{AbstractFloat}}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
+
+    Fits an Adaptive Lasso (AdaLasso) regression model to the provided data and returns coefficients and residuals.
+
+    # Arguments
+    - `Estimation_X::Matrix{Fl}`: Matrix of predictors for estimation.
+    - `estimation_y::Matrix{Fl}`: Matrix of response values for estimation.
+    - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
+    - `α::AbstractFloat`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
+    - `information_criteria::String`: Information Criteria method for hyperparameter selection (default: aic).
+    - `ϵ::AbstractFloat`: Non negative value to handle 0 coefs on the first lasso step (default: 0.05).
+    - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
+    - `penalize_initial_states::Bool`: Flag for selecting initial states. When false the penalty factor for these variables will be set to 0.
+
+    # Returns
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple containing coefficients and residuals of the fitted AdaLasso model.
+
+"""
+function estimation_procedure(
+    Estimation_X::Matrix{Tl},
+    estimation_y::Matrix{Fl},
+    components_indexes::Dict{String,Vector{Int}},
+    α::AbstractFloat,
+    information_criteria::String,
+    ϵ::AbstractFloat,
+    penalize_exogenous::Bool,
+    penalize_initial_states::Bool,
+)::Tuple{
+    Vector{Vector{AbstractFloat}},Vector{Vector{AbstractFloat}}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
+    coefs_vec = Vector{AbstractFloat}[]
+    ε_vec = Vector{AbstractFloat}[]
+    N_series = size(estimation_y, 2)
+
+    for i in 1:N_series
+        coef_i, ε_i = estimation_procedure(
+            Estimation_X,
+            estimation_y[:, i],
+            components_indexes,
+            α,
+            information_criteria,
+            ϵ,
+            penalize_exogenous,
+            penalize_initial_states,
+        )
+        push!(coefs_vec, coef_i)
+        push!(ε_vec, ε_i)
+    end
+    return coefs_vec, ε_vec
 end
