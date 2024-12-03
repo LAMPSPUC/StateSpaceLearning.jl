@@ -8,13 +8,13 @@ function get_confusion_matrix(selected, true_features, false_features)
 end
 
 function get_SSL_results(
-    y_train::Vector{Float64},
+    y_train::Vector{Fl},
     true_features::Vector{Int64},
     false_features::Vector{Int64},
-    X_train::Matrix{Float64},
+    X_train::Matrix{Fl},
     inf_criteria::String,
-    true_β::Vector{Float64},
-)
+    true_β::Vector{Fl},
+) where Fl <: AbstractFloat
     series_result = nothing
 
     model = StateSpaceLearning.StructuralModel(
@@ -72,13 +72,13 @@ function get_SSL_results(
 end
 
 function get_SS_res_results(
-    y_train::Vector{Float64},
+    y_train::Vector{Fl},
     true_features::Vector{Int64},
     false_features::Vector{Int64},
-    X_train::Matrix{Float64},
+    X_train::Matrix{Fl},
     inf_criteria::String,
-    true_β::Vector{Float64},
-)
+    true_β::Vector{Fl},
+) where Fl <: AbstractFloat
     py"""
     import math
     import statsmodels.api as sm
@@ -141,7 +141,7 @@ function get_SS_res_results(
     return series_result, converged
 end
 
-function get_exogenous_ss_inf_criteria(y_train::Vector{Float64}, X_train::Matrix{Float64})
+function get_exogenous_ss_inf_criteria(y_train::Vector{Fl}, X_train::Matrix{Fl}) where Fl <: AbstractFloat
     py"""
     import math
     import statsmodels.api as sm
@@ -160,13 +160,13 @@ function get_exogenous_ss_inf_criteria(y_train::Vector{Float64}, X_train::Matrix
 end
 
 function get_forward_ss(
-    y_train::Vector{Float64},
+    y_train::Vector{Fl},
     true_features::Vector{Int64},
     false_features::Vector{Int64},
-    X_train::Matrix{Float64},
+    X_train::Matrix{Fl},
     inf_criteria::String,
-    true_β::Vector{Float64},
-)
+    true_β::Vector{Fl},
+) where Fl <: AbstractFloat
     best_inf_crit = Inf
     current_inf_crit = 0
     coefs = nothing

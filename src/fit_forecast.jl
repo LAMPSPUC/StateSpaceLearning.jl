@@ -1,9 +1,9 @@
 
 """
 function fit!(model::StateSpaceLearningModel,
-                    α::Float64 = 0.1, 
+                    α::AbstractFloat = 0.1, 
                     information_criteria::String = "aic", 
-                    ϵ::Float64 = 0.05, 
+                    ϵ::AbstractFloat = 0.05, 
                     penalize_exogenous::Bool = true, 
                     penalize_initial_states::Bool = true,
                     )
@@ -12,17 +12,17 @@ function fit!(model::StateSpaceLearningModel,
 
     # Arguments
     model::StateSpaceLearningModel: Model to be fitted.
-    α::Float64: Elastic net mixing parameter (default: 0.1).
+    α::AbstractFloat: Elastic net mixing parameter (default: 0.1).
     information_criteria::String: Method for hyperparameter selection (default: "aic").
-    ϵ::Float64: Non negative value to handle 0 coefs on the first lasso step (default: 0.05).
+    ϵ::AbstractFloat: Non negative value to handle 0 coefs on the first lasso step (default: 0.05).
     penalize_exogenous::Bool: If true, penalize exogenous variables (default: true).
     penalize_initial_states::Bool: If true, penalize initial states (default: true).
 """
 function fit!(
     model::StateSpaceLearningModel;
-    α::Float64=0.1,
+    α::AbstractFloat=0.1,
     information_criteria::String="aic",
-    ϵ::Float64=0.05,
+    ϵ::AbstractFloat=0.05,
     penalize_exogenous::Bool=true,
     penalize_initial_states::Bool=true,
 )
@@ -50,16 +50,25 @@ function fit!(
 
     residuals_variances = get_variances(model, estimation_ε, coefs, components_indexes)
 
+    T = typeof(model.y) <:Vector ? length(model.y) : size(model.y, 1)
+
     ε, fitted = get_fit_and_residuals(
-        estimation_ε, coefs, model.X, valid_indexes, length(model.y)
+        estimation_ε, coefs, model.X, valid_indexes, T
     )
 
-    output = Output(coefs, ε, fitted, residuals_variances, valid_indexes, components)
+    if typeof(model.y) <:Vector
+        output = Output(coefs, ε, fitted, residuals_variances, valid_indexes, components)
+    else
+        output = Output[]
+        for i in eachindex(coefs)
+            push!(output, Output(coefs[i], ε[i], fitted[i], residuals_variances[i], valid_indexes, components[i]))
+        end
+    end
     return model.output = output
 end
 
 """
-    forecast(model::StateSpaceLearningModel, steps_ahead::Int; Exogenous_Forecast::Union{Matrix{Fl}, Missing}=missing)::Vector{Float64} where Fl
+    forecast(model::StateSpaceLearningModel, steps_ahead::Int; Exogenous_Forecast::Union{Matrix{Fl}, Missing}=missing)::Vector{AbstractFloat} where Fl
 
     Returns the forecast for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
 
@@ -69,19 +78,21 @@ end
     - `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast (default: zeros(steps_ahead, 0))
 
     # Returns
-    - `Vector{Float64}`: Vector containing forecasted values.
+    - `Union{Matrix{AbstractFloat}, Vector{AbstractFloat}}`: Matrix or vector of matrices containing forecasted values.
 
 """
 function forecast(
     model::StateSpaceLearningModel,
     steps_ahead::Int;
     Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0),
-)::Vector{Float64} where {Fl}
-    @assert length(model.output.components["Exogenous_X"]["Indexes"]) ==
+)::Union{Matrix{<:AbstractFloat}, Vector{<:AbstractFloat}} where Fl <: AbstractFloat
+
+    exog_idx = typeof(model.output) == Output ? model.output.components["Exogenous_X"]["Indexes"] : model.output[1].components["Exogenous_X"]["Indexes"]
+    @assert length(exog_idx) ==
         size(Exogenous_Forecast, 2) "If an exogenous matrix was utilized in the estimation procedure, it must be provided its prediction for the forecast procedure. If no exogenous matrix was utilized, Exogenous_Forecast must be missing"
     @assert size(Exogenous_Forecast, 1) == steps_ahead "Exogenous_Forecast must have the same number of rows as steps_ahead"
 
-    Exogenous_X = model.X[:, model.output.components["Exogenous_X"]["Indexes"]]
+    Exogenous_X = model.X[:, exog_idx]
     complete_matrix = create_X(
         model.level,
         model.stochastic_level,
@@ -97,12 +108,20 @@ function forecast(
         Exogenous_Forecast,
     )
 
-    return complete_matrix[(end - steps_ahead + 1):end, :] * model.output.coefs
+    if typeof(model.output) == Output
+        return AbstractFloat.(complete_matrix[(end - steps_ahead + 1):end, :] * model.output.coefs)
+    else
+        prediction = Matrix{AbstractFloat}(undef, steps_ahead, length(model.output))
+        for i in eachindex(model.output)
+            prediction[:, i] = complete_matrix[(end - steps_ahead + 1):end, :] * model.output[i].coefs
+        end
+        return AbstractFloat.(prediction)
+    end
 end
 
 """
 simulate(model::StateSpaceLearningModel, steps_ahead::Int, N_scenarios::Int;
-                                 Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0))::Matrix{Float64} where Fl
+                                 Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0))::Matrix{AbstractFloat} where Fl
 
     Generate simulations for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
 
@@ -113,60 +132,91 @@ simulate(model::StateSpaceLearningModel, steps_ahead::Int, N_scenarios::Int;
     - `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast (default: zeros(steps_ahead, 0))
 
     # Returns
-    - `Matrix{Float64}`: Matrix containing simulated values.
+    - `Union{Vector{Matrix{AbstractFloat}}, Matrix{AbstractFloat}}`: Matrix or vector of matrices containing simulated values.
 """
 function simulate(
     model::StateSpaceLearningModel,
     steps_ahead::Int,
     N_scenarios::Int;
     Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0),
-)::Matrix{Float64} where {Fl}
-    prediction = forecast(model, steps_ahead; Exogenous_Forecast=Exogenous_Forecast)
+    seasonal_innovation_simulation::Int=0,
+)::Union{Vector{Matrix{<:AbstractFloat}}, Matrix{<:AbstractFloat}} where Fl <: AbstractFloat
+    @assert seasonal_innovation_simulation >= 0 "seasonal_innovation_simulation must be a non-negative integer"
+    @assert seasonal_innovation_simulation >= 0 "seasonal_innovation_simulation must be a non-negative integer"
+
+    prediction = StateSpaceLearning.forecast(model, steps_ahead; Exogenous_Forecast=Exogenous_Forecast)
+
+    is_univariate = typeof(model.output) == StateSpaceLearning.Output
 
     simulation_X = zeros(steps_ahead, 0)
-    components_matrix = zeros(length(model.output.valid_indexes), 0)
+    valid_indexes = is_univariate ? model.output.valid_indexes : model.output[1].valid_indexes
+    components_matrix = zeros(length(valid_indexes), 0)
     N_components = 1
 
-    model_innovations = get_model_innovations(model)
+    model_innovations = StateSpaceLearning.get_model_innovations(model)
     for innovation in model_innovations
-        if innovation in keys(model.output.residuals_variances)
-            simulation_X = hcat(
-                simulation_X,
-                get_innovation_simulation_X(model, innovation, steps_ahead)[
-                    (end - steps_ahead):(end - 1), (end - steps_ahead + 1):end
-                ],
-            )
-            comp = fill_innovation_coefs(model, innovation)
-            components_matrix = hcat(components_matrix, comp[model.output.valid_indexes])
-            N_components += 1
-        end
+        simulation_X = hcat(
+            simulation_X,
+            StateSpaceLearning.get_innovation_simulation_X(model, innovation, steps_ahead)[
+                (end - steps_ahead):(end - 1), (end - steps_ahead + 1):end
+            ],
+        )
+        comp = StateSpaceLearning.fill_innovation_coefs(model, innovation, valid_indexes)
+        components_matrix = hcat(components_matrix, comp)
+        N_components += 1
     end
 
-    components_matrix = hcat(components_matrix, model.output.ε[model.output.valid_indexes])
+    if is_univariate
+        components_matrix = hcat(components_matrix, model.output.ε[valid_indexes])
+        @assert N_components < length(model.y) // seasonal_innovation_simulation "The parameter `seasonal_innovation_simulation` is too large for the given dataset, please reduce it"
+    else
+        for i in eachindex(model.output)
+            components_matrix = hcat(components_matrix, model.output[i].ε[valid_indexes])
+        end
+        N_mv_components = N_components*length(model.output)
+        @assert N_mv_components < size(model.y, 1) // seasonal_innovation_simulation "The parameter `seasonal_innovation_simulation` is too large for the given dataset, please reduce it"
+    end
     simulation_X = hcat(simulation_X, Matrix(1.0 * I, steps_ahead, steps_ahead))
     components_matrix += rand(Normal(0, 1), size(components_matrix)) ./ 1e9 # Make sure matrix is positive definite
 
-    ∑ = cov(components_matrix)
-    MV_dist = MvNormal(zeros(N_components), ∑)
-    o_noises = if model.outlier
-        rand(Normal(0, std(model.output.components["o"]["Coefs"])), steps_ahead, N_scenarios)
-    else
-        zeros(steps_ahead, N_scenarios)
-    end
+    MV_dist_vec = Vector{MvNormal}(undef, steps_ahead)
+    o_noises = is_univariate ? zeros(steps_ahead, N_scenarios) : [zeros(steps_ahead, N_scenarios) for _ in 1:length(model.output)]
 
-    simulation = hcat([prediction for _ in 1:N_scenarios]...)
-    for s in 1:N_scenarios
-        sim_coefs = ones(size(simulation_X, 2)) .* NaN
-
+    if seasonal_innovation_simulation == 0
+        ∑ = cov(components_matrix)
         for i in 1:steps_ahead
-            rand_inovs = rand(MV_dist)
-
-            for comp in eachindex(rand_inovs)
-                sim_coefs[i + (comp - 1) * steps_ahead] = rand_inovs[comp]
-            end
+            MV_dist_vec[i] = is_univariate ? MvNormal(zeros(N_components), ∑) : MvNormal(zeros(N_mv_components), ∑)
         end
 
-        simulation[:, s] += (simulation_X * sim_coefs + o_noises[:, s])
+        if model.outlier
+            if is_univariate
+                o_noises = rand(Normal(0, std(model.output.components["o"]["Coefs"])), steps_ahead, N_scenarios)
+            else
+                o_noises = [rand(Normal(0, std(model.output[i].components["o"]["Coefs"])), steps_ahead, N_scenarios) for i in eachindex(model.output)]
+            end
+        end
+    else
+        start_seasonal_term = (size(components_matrix, 1) % seasonal_innovation_simulation)
+        for i in 1:steps_ahead
+            ∑ = cov(components_matrix[i + start_seasonal_term:seasonal_innovation_simulation:end, :])
+            MV_dist_vec[i] = is_univariate ? MvNormal(zeros(N_components), ∑) : MvNormal(zeros(N_mv_components), ∑)
+            if is_univariate
+                model.outlier ? o_noises[i, :] = rand(Normal(0, std(model.output.components["o"]["Coefs"][i + start_seasonal_term:seasonal_innovation_simulation:end])), N_scenarios) : nothing
+            else
+                for j in eachindex(model.output)
+                    model.outlier ? o_noises[j][i, :] = rand(Normal(0, std(model.output[j].components["o"]["Coefs"][i + start_seasonal_term:seasonal_innovation_simulation:end])), N_scenarios) : nothing
+                end
+            end
+        end 
+
+    end
+    
+    simulation = is_univariate ? AbstractFloat.(hcat([prediction for _ in 1:N_scenarios]...)) : [AbstractFloat.(hcat([prediction[:, i] for _ in 1:N_scenarios]...)) for i in eachindex(model.output)]
+    if is_univariate
+        fill_simulation!(simulation, MV_dist_vec, o_noises, simulation_X)
+    else
+        fill_simulation!(simulation, MV_dist_vec, o_noises, simulation_X, length(model_innovations))
+        simulation = Vector{Matrix{<:AbstractFloat}}(simulation)
     end
 
     return simulation

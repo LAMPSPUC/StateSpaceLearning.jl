@@ -149,7 +149,7 @@ using Plots
 airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
 log_air_passengers = log.(airp.passengers)
 
-airpassengers = Float64.(airp.passengers)
+airpassengers = AbstractFloat.(airp.passengers)
 log_air_passengers[60:72] .= NaN
 
 model = StructuralModel(log_air_passengers)

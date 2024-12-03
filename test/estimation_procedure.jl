@@ -95,26 +95,26 @@ end
     X2 = Basic_Structural_w_level.X
 
     coefs0, ε0 = StateSpaceLearning.fit_lasso(
-        X, y, 0.1, "aic", true, components_indexes, ones(size(X, 2) - 1); rm_average=true
+        X, AbstractFloat.(y), 0.1, "aic", true, components_indexes, ones(size(X, 2) - 1); rm_average=true
     )
     @test length(coefs0) == 43
     @test length(ε0) == 10
 
     coefs1, ε1 = StateSpaceLearning.fit_lasso(
-        X2, y, 0.1, "aic", true, components_indexes2, ones(size(X2, 2)); rm_average=false
+        X2, AbstractFloat.(y), 0.1, "aic", true, components_indexes2, ones(size(X2, 2)); rm_average=false
     )
     @test length(coefs1) == 42
     @test length(ε1) == 10
 
     coefs2, ε2 = StateSpaceLearning.fit_lasso(
-        X, y, 0.1, "aic", true, components_indexes, ones(size(X, 2) - 1); rm_average=true
+        X, AbstractFloat.(y), 0.1, "aic", true, components_indexes, ones(size(X, 2) - 1); rm_average=true
     )
     @test coefs2[1] == mean(y)
     @test length(coefs2) == 43
     @test length(ε2) == 10
 
     coefs3, ε3 = StateSpaceLearning.fit_lasso(
-        X, y, 0.1, "aic", false, components_indexes, ones(size(X, 2) - 1); rm_average=true
+        X, AbstractFloat.(y), 0.1, "aic", false, components_indexes, ones(size(X, 2) - 1); rm_average=true
     )
     @test coefs3[components_indexes["o"][4]] == 0
     @test all(coefs3[components_indexes["Exogenous_X"]] .!= 0)
@@ -123,7 +123,7 @@ end
 
     coefs4, ε4 = StateSpaceLearning.fit_lasso(
         X,
-        y,
+        AbstractFloat.(y),
         0.1,
         "aic",
         true,

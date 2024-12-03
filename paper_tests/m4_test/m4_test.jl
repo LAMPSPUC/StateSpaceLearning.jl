@@ -33,9 +33,9 @@ function run_config(
     results_table::DataFrame,
     outlier::Bool,
     information_criteria::String,
-    α::Float64,
+    α::AbstractFloat,
     save_init::Bool,
-    sample_size::Int64,
+    sample_size::Int,
 )
     NAIVE_sMAPE = 14.427 #M4 Paper
     NAIVE_MASE = 1.063   #M4 Paper
@@ -98,9 +98,9 @@ end
 # Main script
 function main()
     results_table = DataFrame()
-    for outlier in [true, false]
-        for information_criteria in ["aic", "bic"]
-            for α in vcat([0.0], collect(0.1:0.2:0.9), [1.0])
+    for outlier in [true]
+        for information_criteria in ["aic"]
+            for α in [0.1]
                 @info "Running SSL with outlier = $outlier, information_criteria = $information_criteria, α = $α"
                 results_table = run_config(
                     results_table, outlier, information_criteria, α, false, 60
@@ -140,4 +140,4 @@ create_dirs()
 
 main()
 
-run_config(DataFrame(), false, "aic", 0.1, true, 2794)#max sample size
+#run_config(DataFrame(), false, "aic", 0.1, true, 2794)#max sample size

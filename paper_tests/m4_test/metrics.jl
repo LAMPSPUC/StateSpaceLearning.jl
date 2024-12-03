@@ -5,7 +5,7 @@ function sMAPE(y_test::Vector, prediction::Vector)
     return (200 / H) * sum(abs(y_test[i] - prediction[i]) / (denominator[i]) for i in 1:H)
 end
 
-function MASE(y_train::Vector, y_test::Vector, prediction::Vector; m::Int64=12)
+function MASE(y_train::Vector, y_test::Vector, prediction::Vector; m::Int=12)
     T = length(y_train)
     H = length(y_test)
 

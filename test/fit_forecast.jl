@@ -22,6 +22,19 @@
     @test length(model2.output.valid_indexes) == 89
     @test length(model2.output.residuals_variances) == 4
     @test length(keys(model2.output.components)) == 9
+
+    model3 = StateSpaceLearning.StructuralModel(rand(100, 3))
+    StateSpaceLearning.fit!(model3)
+
+    @test length(model3.output) == 3
+    for i in eachindex(model3.output)
+        @test length(model3.output[i].ε) == 100
+        @test length(model3.output[i].fitted) == 100
+        @test length(model3.output[i].coefs) == 375
+        @test length(model3.output[i].valid_indexes) == 100
+        @test length(model3.output[i].residuals_variances) == 4
+        @test length(keys(model3.output[i].components)) == 9
+    end
 end
 
 @testset "Function: forecast" begin
@@ -226,9 +239,26 @@ end
     StateSpaceLearning.fit!(model1)
     @test size(StateSpaceLearning.simulate(model1, 10, 100)) == (10, 100)
 
+    @test size(StateSpaceLearning.simulate(model1, 10, 100; seasonal_innovation_simulation = 10)) == (10, 100)
+
     model2 = StateSpaceLearning.StructuralModel(y2; Exogenous_X=rand(100, 3))
     StateSpaceLearning.fit!(model2)
     @test size(
         StateSpaceLearning.simulate(model2, 10, 100; Exogenous_Forecast=rand(10, 3))
     ) == (10, 100)
+
+    model3 = StateSpaceLearning.StructuralModel(rand(100, 3))
+    StateSpaceLearning.fit!(model3)
+    simulations  = StateSpaceLearning.simulate(model3, 10, 100)
+
+    # test assert error
+    @test_throws AssertionError StateSpaceLearning.simulate(model3, 10, 100; seasonal_innovation_simulation = 10)
+    simulations2 = StateSpaceLearning.simulate(model3, 10, 100; seasonal_innovation_simulation = 3)
+
+    @test length(simulations) == 3
+    @test length(simulations2) == 3
+    for i in eachindex(model3.output)
+        @test size(simulations[i]) == (10, 100)
+        @test size(simulations2[i]) == (10, 100)
+    end
 end

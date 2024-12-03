@@ -23,7 +23,7 @@ function assert_invertibility(q::Vector{Fl}) where {Fl}
     return all(abs.(roots_of_inverse_polinomial(poly)) .< 1)
 end
 
-function generate_sarima_exog(T::Int64, M::Int64)
+function generate_sarima_exog(T::Int, M::Int)
     X = zeros(T, M)
     s = 12
     for j in 1:M
@@ -87,7 +87,7 @@ function generate_sarima_exog(T::Int64, M::Int64)
     return X
 end
 
-function generate_subset(T::Int64, M::Int64, K::Int64)
+function generate_subset(T::Int, M::Int, K::Int)
     s = 12
 
     μ1 = 1.0

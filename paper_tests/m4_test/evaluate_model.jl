@@ -3,9 +3,9 @@ function evaluate_SSL(
     results_df::DataFrame,
     input::Dict,
     outlier::Bool,
-    α::Float64,
-    H::Int64,
-    sample_size::Int64,
+    α::AbstractFloat,
+    H::Int,
+    sample_size::Int,
     information_criteria::String,
 )
     normalized_y = input["normalized_train"]
