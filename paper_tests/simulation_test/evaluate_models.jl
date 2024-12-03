@@ -14,7 +14,7 @@ function get_SSL_results(
     X_train::Matrix{Fl},
     inf_criteria::String,
     true_β::Vector{Fl},
-) where Fl <: AbstractFloat
+) where {Fl<:AbstractFloat}
     series_result = nothing
 
     model = StateSpaceLearning.StructuralModel(
@@ -78,7 +78,7 @@ function get_SS_res_results(
     X_train::Matrix{Fl},
     inf_criteria::String,
     true_β::Vector{Fl},
-) where Fl <: AbstractFloat
+) where {Fl<:AbstractFloat}
     py"""
     import math
     import statsmodels.api as sm
@@ -141,7 +141,9 @@ function get_SS_res_results(
     return series_result, converged
 end
 
-function get_exogenous_ss_inf_criteria(y_train::Vector{Fl}, X_train::Matrix{Fl}) where Fl <: AbstractFloat
+function get_exogenous_ss_inf_criteria(
+    y_train::Vector{Fl}, X_train::Matrix{Fl}
+) where {Fl<:AbstractFloat}
     py"""
     import math
     import statsmodels.api as sm
@@ -166,7 +168,7 @@ function get_forward_ss(
     X_train::Matrix{Fl},
     inf_criteria::String,
     true_β::Vector{Fl},
-) where Fl <: AbstractFloat
+) where {Fl<:AbstractFloat}
     best_inf_crit = Inf
     current_inf_crit = 0
     coefs = nothing

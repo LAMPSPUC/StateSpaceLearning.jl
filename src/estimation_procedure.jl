@@ -79,7 +79,9 @@ function get_path_information_criteria(
     Lasso_y::Vector{Fl},
     information_criteria::String;
     intercept::Bool=true,
-)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
+)::Tuple{
+    Vector{AbstractFloat},Vector{AbstractFloat}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     path_size = length(model.lambda)
     T = size(Lasso_X, 1)
     K = count(i -> i != 0, model.betas; dims=1)'
@@ -136,7 +138,9 @@ function fit_glmnet(
     information_criteria::String="aic",
     penalty_factor::Vector{Pl}=ones(size(Lasso_X, 2) - 1),
     intercept::Bool=intercept,
-)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat, Pl <: AbstractFloat}
+)::Tuple{
+    Vector{AbstractFloat},Vector{AbstractFloat}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat,Pl<:AbstractFloat}
     model = glmnet(
         Lasso_X,
         Lasso_y;
@@ -188,7 +192,9 @@ function fit_lasso(
     components_indexes::Dict{String,Vector{Int}},
     penalty_factor::Vector{Pl};
     rm_average::Bool=false,
-)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat, Pl <: AbstractFloat}
+)::Tuple{
+    Vector{AbstractFloat},Vector{AbstractFloat}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat,Pl<:AbstractFloat}
     outlier_duplicate_columns = get_outlier_duplicate_columns(
         Estimation_X, components_indexes
     )
@@ -278,7 +284,9 @@ function estimation_procedure(
     ϵ::AbstractFloat,
     penalize_exogenous::Bool,
     penalize_initial_states::Bool,
-)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
+)::Tuple{
+    Vector{AbstractFloat},Vector{AbstractFloat}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     @assert 0 <= α <= 1 "α must be in [0, 1]"
     @assert ϵ > 0 "ϵ must be positive"
 
@@ -398,10 +406,12 @@ function estimation_procedure(
     ϵ::AbstractFloat,
     penalize_exogenous::Bool,
     penalize_initial_states::Bool,
-)::Tuple{Vector{Vector{AbstractFloat}},Vector{Vector{AbstractFloat}}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
+)::Tuple{
+    Vector{Vector{AbstractFloat}},Vector{Vector{AbstractFloat}}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     coefs_vec = Vector{AbstractFloat}[]
-    ε_vec     = Vector{AbstractFloat}[]
-    N_series  = size(estimation_y, 2)
+    ε_vec = Vector{AbstractFloat}[]
+    N_series = size(estimation_y, 2)
 
     for i in 1:N_series
         coef_i, ε_i = estimation_procedure(

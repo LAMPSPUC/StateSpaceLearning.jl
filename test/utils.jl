@@ -112,9 +112,15 @@ end
 
     valid_indexes = model.output.valid_indexes
 
-    inov_comp1 = StateSpaceLearning.fill_innovation_coefs(model, components[1], valid_indexes)
-    inov_comp2 = StateSpaceLearning.fill_innovation_coefs(model, components[2], valid_indexes)
-    inov_comp3 = StateSpaceLearning.fill_innovation_coefs(model, components[3], valid_indexes)
+    inov_comp1 = StateSpaceLearning.fill_innovation_coefs(
+        model, components[1], valid_indexes
+    )
+    inov_comp2 = StateSpaceLearning.fill_innovation_coefs(
+        model, components[2], valid_indexes
+    )
+    inov_comp3 = StateSpaceLearning.fill_innovation_coefs(
+        model, components[3], valid_indexes
+    )
 
     @test length(inov_comp1) == 100
     @test length(inov_comp2) == 100
@@ -126,12 +132,17 @@ end
 
     valid_indexes = model.output[1].valid_indexes
 
-    inov_comp1 = StateSpaceLearning.fill_innovation_coefs(model, components[1], valid_indexes)
-    inov_comp2 = StateSpaceLearning.fill_innovation_coefs(model, components[2], valid_indexes)
-    inov_comp3 = StateSpaceLearning.fill_innovation_coefs(model, components[3], valid_indexes)
+    inov_comp1 = StateSpaceLearning.fill_innovation_coefs(
+        model, components[1], valid_indexes
+    )
+    inov_comp2 = StateSpaceLearning.fill_innovation_coefs(
+        model, components[2], valid_indexes
+    )
+    inov_comp3 = StateSpaceLearning.fill_innovation_coefs(
+        model, components[3], valid_indexes
+    )
 
     @test size(inov_comp1) == (100, 3)
     @test size(inov_comp2) == (100, 3)
     @test size(inov_comp3) == (100, 3)
-    
 end

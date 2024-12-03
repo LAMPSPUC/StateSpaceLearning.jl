@@ -16,7 +16,7 @@
 """
 function get_information(
     T::Int, K::Int, ε::Vector{Fl}; information_criteria::String="aic"
-)::AbstractFloat where Fl <: AbstractFloat
+)::AbstractFloat where {Fl<:AbstractFloat}
     if information_criteria == "bic"
         return T * log(var(ε)) + K * log(T)
     elseif information_criteria == "aic"

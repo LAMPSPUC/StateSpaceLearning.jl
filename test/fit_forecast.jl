@@ -239,7 +239,9 @@ end
     StateSpaceLearning.fit!(model1)
     @test size(StateSpaceLearning.simulate(model1, 10, 100)) == (10, 100)
 
-    @test size(StateSpaceLearning.simulate(model1, 10, 100; seasonal_innovation_simulation = 10)) == (10, 100)
+    @test size(
+        StateSpaceLearning.simulate(model1, 10, 100; seasonal_innovation_simulation=10)
+    ) == (10, 100)
 
     model2 = StateSpaceLearning.StructuralModel(y2; Exogenous_X=rand(100, 3))
     StateSpaceLearning.fit!(model2)
@@ -249,11 +251,15 @@ end
 
     model3 = StateSpaceLearning.StructuralModel(rand(100, 3))
     StateSpaceLearning.fit!(model3)
-    simulations  = StateSpaceLearning.simulate(model3, 10, 100)
+    simulations = StateSpaceLearning.simulate(model3, 10, 100)
 
     # test assert error
-    @test_throws AssertionError StateSpaceLearning.simulate(model3, 10, 100; seasonal_innovation_simulation = 10)
-    simulations2 = StateSpaceLearning.simulate(model3, 10, 100; seasonal_innovation_simulation = 3)
+    @test_throws AssertionError StateSpaceLearning.simulate(
+        model3, 10, 100; seasonal_innovation_simulation=10
+    )
+    simulations2 = StateSpaceLearning.simulate(
+        model3, 10, 100; seasonal_innovation_simulation=3
+    )
 
     @test length(simulations) == 3
     @test length(simulations2) == 3

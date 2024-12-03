@@ -1,5 +1,5 @@
 mutable struct StructuralModel <: StateSpaceLearningModel
-    y::Union{Vector, Matrix}
+    y::Union{Vector,Matrix}
     X::Matrix
     level::Bool
     stochastic_level::Bool
@@ -11,10 +11,10 @@ mutable struct StructuralModel <: StateSpaceLearningModel
     outlier::Bool
     ζ_ω_threshold::Int
     n_exogenous::Int
-    output::Union{Vector{Output}, Output, Nothing}
+    output::Union{Vector{Output},Output,Nothing}
 
     function StructuralModel(
-        y::Union{Vector{Fl}, Matrix{Fl}};
+        y::Union{Vector{Fl},Matrix{Fl}};
         level::Bool=true,
         stochastic_level::Bool=true,
         trend::Bool=true,
@@ -24,11 +24,15 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         freq_seasonal::Int=12,
         outlier::Bool=true,
         ζ_ω_threshold::Int=12,
-        Exogenous_X::Matrix{Fl}=typeof(y) <:Vector ? zeros(length(y), 0) : zeros(size(y, 1), 0),
+        Exogenous_X::Matrix{Fl}=if typeof(y) <: Vector
+            zeros(length(y), 0)
+        else
+            zeros(size(y, 1), 0)
+        end,
     ) where {Fl}
         n_exogenous = size(Exogenous_X, 2)
         @assert !has_intercept(Exogenous_X) "Exogenous matrix must not have an intercept column"
-        if typeof(y) <:Vector
+        if typeof(y) <: Vector
             @assert seasonal ? length(y) > freq_seasonal : true "Time series must be longer than the seasonal period"
         else
             @assert seasonal ? size(y, 1) > freq_seasonal : true "Time series must be longer than the seasonal period"
@@ -280,7 +284,7 @@ function create_X(
     Exogenous_X::Matrix{Fl},
     steps_ahead::Int=0,
     Exogenous_Forecast::Matrix{Tl}=zeros(steps_ahead, size(Exogenous_X, 2)),
-) where {Fl <: AbstractFloat, Tl <: AbstractFloat}
+) where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     T = size(Exogenous_X, 1)
 
     ξ_matrix = stochastic_level ? create_ξ(T, steps_ahead) : zeros(T + steps_ahead, 0)
@@ -322,7 +326,7 @@ function get_components_indexes(model::StructuralModel)::Dict
 
 """
 function get_components_indexes(model::StructuralModel)::Dict
-    T = typeof(model.y) <:Vector ? length(model.y) : size(model.y, 1)
+    T = typeof(model.y) <: Vector ? length(model.y) : size(model.y, 1)
 
     FINAL_INDEX = 0
 
@@ -425,7 +429,7 @@ function get_variances(
     ε::Vector{Fl},
     coefs::Vector{Tl},
     components_indexes::Dict{String,Vector{Int}},
-)::Dict where {Fl, Tl}
+)::Dict where {Fl,Tl}
     model_innovations = get_model_innovations(model)
 
     variances = Dict()
@@ -461,7 +465,7 @@ function get_variances(
     ε::Vector{Vector{Fl}},
     coefs::Vector{Vector{Tl}},
     components_indexes::Dict{String,Vector{Int}},
-)::Vector{Dict} where {Fl, Tl}
+)::Vector{Dict} where {Fl,Tl}
     model_innovations = get_model_innovations(model)
 
     variances_vec = Dict[]

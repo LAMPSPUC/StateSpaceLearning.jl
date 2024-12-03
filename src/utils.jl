@@ -19,7 +19,7 @@
 """
 function build_components(
     X::Matrix{Tl}, coefs::Vector{Fl}, components_indexes::Dict{String,Vector{Int}}
-)::Dict where {Fl <: AbstractFloat, Tl <: AbstractFloat}
+)::Dict where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     components = Dict()
     for key in keys(components_indexes)
         components[key] = Dict()
@@ -57,7 +57,7 @@ end
 """
 function build_components(
     X::Matrix{Tl}, coefs::Vector{Vector{Fl}}, components_indexes::Dict{String,Vector{Int}}
-)::Vector{Dict} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
+)::Vector{Dict} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     components_vec = Dict[]
     for coef_el in coefs
         components = Dict()
@@ -108,7 +108,9 @@ function get_fit_and_residuals(
     X::Matrix{Tl},
     valid_indexes::Vector{Int},
     T::Int,
-)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Pl <: AbstractFloat, Tl <: AbstractFloat}
+)::Tuple{
+    Vector{AbstractFloat},Vector{AbstractFloat}
+} where {Fl<:AbstractFloat,Pl<:AbstractFloat,Tl<:AbstractFloat}
     ε = fill(NaN, T)
     ε[valid_indexes] = estimation_ε
     fitted = X * coefs
@@ -145,8 +147,10 @@ function get_fit_and_residuals(
     X::Matrix{Tl},
     valid_indexes::Vector{Int},
     T::Int,
-)::Tuple{Vector{Vector{AbstractFloat}},Vector{Vector{AbstractFloat}}} where {Fl <: AbstractFloat, Pl <: AbstractFloat, Tl <: AbstractFloat}
-    ε_vec      = Vector{AbstractFloat}[]
+)::Tuple{
+    Vector{Vector{AbstractFloat}},Vector{Vector{AbstractFloat}}
+} where {Fl<:AbstractFloat,Pl<:AbstractFloat,Tl<:AbstractFloat}
+    ε_vec = Vector{AbstractFloat}[]
     fitted_vec = Vector{AbstractFloat}[]
 
     for i in eachindex(coefs)
@@ -208,7 +212,7 @@ end
 """
 function handle_missing_values(
     X::Matrix{Tl}, y::Vector{Fl}
-)::Tuple{Vector{Fl},Matrix{Fl},Vector{Int}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
+)::Tuple{Vector{Fl},Matrix{Fl},Vector{Int}} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     invalid_indexes = unique(
         vcat([i[1] for i in findall(i -> any(isnan, i), X)], findall(i -> isnan(i), y))
     )
@@ -236,7 +240,7 @@ handle_missing_values(
 """
 function handle_missing_values(
     X::Matrix{Tl}, y::Matrix{Fl}
-)::Tuple{Matrix{Fl},Matrix{Fl},Vector{Int}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
+)::Tuple{Matrix{Fl},Matrix{Fl},Vector{Int}} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     invalid_cartesian_indexes = unique(
         vcat([i[1] for i in findall(i -> any(isnan, i), X)], findall(i -> isnan(i), y))
     )
@@ -264,7 +268,7 @@ has_intercept(X::Matrix{Fl})::Bool where Fl <: AbstractFloat
     # Returns
     - `Bool`: True if the input matrix has a constant column, false otherwise.
 """
-function has_intercept(X::Matrix{Fl})::Bool where Fl <: AbstractFloat
+function has_intercept(X::Matrix{Fl})::Bool where {Fl<:AbstractFloat}
     return any([all(X[:, i] .== 1) for i in 1:size(X, 2)])
 end
 
@@ -282,9 +286,11 @@ fill_innovation_coefs(model::StructuralModel, T::Int, component::String, valid_i
     # Returns
     - `Union{Vector{AbstractFloat}, Matrix{AbstractFloat}}`: Vector or matrix containing innovation coefficients for the given component.
 """
-function fill_innovation_coefs(model::StructuralModel, component::String, valid_indexes::Vector{Int})::Union{Vector, Matrix}
+function fill_innovation_coefs(
+    model::StructuralModel, component::String, valid_indexes::Vector{Int}
+)::Union{Vector,Matrix}
     T = length(model.y)
-    if typeof(model.output) == Output 
+    if typeof(model.output) == Output
         inov_comp = zeros(T)
         for (i, idx) in enumerate(model.output.components[component]["Indexes"])
             inov_comp[findfirst(i -> i != 0, model.X[:, idx])] = model.output.components[component]["Coefs"][i]
@@ -313,7 +319,12 @@ fill_simulation!(simulation::Matrix{Tl}, MV_dist_vec::Vector{MvNormal}, o_noises
     - `o_noises::Matrix{Fl}`: Matrix of outliers.
     - `simulation_X::Matrix{Pl}`: Matrix of simulation coefficients.
 """
-function fill_simulation!(simulation::Matrix{Tl}, MV_dist_vec::Vector{MvNormal}, o_noises::Matrix{Fl}, simulation_X::Matrix{Pl}) where {Fl <: AbstractFloat, Pl <: AbstractFloat, Tl <: AbstractFloat}
+function fill_simulation!(
+    simulation::Matrix{Tl},
+    MV_dist_vec::Vector{MvNormal},
+    o_noises::Matrix{Fl},
+    simulation_X::Matrix{Pl},
+) where {Fl<:AbstractFloat,Pl<:AbstractFloat,Tl<:AbstractFloat}
     steps_ahead, N_scenarios = size(simulation)
     for s in 1:N_scenarios
         sim_coefs = ones(size(simulation_X, 2)) .* NaN
@@ -342,10 +353,15 @@ fill_simulation!(simulation::Vector{Matrix{Tl}}, MV_dist_vec::Vector{MvNormal}, 
     - `simulation_X::Matrix{Pl}`: Matrix of simulation coefficients.
     - `N_innovations::Int`: Number of innovations.
 """
-function fill_simulation!(simulation::Vector{Matrix{Tl}}, MV_dist_vec::Vector{MvNormal}, o_noises::Vector{Matrix{Fl}}, simulation_X::Matrix{Pl}, N_innovations::Int) where {Fl <: AbstractFloat, Pl <: AbstractFloat, Tl <: AbstractFloat}
+function fill_simulation!(
+    simulation::Vector{Matrix{Tl}},
+    MV_dist_vec::Vector{MvNormal},
+    o_noises::Vector{Matrix{Fl}},
+    simulation_X::Matrix{Pl},
+    N_innovations::Int,
+) where {Fl<:AbstractFloat,Pl<:AbstractFloat,Tl<:AbstractFloat}
     steps_ahead, N_scenarios = size(simulation[1])
     for j in eachindex(simulation)
-       
         for s in 1:N_scenarios
             sim_coefs = ones(size(simulation_X, 2)) .* NaN
 
