@@ -245,14 +245,14 @@ function simulate(
             if is_univariate
                 if model.outlier
                     o_noises[i, :] = rand(
-                    Normal(
-                        0,
-                        std(
-                            model.output.components["o"]["Coefs"][(i + start_seasonal_term):seasonal_innovation_simulation:end],
+                        Normal(
+                            0,
+                            std(
+                                model.output.components["o"]["Coefs"][(i + start_seasonal_term):seasonal_innovation_simulation:end],
+                            ),
                         ),
-                    ),
-                    N_scenarios,
-                )
+                        N_scenarios,
+                    )
                 else
                     nothing
                 end
@@ -260,14 +260,14 @@ function simulate(
                 for j in eachindex(model.output)
                     if model.outlier
                         o_noises[j][i, :] = rand(
-                        Normal(
-                            0,
-                            std(
-                                model.output[j].components["o"]["Coefs"][(i + start_seasonal_term):seasonal_innovation_simulation:end],
+                            Normal(
+                                0,
+                                std(
+                                    model.output[j].components["o"]["Coefs"][(i + start_seasonal_term):seasonal_innovation_simulation:end],
+                                ),
                             ),
-                        ),
-                        N_scenarios,
-                    )
+                            N_scenarios,
+                        )
                     else
                         nothing
                     end
@@ -280,9 +280,9 @@ function simulate(
         AbstractFloat.(hcat([prediction for _ in 1:N_scenarios]...))
     else
         [
-        AbstractFloat.(hcat([prediction[:, i] for _ in 1:N_scenarios]...)) for
-        i in eachindex(model.output)
-    ]
+            AbstractFloat.(hcat([prediction[:, i] for _ in 1:N_scenarios]...)) for
+            i in eachindex(model.output)
+        ]
     end
     if is_univariate
         fill_simulation!(simulation, MV_dist_vec, o_noises, simulation_X)
