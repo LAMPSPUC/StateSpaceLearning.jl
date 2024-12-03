@@ -241,7 +241,7 @@ function handle_missing_values(
         vcat([i[1] for i in findall(i -> any(isnan, i), X)], findall(i -> isnan(i), y))
     )
 
-    invalid_indexes = Int64[]
+    invalid_indexes = Int[]
     for i in invalid_cartesian_indexes
         if !(i[1] in invalid_indexes)
             push!(invalid_indexes, i[1])
@@ -269,7 +269,7 @@ function has_intercept(X::Matrix{Fl})::Bool where Fl <: AbstractFloat
 end
 
 """
-fill_innovation_coefs(model::StructuralModel, T::Int, component::String, valid_indexes::Vector{Int64})::Vector{AbstractFloat}
+fill_innovation_coefs(model::StructuralModel, T::Int, component::String, valid_indexes::Vector{Int})::Vector{AbstractFloat}
 
     Build the innovation coefficients for a given component with same length as the original time series and coefficients attributed to the first observation they are associated with.
 
@@ -277,12 +277,12 @@ fill_innovation_coefs(model::StructuralModel, T::Int, component::String, valid_i
     - `model::StructuralModel`: Structural model.
     - `T::Int`: Length of the original time series.
     - `component::String`: Component name.
-    - `valid_indexes::Vector{Int64}`: Valid Indexes in the time series
+    - `valid_indexes::Vector{Int}`: Valid Indexes in the time series
 
     # Returns
     - `Union{Vector{AbstractFloat}, Matrix{AbstractFloat}}`: Vector or matrix containing innovation coefficients for the given component.
 """
-function fill_innovation_coefs(model::StructuralModel, component::String, valid_indexes::Vector{Int64})::Union{Vector, Matrix}
+function fill_innovation_coefs(model::StructuralModel, component::String, valid_indexes::Vector{Int})::Union{Vector, Matrix}
     T = length(model.y)
     if typeof(model.output) == Output 
         inov_comp = zeros(T)

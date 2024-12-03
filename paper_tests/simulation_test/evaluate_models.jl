@@ -9,8 +9,8 @@ end
 
 function get_SSL_results(
     y_train::Vector{Fl},
-    true_features::Vector{Int64},
-    false_features::Vector{Int64},
+    true_features::Vector{Int},
+    false_features::Vector{Int},
     X_train::Matrix{Fl},
     inf_criteria::String,
     true_β::Vector{Fl},
@@ -73,8 +73,8 @@ end
 
 function get_SS_res_results(
     y_train::Vector{Fl},
-    true_features::Vector{Int64},
-    false_features::Vector{Int64},
+    true_features::Vector{Int},
+    false_features::Vector{Int},
     X_train::Matrix{Fl},
     inf_criteria::String,
     true_β::Vector{Fl},
@@ -161,8 +161,8 @@ end
 
 function get_forward_ss(
     y_train::Vector{Fl},
-    true_features::Vector{Int64},
-    false_features::Vector{Int64},
+    true_features::Vector{Int},
+    false_features::Vector{Int},
     X_train::Matrix{Fl},
     inf_criteria::String,
     true_β::Vector{Fl},
