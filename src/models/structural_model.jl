@@ -58,7 +58,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
     stochastic_trend::Bool
     seasonal::Bool
     stochastic_seasonal::Bool
-    freq_seasonal::Union{Int, Vector{Int}}
+    freq_seasonal::Union{Int,Vector{Int}}
     outlier::Bool
     ζ_ω_threshold::Int
     n_exogenous::Int
@@ -72,7 +72,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         stochastic_trend::Bool=true,
         seasonal::Bool=true,
         stochastic_seasonal::Bool=true,
-        freq_seasonal::Union{Int, Vector{Int}}=12,
+        freq_seasonal::Union{Int,Vector{Int}}=12,
         outlier::Bool=true,
         ζ_ω_threshold::Int=12,
         Exogenous_X::Matrix=if typeof(y) <: Vector
@@ -261,7 +261,12 @@ end
 
 """
 function create_initial_states_Matrix(
-    T::Int, freq_seasonal::Union{Int, Vector{Int}}, steps_ahead::Int, level::Bool, trend::Bool, seasonal::Bool
+    T::Int,
+    freq_seasonal::Union{Int,Vector{Int}},
+    steps_ahead::Int,
+    level::Bool,
+    trend::Bool,
+    seasonal::Bool,
 )::Matrix
     initial_states_matrix = zeros(T + steps_ahead, 0)
     if level
@@ -332,7 +337,7 @@ function create_X(
     stochastic_trend::Bool,
     seasonal::Bool,
     stochastic_seasonal::Bool,
-    freq_seasonal::Union{Int, Vector{Int}},
+    freq_seasonal::Union{Int,Vector{Int}},
     outlier::Bool,
     ζ_ω_threshold::Int,
     Exogenous_X::Matrix{Fl},
@@ -435,9 +440,7 @@ function get_components_indexes(model::StructuralModel)::Dict
     if model.stochastic_seasonal
         for s in model.freq_seasonal
             ω_s_indexes = collect(
-                (FINAL_INDEX + 1):(FINAL_INDEX + ω_size(
-                    T, s, model.ζ_ω_threshold
-                )),
+                (FINAL_INDEX + 1):(FINAL_INDEX + ω_size(T, s, model.ζ_ω_threshold))
             )
             FINAL_INDEX += length(ω_s_indexes)
             push!(ω_indexes, ω_s_indexes)

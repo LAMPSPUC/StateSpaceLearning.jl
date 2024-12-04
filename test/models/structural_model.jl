@@ -360,7 +360,7 @@ end
         stochastic_trend=true,
         seasonal=true,
         stochastic_seasonal=true,
-        freq_seasonal=[2,5],
+        freq_seasonal=[2, 5],
         outlier=true,
         ζ_ω_threshold=0,
         Exogenous_X=Exogenous_X2,
@@ -394,7 +394,9 @@ end
 
     models = [Basic_Structural, Basic_Structural2, Local_Level, Local_Linear_Trend]
 
-    params_vec = [["ξ", "ζ", "ω_2", "ε"], ["ξ", "ζ", "ω_2", "ω_5", "ε"], ["ξ", "ε"], ["ξ", "ζ", "ε"]]
+    params_vec = [
+        ["ξ", "ζ", "ω_2", "ε"], ["ξ", "ζ", "ω_2", "ω_5", "ε"], ["ξ", "ε"], ["ξ", "ζ", "ε"]
+    ]
 
     for idx in eachindex(models)
         model = models[idx]
@@ -467,7 +469,7 @@ end
         stochastic_trend=false,
         seasonal=true,
         stochastic_seasonal=true,
-        freq_seasonal=[2,5],
+        freq_seasonal=[2, 5],
         outlier=true,
         ζ_ω_threshold=0,
         Exogenous_X=zeros(10, 0),
@@ -475,7 +477,9 @@ end
 
     models = [model1, model2, model3, model4]
 
-    keys_vec = [["ξ", "ζ", "ω_2"], ["ζ", "ω_2"], ["ξ", "ω_2"], ["ξ", "ζ"], ["ξ", "ω_2", "ω_5"]]
+    keys_vec = [
+        ["ξ", "ζ", "ω_2"], ["ζ", "ω_2"], ["ξ", "ω_2"], ["ξ", "ζ"], ["ξ", "ω_2", "ω_5"]
+    ]
 
     for idx in eachindex(models)
         model = models[idx]
