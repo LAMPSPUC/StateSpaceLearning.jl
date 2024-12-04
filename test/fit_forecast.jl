@@ -228,6 +228,12 @@ end
         6.253,
         6.384,
     ]
+
+    model4 = StateSpaceLearning.StructuralModel(y3; freq_seasonal=[12, 36])
+    StateSpaceLearning.fit!(model4)
+    forecast4 = trunc.(StateSpaceLearning.forecast(model4, 18); digits=3)
+
+    @test length(forecast4) == 18
 end
 
 @testset "Function: simulate" begin

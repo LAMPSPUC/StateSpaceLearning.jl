@@ -1,22 +1,31 @@
 
-"""
-function fit!(model::StateSpaceLearningModel,
+@doc raw"""
+Fits the StateSpaceLearning model using specified parameters and estimation procedures. After fitting, the model output can be accessed in model.output
+
+fit!(model::StateSpaceLearningModel,
                     α::AbstractFloat = 0.1, 
-                    information_criteria::String = "aic", 
+                    information\_criteria::String = "aic", 
                     ϵ::AbstractFloat = 0.05, 
-                    penalize_exogenous::Bool = true, 
-                    penalize_initial_states::Bool = true,
+                    penalize\_exogenous::Bool = true, 
+                    penalize\_initial\_states::Bool = true,
                     )
 
-    Fits the StateSpaceLearning model using specified parameters and estimation procedures.
+# Arguments
+- model::StateSpaceLearningModel: Model to be fitted.
+- α::AbstractFloat: Elastic net mixing parameter (default: 0.1).
+- information\_criteria::String: Method for hyperparameter selection (default: "aic").
+- ϵ::AbstractFloat: Non negative value to handle 0 coefs on the first lasso step (default: 0.05).
+- penalize\_exogenous::Bool: If true, penalize exogenous variables (default: true).
+- penalize\_initial\_states::Bool: If true, penalize initial states (default: true).
 
-    # Arguments
-    model::StateSpaceLearningModel: Model to be fitted.
-    α::AbstractFloat: Elastic net mixing parameter (default: 0.1).
-    information_criteria::String: Method for hyperparameter selection (default: "aic").
-    ϵ::AbstractFloat: Non negative value to handle 0 coefs on the first lasso step (default: 0.05).
-    penalize_exogenous::Bool: If true, penalize exogenous variables (default: true).
-    penalize_initial_states::Bool: If true, penalize initial states (default: true).
+# Example
+```julia
+y = rand(100)
+model = StructuralModel(y)
+fit!(model)
+output = model.output
+```
+
 """
 function fit!(
     model::StateSpaceLearningModel;
@@ -75,25 +84,34 @@ function fit!(
     return model.output = output
 end
 
-"""
-    forecast(model::StateSpaceLearningModel, steps_ahead::Int; Exogenous_Forecast::Union{Matrix{Fl}, Missing}=missing)::Vector{AbstractFloat} where Fl
+@doc raw"""
+Returns the forecast for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
 
-    Returns the forecast for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
+forecast(model::StateSpaceLearningModel, steps\_ahead::Int; Exogenous\_Forecast::Union{Matrix{Fl}, Missing}=missing)::Vector{AbstractFloat} where Fl
 
-    # Arguments
-    - `model::StateSpaceLearningModel`: Model obtained from fitting.
-    - `steps_ahead::Int`: Number of steps ahead for forecasting.
-    - `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast (default: zeros(steps_ahead, 0))
+# Arguments
+- `model::StateSpaceLearningModel`: Model obtained from fitting.
+- `steps_ahead::Int`: Number of steps ahead for forecasting.
+- `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast (default: zeros(steps_ahead, 0))
 
-    # Returns
-    - `Union{Matrix{AbstractFloat}, Vector{AbstractFloat}}`: Matrix or vector of matrices containing forecasted values.
+# Returns
+- `Union{Matrix{AbstractFloat}, Vector{AbstractFloat}}`: Matrix or vector of matrices containing forecasted values.
 
+# Example
+```julia
+y = rand(100)
+model = StructuralModel(y)
+fit!(model)
+steps_ahead = 12
+point_prediction = forecast(model, steps_ahead)
+```
 """
 function forecast(
     model::StateSpaceLearningModel,
     steps_ahead::Int;
     Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0),
 )::Union{Matrix{<:AbstractFloat},Vector{<:AbstractFloat}} where {Fl<:AbstractFloat}
+    @assert isfitted(model) "Model must be fitted before simulation"
     exog_idx = if typeof(model.output) == Output
         model.output.components["Exogenous_X"]["Indexes"]
     else
@@ -132,20 +150,40 @@ function forecast(
     end
 end
 
-"""
-simulate(model::StateSpaceLearningModel, steps_ahead::Int, N_scenarios::Int;
-                                 Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0))::Matrix{AbstractFloat} where Fl
+@doc raw"""
+Generate simulations for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
 
-    Generate simulations for a given number of steps ahead using the provided StateSpaceLearning output and exogenous forecast data.
+simulate(model::StateSpaceLearningModel, steps\_ahead::Int, N\_scenarios::Int;
+                                 Exogenous\_Forecast::Matrix{Fl}=zeros(steps_ahead, 0))::Matrix{AbstractFloat} where Fl
 
-    # Arguments
-    - `model::StateSpaceLearningModel`: Model obtained from fitting.
-    - `steps_ahead::Int`: Number of steps ahead for simulation.
-    - `N_scenarios::Int`: Number of scenarios to simulate (default: 1000).
-    - `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast (default: zeros(steps_ahead, 0))
+# Arguments
+- `model::StateSpaceLearningModel`: Model obtained from fitting.
+- `steps_ahead::Int`: Number of steps ahead for simulation.
+- `N_scenarios::Int`: Number of scenarios to simulate (default: 1000).
+- `Exogenous_Forecast::Matrix{Fl}`: Exogenous variables forecast (default: zeros(steps_ahead, 0))
 
-    # Returns
-    - `Union{Vector{Matrix{AbstractFloat}}, Matrix{AbstractFloat}}`: Matrix or vector of matrices containing simulated values.
+# Returns
+- `Union{Vector{Matrix{AbstractFloat}}, Matrix{AbstractFloat}}`: Matrix or vector of matrices containing simulated values.
+
+# Example (Univariate Case)
+```julia
+y = rand(100)
+model = StructuralModel(y)
+fit!(model)
+steps_ahead = 12
+N_scenarios = 1000
+simulation  = simulate(model, steps_ahead, N_scenarios)
+```
+
+# Example (Multivariate Case)
+```julia
+y = rand(100, 3)
+model = StructuralModel(y)
+fit!(model)
+steps_ahead = 12
+N_scenarios = 1000
+simulation  = simulate(model, steps_ahead, N_scenarios)
+```
 """
 function simulate(
     model::StateSpaceLearningModel,
@@ -156,6 +194,7 @@ function simulate(
 )::Union{Vector{Matrix{<:AbstractFloat}},Matrix{<:AbstractFloat}} where {Fl<:AbstractFloat}
     @assert seasonal_innovation_simulation >= 0 "seasonal_innovation_simulation must be a non-negative integer"
     @assert seasonal_innovation_simulation >= 0 "seasonal_innovation_simulation must be a non-negative integer"
+    @assert isfitted(model) "Model must be fitted before simulation"
 
     prediction = StateSpaceLearning.forecast(
         model, steps_ahead; Exogenous_Forecast=Exogenous_Forecast

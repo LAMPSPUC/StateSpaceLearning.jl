@@ -56,6 +56,7 @@ Current features include:
 Quick example of fit and forecast for the air passengers time-series.
 
 ```julia
+using StateSpaceLearning
 using CSV
 using DataFrames
 using Plots
@@ -69,8 +70,7 @@ fit!(model)
 prediction_log = StateSpaceLearning.forecast(model, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
 prediction = exp.(prediction_log)
 
-plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
-plot!(vcat(ones(length(log_air_passengers)).*NaN, prediction), lab = "Forecast", w=2, color = "blue")
+plot_point_forecast(airp.passengers, prediction)
 ```
 ![quick_example_airp](./docs/src/assets/quick_example_airp.PNG)
 
@@ -78,11 +78,7 @@ plot!(vcat(ones(length(log_air_passengers)).*NaN, prediction), lab = "Forecast",
 N_scenarios = 1000
 simulation = StateSpaceLearning.simulate(model, steps_ahead, N_scenarios) # arguments are the output of the fitted model, number of steps ahead the user wants to forecast and number of scenario paths
 
-plot(airp.passengers, w=2 , color = "Black", lab = "Historical", legend = :outerbottom)
-for s in 1:N_scenarios-1
-    plot!(vcat(ones(length(log_air_passengers)).*NaN, exp.(simulation[:, s])), lab = "", α = 0.1 , color = "red")
-end
-plot!(vcat(ones(length(log_air_passengers)).*NaN, exp.(simulation[:, N_scenarios])), lab = "Scenarios Paths", α = 0.1 , color = "red")
+plot_scenarios(airp.passengers, exp.(simulation))
 
 ```
 ![airp_sim](./docs/src/assets/airp_sim.svg)
@@ -103,7 +99,7 @@ fit!(model)
 
 level = model.output.components["μ1"]["Values"] + model.output.components["ξ"]["Values"]
 slope = model.output.components["ν1"]["Values"] + model.output.components["ζ"]["Values"]
-seasonal = model.output.components["γ1"]["Values"] + model.output.components["ω"]["Values"]
+seasonal = model.output.components["γ1_12"]["Values"] + model.output.components["ω_12"]["Values"]
 trend = level + slope
 
 plot(trend, w=2 , color = "Black", lab = "Trend Component", legend = :outerbottom)

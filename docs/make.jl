@@ -15,7 +15,7 @@ makedocs(;
     format=Documenter.HTML(; mathengine=Documenter.MathJax2()),
     sitename="StateSpaceLearning.jl",
     authors="André Ramos",
-    pages=["Home" => "index.md", "manual.md"],
+    pages=["Home" => "index.md", "manual.md", "features.md", "examples.md"],
 )
 
 deploydocs(; repo="github.com/LAMPSPUC/StateSpaceLearning.jl.git", push_preview=true)

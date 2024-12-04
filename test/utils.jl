@@ -108,7 +108,7 @@ end
 @testset "Function: fill_innovation_coefs" begin
     model = StateSpaceLearning.StructuralModel(rand(100))
     StateSpaceLearning.fit!(model)
-    components = ["ξ", "ζ", "ω"]
+    components = ["ξ", "ζ", "ω_12"]
 
     valid_indexes = model.output.valid_indexes
 
@@ -128,7 +128,7 @@ end
 
     model = StateSpaceLearning.StructuralModel(rand(100, 3))
     StateSpaceLearning.fit!(model)
-    components = ["ξ", "ζ", "ω"]
+    components = ["ξ", "ζ", "ω_12"]
 
     valid_indexes = model.output[1].valid_indexes
 

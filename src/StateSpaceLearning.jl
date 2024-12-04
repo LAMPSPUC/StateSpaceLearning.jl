@@ -11,7 +11,8 @@ include("estimation_procedure.jl")
 include("utils.jl")
 include("datasets.jl")
 include("fit_forecast.jl")
+include("plots.jl")
 
-export fit!, forecast, simulate, StructuralModel
+export fit!, forecast, simulate, StructuralModel, plot_point_forecast, plot_scenarios
 
 end # module StateSpaceLearning
