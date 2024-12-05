@@ -52,7 +52,7 @@ def evaluate_ss(input, sample_size, init, hyperparameters_inicialization):
 results      = []
 results_init = []
 for i in range(0, 48000):
-    hyperparameters_inicialization = [ssl_init_df.loc[i]["ϵ"], ssl_init_df.loc[i]["ξ"],ssl_init_df.loc[i]["ζ"],ssl_init_df.loc[i]["ω"]]
+    hyperparameters_inicialization = [ssl_init_df.loc[i]["ϵ"], ssl_init_df.loc[i]["ξ"],ssl_init_df.loc[i]["ζ"],ssl_init_df.loc[i]["ω_12"]]
     results.append(evaluate_ss(dict_vec[i], 2794, False, hyperparameters_inicialization))
     results_init.append(evaluate_ss(dict_vec[i], 2794, True, hyperparameters_inicialization))
 

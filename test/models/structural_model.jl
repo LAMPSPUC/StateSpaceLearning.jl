@@ -315,7 +315,7 @@ end
     models = [Basic_Structural, Local_Level, Local_Linear_Trend1, Local_Linear_Trend2]
 
     empty_keys_vec = [
-        [], ["ν1", "ζ", "γ₁", "ω"], ["γ₁", "ω", "o"], ["γ₁", "ω", "o", "Exogenous_X"]
+        [], ["ν1", "ζ", "γ₁", "ω_2"], ["γ₁", "ω_2", "o"], ["γ₁", "ω_2", "o", "Exogenous_X"]
     ]
 
     exogs = [Exogenous_X1, Exogenous_X1, Exogenous_X1, Exogenous_X2]
@@ -352,6 +352,19 @@ end
         ζ_ω_threshold=0,
         Exogenous_X=Exogenous_X2,
     )
+    Basic_Structural2 = StateSpaceLearning.StructuralModel(
+        rand(10);
+        level=true,
+        stochastic_level=true,
+        trend=true,
+        stochastic_trend=true,
+        seasonal=true,
+        stochastic_seasonal=true,
+        freq_seasonal=[2, 5],
+        outlier=true,
+        ζ_ω_threshold=0,
+        Exogenous_X=Exogenous_X2,
+    )
     Local_Level = StateSpaceLearning.StructuralModel(
         rand(10);
         level=true,
@@ -379,15 +392,17 @@ end
         Exogenous_X=Exogenous_X2,
     )
 
-    models = [Basic_Structural, Local_Level, Local_Linear_Trend]
+    models = [Basic_Structural, Basic_Structural2, Local_Level, Local_Linear_Trend]
 
-    params_vec = [["ξ", "ζ", "ω", "ε"], ["ξ", "ε"], ["ξ", "ζ", "ε"]]
+    params_vec = [
+        ["ξ", "ζ", "ω_2", "ε"], ["ξ", "ζ", "ω_2", "ω_5", "ε"], ["ξ", "ε"], ["ξ", "ζ", "ε"]
+    ]
 
     for idx in eachindex(models)
         model = models[idx]
         components_indexes = StateSpaceLearning.get_components_indexes(model)
         variances = StateSpaceLearning.get_variances(
-            model, rand(100), rand(39), components_indexes
+            model, rand(100), rand(100), components_indexes
         )
         @test all([key in keys(variances) for key in params_vec[idx]])
     end
@@ -446,10 +461,25 @@ end
         ζ_ω_threshold=0,
         Exogenous_X=zeros(10, 0),
     )
+    model5 = StateSpaceLearning.StructuralModel(
+        rand(10);
+        level=true,
+        stochastic_level=true,
+        trend=true,
+        stochastic_trend=false,
+        seasonal=true,
+        stochastic_seasonal=true,
+        freq_seasonal=[2, 5],
+        outlier=true,
+        ζ_ω_threshold=0,
+        Exogenous_X=zeros(10, 0),
+    )
 
     models = [model1, model2, model3, model4]
 
-    keys_vec = [["ξ", "ζ", "ω"], ["ζ", "ω"], ["ξ", "ω"], ["ξ", "ζ"]]
+    keys_vec = [
+        ["ξ", "ζ", "ω_2"], ["ζ", "ω_2"], ["ξ", "ω_2"], ["ξ", "ζ"], ["ξ", "ω_2", "ω_5"]
+    ]
 
     for idx in eachindex(models)
         model = models[idx]
@@ -461,7 +491,7 @@ end
 @testset "Function: get_innovation_simulation_X" begin
     innovation1 = "ξ"
     innovation2 = "ζ"
-    innovation3 = "ω"
+    innovation3 = "ω_2"
 
     model = StateSpaceLearning.StructuralModel(
         rand(3);

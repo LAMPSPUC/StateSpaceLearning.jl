@@ -326,7 +326,10 @@ function estimation_procedure(
     for key in keys(components_indexes)
         if key != "initial_states" && key != "μ1"
             component = components_indexes[key]
-            if key != "Exogenous_X" && key != "o" && !(key in ["ν1", "γ1"])
+            if key != "Exogenous_X" &&
+                key != "o" &&
+                !(key in ["ν1"]) &&
+                !(occursin("γ", key))
                 κ = count(i -> i != 0, coefs[component]) < 1 ? 0 : std(coefs[component])
                 if hasintercept
                     ts_penalty_factor[component .- 1] .= (1 / (κ + ϵ))
