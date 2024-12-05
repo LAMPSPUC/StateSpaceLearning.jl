@@ -50,7 +50,7 @@ function evaluate_SSL(
         DataFrame(
             [
                 [model.output.residuals_variances["ξ"]],
-                [model.output.residuals_variances["ω"]],
+                [model.output.residuals_variances["ω_12"]],
                 [model.output.residuals_variances["ε"]],
                 [model.output.residuals_variances["ζ"]],
             ],

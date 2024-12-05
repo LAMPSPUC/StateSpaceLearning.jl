@@ -212,7 +212,7 @@ ss_model = BasicStructural(log_air_passengers, 12)
 set_initial_hyperparameters!(ss_model, Dict("sigma2_ε" => residuals_variances["ε"], 
                                          "sigma2_ξ" =>residuals_variances["ξ"], 
                                          "sigma2_ζ" =>residuals_variances["ζ"], 
-                                         "sigma2_ω" =>residuals_variances["ω"]))
+                                         "sigma2_ω" =>residuals_variances["ω_12"]))
 StateSpaceModels.fit!(ss_model)
 ```
 

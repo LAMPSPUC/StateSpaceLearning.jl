@@ -315,7 +315,7 @@ end
     models = [Basic_Structural, Local_Level, Local_Linear_Trend1, Local_Linear_Trend2]
 
     empty_keys_vec = [
-        [], ["ν1", "ζ", "γ₁", "ω"], ["γ₁", "ω", "o"], ["γ₁", "ω", "o", "Exogenous_X"]
+        [], ["ν1", "ζ", "γ₁", "ω_2"], ["γ₁", "ω_2", "o"], ["γ₁", "ω_2", "o", "Exogenous_X"]
     ]
 
     exogs = [Exogenous_X1, Exogenous_X1, Exogenous_X1, Exogenous_X2]
