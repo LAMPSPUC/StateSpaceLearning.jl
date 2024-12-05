@@ -51,7 +51,7 @@ fit!(model; penalize_initial_states=false)
 simulation = StateSpaceLearning.simulate(model, steps_ahead, 100) #Gets a 12 steps ahead prediction
 plot_scenarios(y, simulation)
 ```
-![solar_sim_raw](assets/solar_sim_raw.PNG)
+![solar_sim_raw](assets/solar_sim_raw.png)
 
 Now we present the results by setting the ``seasonal\_innovation\_simulation`` hyperparameter to 24 (given that it is a solar hourly time series).
 
@@ -68,7 +68,7 @@ fit!(model; penalize_initial_states=false)
 simulation = StateSpaceLearning.simulate(model, steps_ahead, 100; seasonal_innovation_simulation=24) #Gets a 12 steps ahead prediction
 plot_scenarios(y, simulation)
 ```
-![solar_sim_treated](assets/solar_sim_treated.PNG)
+![solar_sim_treated](assets/solar_sim_treated.png)
 
 Thus, the model has demonstrated its capability to effectively capture the intermittent nature of the solar time series, providing a more accurate representation of its underlying characteristics.
 
@@ -92,7 +92,7 @@ prediction = StateSpaceLearning.forecast(model, steps_ahead) # arguments are the
 
 plot_point_forecast(y, prediction)
 ```
-![one_seas](assets/one_seas.PNG)
+![one_seas](assets/one_seas.png)
 
 
 Note that the model successfully captured the daily seasonality but, as expected, was unable to capture the weekly seasonality. We now present the results after setting the `freq\_seasonal` hyperparameter to [24, 168], accounting for both daily and weekly seasonalities.
@@ -112,6 +112,6 @@ prediction = StateSpaceLearning.forecast(model, steps_ahead) # arguments are the
 
 plot_point_forecast(y, prediction)
 ```
-![two_seas](assets/two_seas.PNG)
+![two_seas](assets/two_seas.png)
 
 Note that the model was able to capture both seasonalities in this case.
