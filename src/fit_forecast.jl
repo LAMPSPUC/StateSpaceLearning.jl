@@ -272,7 +272,7 @@ function simulate(
         end
     else
         start_seasonal_term = (size(components_matrix, 1) % seasonal_innovation_simulation)
-        for i in 1:seasonal_innovation_simulation
+        for i in 1:min(seasonal_innovation_simulation, steps_ahead)
             ∑ = if is_univariate
                 Diagonal([
                     var(
