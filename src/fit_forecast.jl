@@ -196,9 +196,7 @@ function simulate(
     @assert seasonal_innovation_simulation >= 0 "seasonal_innovation_simulation must be a non-negative integer"
     @assert isfitted(model) "Model must be fitted before simulation"
 
-    prediction = forecast(
-        model, steps_ahead; Exogenous_Forecast=Exogenous_Forecast
-    )
+    prediction = forecast(model, steps_ahead; Exogenous_Forecast=Exogenous_Forecast)
 
     is_univariate = typeof(model.output) == Output
 
