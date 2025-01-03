@@ -196,11 +196,11 @@ function simulate(
     @assert seasonal_innovation_simulation >= 0 "seasonal_innovation_simulation must be a non-negative integer"
     @assert isfitted(model) "Model must be fitted before simulation"
 
-    prediction = StateSpaceLearning.forecast(
+    prediction = forecast(
         model, steps_ahead; Exogenous_Forecast=Exogenous_Forecast
     )
 
-    is_univariate = typeof(model.output) == StateSpaceLearning.Output
+    is_univariate = typeof(model.output) == Output
 
     simulation_X = zeros(steps_ahead, 0)
     valid_indexes =
@@ -208,15 +208,15 @@ function simulate(
     components_matrix = zeros(length(valid_indexes), 0)
     N_components = 1
 
-    model_innovations = StateSpaceLearning.get_model_innovations(model)
+    model_innovations = get_model_innovations(model)
     for innovation in model_innovations
         simulation_X = hcat(
             simulation_X,
-            StateSpaceLearning.get_innovation_simulation_X(model, innovation, steps_ahead)[
+            get_innovation_simulation_X(model, innovation, steps_ahead)[
                 (end - steps_ahead):(end - 1), (end - steps_ahead + 1):end
             ],
         )
-        comp = StateSpaceLearning.fill_innovation_coefs(model, innovation, valid_indexes)
+        comp = fill_innovation_coefs(model, innovation, valid_indexes)
         components_matrix = hcat(components_matrix, comp)
         N_components += 1
     end
@@ -242,7 +242,11 @@ function simulate(
     end
 
     if seasonal_innovation_simulation == 0
-        ∑ = cov(components_matrix)
+        ∑ = if is_univariate
+            Diagonal([var(components_matrix[:, i]) for i in 1:N_components])
+        else
+            Diagonal([var(components_matrix[:, i]) for i in 1:N_mv_components])
+        end
         for i in 1:steps_ahead
             MV_dist_vec[i] = if is_univariate
                 MvNormal(zeros(N_components), ∑)
@@ -270,12 +274,27 @@ function simulate(
         end
     else
         start_seasonal_term = (size(components_matrix, 1) % seasonal_innovation_simulation)
-        for i in 1:steps_ahead
-            ∑ = cov(
-                components_matrix[
-                    (i + start_seasonal_term):seasonal_innovation_simulation:end, :,
-                ],
-            )
+        for i in 1:seasonal_innovation_simulation
+            ∑ = if is_univariate
+                Diagonal([
+                    var(
+                        components_matrix[
+                            (i + start_seasonal_term):seasonal_innovation_simulation:end,
+                            j,
+                        ],
+                    ) for j in 1:N_components
+                ])
+            else
+                Diagonal([
+                    var(
+                        components_matrix[
+                            (i + start_seasonal_term):seasonal_innovation_simulation:end,
+                            j,
+                        ],
+                    ) for j in 1:N_mv_components
+                ])
+            end
+
             MV_dist_vec[i] = if is_univariate
                 MvNormal(zeros(N_components), ∑)
             else
@@ -309,6 +328,20 @@ function simulate(
                         )
                     else
                         nothing
+                    end
+                end
+            end
+        end
+        for i in (seasonal_innovation_simulation + 1):steps_ahead
+            MV_dist_vec[i] = MV_dist_vec[i - seasonal_innovation_simulation]
+            if model.outlier
+                if is_univariate
+                    o_noises[i, :] = o_noises[i - seasonal_innovation_simulation, :]
+                else
+                    for j in eachindex(model.output)
+                        o_noises[j][i, :] = o_noises[j][
+                            i - seasonal_innovation_simulation, :,
+                        ]
                     end
                 end
             end
