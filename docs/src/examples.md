@@ -86,7 +86,7 @@ y = solars[!, "values"]
 T = length(y)
 steps_ahead = 168
 
-model = StructuralModel(y; freq_seasonal=24)
+model = StructuralModel(y; freq_seasonal=168)
 fit!(model)
 prediction = StateSpaceLearning.forecast(model, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
 
