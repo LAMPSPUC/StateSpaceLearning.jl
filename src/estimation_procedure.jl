@@ -294,7 +294,9 @@ function estimation_procedure(
 
     if hasintercept
         penalty_factor = ones(size(Estimation_X, 2) - 1)
-        penalty_factor[components_indexes["initial_states"][2:end] .- 1] .= 0
+        if length(penalty_factor) != length(components_indexes["initial_states"][2:end])
+            penalty_factor[components_indexes["initial_states"][2:end] .- 1] .= 0
+        end
         coefs, _ = fit_lasso(
             Estimation_X,
             estimation_y,
@@ -307,7 +309,9 @@ function estimation_procedure(
         )
     else
         penalty_factor = ones(size(Estimation_X, 2))
-        penalty_factor[components_indexes["initial_states"][1:end]] .= 0
+        if length(penalty_factor) != length(components_indexes["initial_states"])
+            penalty_factor[components_indexes["initial_states"][1:end]] .= 0
+        end
         coefs, _ = fit_lasso(
             Estimation_X,
             estimation_y,
