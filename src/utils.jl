@@ -162,36 +162,6 @@ function get_fit_and_residuals(
     end
     return ε_vec, fitted_vec
 end
-"""
-o_size(T::Int)::Int
-
-    Calculates the size of outlier matrix based on the input T.
-
-    # Arguments
-    - `T::Int`: Length of the original time series.
-
-    # Returns
-    - `Int`: Size of o calculated from T.
-
-"""
-o_size(T::Int)::Int = T
-
-"""
-create_o_matrix(T::Int, steps_ahead::Int)::Matrix
-
-    Creates a matrix of outliers based on the input sizes, and the desired steps ahead (this is necessary for the forecast function).
-
-    # Arguments
-    - `T::Int`: Length of the original time series.
-    - `steps_ahead::Int`: Number of steps ahead (for estimation purposes this should be set at 0).
-    
-    # Returns
-    - `Matrix`: Matrix of outliers constructed based on the input sizes.
-
-"""
-function create_o_matrix(T::Int, steps_ahead::Int)::Matrix
-    return vcat(Matrix(1.0 * I, T, T), zeros(steps_ahead, T))
-end
 
 """
     handle_missing_values(

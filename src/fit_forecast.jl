@@ -121,20 +121,7 @@ function forecast(
     @assert size(Exogenous_Forecast, 1) == steps_ahead "Exogenous_Forecast must have the same number of rows as steps_ahead"
 
     Exogenous_X = model.X[:, exog_idx]
-    complete_matrix = create_X(
-        model.level,
-        model.stochastic_level,
-        model.trend,
-        model.stochastic_trend,
-        model.seasonal,
-        model.stochastic_seasonal,
-        model.freq_seasonal,
-        model.outlier,
-        model.ζ_ω_threshold,
-        Exogenous_X,
-        steps_ahead,
-        Exogenous_Forecast,
-    )
+    complete_matrix = create_X(model, Exogenous_X, steps_ahead, Exogenous_Forecast)
 
     if typeof(model.output) == Output
         return AbstractFloat.(
