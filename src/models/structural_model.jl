@@ -60,7 +60,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
     seasonal::Bool
     stochastic_seasonal::Bool
     freq_seasonal::Union{Int,Vector{Int}}
-    cycle_period::Union{Union{Int, <:AbstractFloat},Vector{Int}, Vector{<:AbstractFloat}}
+    cycle_period::Union{Union{Int,<:AbstractFloat},Vector{Int},Vector{<:AbstractFloat}}
     cycle_matrix::Vector{Matrix}
     stochastic_cycle::Bool
     outlier::Bool
@@ -78,7 +78,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         seasonal::Bool=true,
         stochastic_seasonal::Bool=true,
         freq_seasonal::Union{Int,Vector{Int}}=12,
-        cycle_period::Union{Union{Int, <:AbstractFloat},Vector{Int}, Vector{<:AbstractFloat}}=0,
+        cycle_period::Union{Union{Int,<:AbstractFloat},Vector{Int},Vector{<:AbstractFloat}}=0,
         dumping_cycle::Float64=1.0,
         stochastic_cycle::Bool=false,
         outlier::Bool=true,
@@ -104,13 +104,13 @@ mutable struct StructuralModel <: StateSpaceLearningModel
                 cycle_matrix = Vector{Matrix}(undef, length(cycle_period))
                 for i in eachindex(cycle_period)
                     A = dumping_cycle * cos(2 * pi / cycle_period[i])
-                    B = dumping_cycle * sin(2 * pi / cycle_period[i]) 
+                    B = dumping_cycle * sin(2 * pi / cycle_period[i])
                     cycle_matrix[i] = [A B; -B A]
                 end
             else
                 cycle_matrix = Vector{Matrix}(undef, 1)
                 A = dumping_cycle * cos(2 * pi / cycle_period)
-                B = dumping_cycle * sin(2 * pi / cycle_period) 
+                B = dumping_cycle * sin(2 * pi / cycle_period)
                 cycle_matrix[1] = [A B; -B A]
             end
         else
@@ -182,7 +182,8 @@ end
     - `Int`: Size of ζ calculated from T.
 
 """
-ζ_size(T::Int, ζ_ω_threshold::Int, stochastic_start::Int)::Int = max(0, T - ζ_ω_threshold - max(2, stochastic_start))
+ζ_size(T::Int, ζ_ω_threshold::Int, stochastic_start::Int)::Int =
+    max(0, T - ζ_ω_threshold - max(2, stochastic_start))
 
 """
 ω_size(T::Int, s::Int, stochastic_start::Int)::Int
@@ -198,8 +199,8 @@ end
     - `Int`: Size of ω calculated from T.
 
 """
-ω_size(T::Int, s::Int, ζ_ω_threshold::Int, stochastic_start::Int)::Int = max(0, T - ζ_ω_threshold - s + 1 - max(0, max(2, stochastic_start) - s))
-
+ω_size(T::Int, s::Int, ζ_ω_threshold::Int, stochastic_start::Int)::Int =
+    max(0, T - ζ_ω_threshold - s + 1 - max(0, max(2, stochastic_start) - s))
 
 """
 o_size(T::Int, stochastic_start::Int)::Int
@@ -229,7 +230,8 @@ o_size(T::Int, stochastic_start::Int)::Int = T - max(1, stochastic_start) + 1
     # Returns
     - `Int`: Size of ϕ calculated from T.
 """
-ϕ_size(T::Int, ζ_ω_threshold::Int, stochastic_start::Int) = 2 * (T - max(2, stochastic_start) + 1) - (ζ_ω_threshold * 2)
+ϕ_size(T::Int, ζ_ω_threshold::Int, stochastic_start::Int) =
+    2 * (T - max(2, stochastic_start) + 1) - (ζ_ω_threshold * 2)
 
 """
     create_ξ(T::Int, steps_ahead::Int, stochastic_start::Int)::Matrix
@@ -248,7 +250,10 @@ o_size(T::Int, stochastic_start::Int)::Int = T - max(1, stochastic_start) + 1
 function create_ξ(T::Int, steps_ahead::Int, stochastic_start::Int)::Matrix
     stochastic_start = max(2, stochastic_start)
     ξ_matrix = zeros(T + steps_ahead, T - stochastic_start + 1)
-    ones_indexes = findall(I -> Tuple(I)[1] - (stochastic_start - 2) > Tuple(I)[2], CartesianIndices((T + steps_ahead, T - stochastic_start)))
+    ones_indexes = findall(
+        I -> Tuple(I)[1] - (stochastic_start - 2) > Tuple(I)[2],
+        CartesianIndices((T + steps_ahead, T - stochastic_start)),
+    )
     ξ_matrix[ones_indexes] .= 1
     return ξ_matrix[:, 1:(end - 1)]
 end
@@ -268,10 +273,12 @@ create_ζ(T::Int, steps_ahead::Int, ζ_ω_threshold::Int, stochastic_start::Int)
     - `Matrix`: Matrix of innovations ζ constructed based on the input sizes.
 
 """
-function create_ζ(T::Int, steps_ahead::Int, ζ_ω_threshold::Int, stochastic_start::Int)::Matrix
+function create_ζ(
+    T::Int, steps_ahead::Int, ζ_ω_threshold::Int, stochastic_start::Int
+)::Matrix
     stochastic_start = max(2, stochastic_start)
     ζ_matrix = zeros(T + steps_ahead, T - stochastic_start)
-    
+
     for t in 2:(T + steps_ahead)
         if t < T
             len = t - stochastic_start
@@ -298,11 +305,13 @@ create_ω(T::Int, freq_seasonal::Int, steps_ahead::Int, ζ_ω_threshold::Int, st
     - `Matrix`: Matrix of innovations ω constructed based on the input sizes.
 
 """
-function create_ω(T::Int, freq_seasonal::Int, steps_ahead::Int, ζ_ω_threshold::Int, stochastic_start::Int)::Matrix
+function create_ω(
+    T::Int, freq_seasonal::Int, steps_ahead::Int, ζ_ω_threshold::Int, stochastic_start::Int
+)::Matrix
     stochastic_start = max(2, stochastic_start)
     ω_matrix_size = T - freq_seasonal + 1
     stochastic_start_diff = max(0, stochastic_start - freq_seasonal)
-    
+
     ω_matrix = zeros(T + steps_ahead, ω_matrix_size - stochastic_start_diff)
     for t in (freq_seasonal + 1):(T + steps_ahead)
         ωₜ_coefs = zeros(ω_matrix_size)
@@ -313,11 +322,10 @@ function create_ω(T::Int, freq_seasonal::Int, steps_ahead::Int, ζ_ω_threshold
             1
         ωₜ_coefs[lag₂[0 .< lag₂ .<= ω_matrix_size + (freq_seasonal - 1)] .- (freq_seasonal - 1)] .=
             -1
-        ω_matrix[t, :] = ωₜ_coefs[1+stochastic_start_diff:end]
+        ω_matrix[t, :] = ωₜ_coefs[(1 + stochastic_start_diff):end]
     end
     return ω_matrix[:, 1:(end - ζ_ω_threshold)]
 end
-
 
 """
 create_o_matrix(T::Int, steps_ahead::Int, stochastic_start::Int)::Matrix
@@ -358,18 +366,22 @@ create_ϕ(X_cycle::Matrix, T::Int, steps_ahead::Int64, ζ_ω_threshold::Int, sto
     # Returns
     - `Matrix`: Matrix of innovations ϕ constructed based on the input sizes.
 """
-function create_ϕ(c_matrix::Matrix, T::Int, steps_ahead::Int64, ζ_ω_threshold::Int, stochastic_start::Int)::Matrix
-
+function create_ϕ(
+    c_matrix::Matrix, T::Int, steps_ahead::Int64, ζ_ω_threshold::Int, stochastic_start::Int
+)::Matrix
     num_cols = 2 * (T - stochastic_start + 1)
     X = Matrix{Float64}(undef, T + steps_ahead, num_cols)
 
     for (idx, t) in enumerate(stochastic_start:T)
-        X[:, 2 * (idx - 1) + 1] = vcat(zeros(t - 1), c_matrix[1:T - t + 1 + steps_ahead, 1])
-        X[:, 2 * (idx - 1) + 2] = vcat(zeros(t - 1), c_matrix[1:T - t + 1 + steps_ahead, 2])
+        X[:, 2 * (idx - 1) + 1] = vcat(
+            zeros(t - 1), c_matrix[1:(T - t + 1 + steps_ahead), 1]
+        )
+        X[:, 2 * (idx - 1) + 2] = vcat(
+            zeros(t - 1), c_matrix[1:(T - t + 1 + steps_ahead), 2]
+        )
     end
 
-    return X[:, 1:end - (ζ_ω_threshold * 2)]
-    
+    return X[:, 1:(end - (ζ_ω_threshold * 2))]
 end
 
 """
@@ -385,13 +397,15 @@ end
     # Returns
     - `Vector{Matrix}`: Deterministic cycle matrix constructed based on the input parameters.
 """
-function create_deterministic_cycle_matrix(cycle_matrix::Vector{Matrix}, T::Int, steps_ahead::Int)::Vector{Matrix}
+function create_deterministic_cycle_matrix(
+    cycle_matrix::Vector{Matrix}, T::Int, steps_ahead::Int
+)::Vector{Matrix}
     deterministic_cycle_matrix = Vector{Matrix}(undef, length(cycle_matrix))
     for (idx, c_matrix) in enumerate(cycle_matrix)
-        X_cycle = Matrix{Float64}(undef, T+steps_ahead, 2)
-        cycle_matrix_term = c_matrix ^ 0
+        X_cycle = Matrix{Float64}(undef, T + steps_ahead, 2)
+        cycle_matrix_term = c_matrix^0
         X_cycle[1, :] = cycle_matrix_term[1, :]
-        for t in 2:T+steps_ahead
+        for t in 2:(T + steps_ahead)
             cycle_matrix_term *= c_matrix
             X_cycle[t, :] = cycle_matrix_term[1, :]
         end
@@ -426,7 +440,7 @@ function create_initial_states_Matrix(
     level::Bool,
     trend::Bool,
     seasonal::Bool,
-    deterministic_cycle_matrix::Vector{Matrix}
+    deterministic_cycle_matrix::Vector{Matrix},
 )::Matrix
     initial_states_matrix = zeros(T + steps_ahead, 0)
     if level
@@ -517,7 +531,11 @@ function create_X(
 ) where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     T = size(Exogenous_X, 1)
 
-    ξ_matrix = stochastic_level ? create_ξ(T, steps_ahead, stochastic_start) : zeros(T + steps_ahead, 0)
+    ξ_matrix = if stochastic_level
+        create_ξ(T, steps_ahead, stochastic_start)
+    else
+        zeros(T + steps_ahead, 0)
+    end
     ζ_matrix = if stochastic_trend
         create_ζ(T, steps_ahead, ζ_ω_threshold, stochastic_start)
     else
@@ -527,19 +545,30 @@ function create_X(
     ω_matrix = zeros(T + steps_ahead, 0)
     if stochastic_seasonal
         for s in freq_seasonal
-            ω_matrix = hcat(ω_matrix, create_ω(T, s, steps_ahead, ζ_ω_threshold, stochastic_start))
+            ω_matrix = hcat(
+                ω_matrix, create_ω(T, s, steps_ahead, ζ_ω_threshold, stochastic_start)
+            )
         end
     end
 
-    deterministic_cycle_matrix = create_deterministic_cycle_matrix(cycle_matrix, T, steps_ahead)
+    deterministic_cycle_matrix = create_deterministic_cycle_matrix(
+        cycle_matrix, T, steps_ahead
+    )
     ϕ_matrix = zeros(T + steps_ahead, 0)
     if stochastic_cycle
         for c_matrix in deterministic_cycle_matrix
-            ϕ_matrix = hcat(ϕ_matrix, create_ϕ(c_matrix, T, steps_ahead, ζ_ω_threshold, stochastic_start))
+            ϕ_matrix = hcat(
+                ϕ_matrix,
+                create_ϕ(c_matrix, T, steps_ahead, ζ_ω_threshold, stochastic_start),
+            )
         end
     end
 
-    o_matrix = outlier ? create_o_matrix(T, steps_ahead, stochastic_start) : zeros(T + steps_ahead, 0)
+    o_matrix = if outlier
+        create_o_matrix(T, steps_ahead, stochastic_start)
+    else
+        zeros(T + steps_ahead, 0)
+    end
 
     initial_states_matrix = create_initial_states_Matrix(
         T, freq_seasonal, steps_ahead, level, trend, seasonal, deterministic_cycle_matrix
@@ -580,7 +609,6 @@ function create_X(
     steps_ahead::Int=0,
     Exogenous_Forecast::Matrix{Tl}=zeros(steps_ahead, size(Exogenous_X, 2)),
 ) where {Fl<:AbstractFloat,Tl<:AbstractFloat}
-    
     return create_X(
         model.level,
         model.stochastic_level,
@@ -655,7 +683,9 @@ function get_components_indexes(model::StructuralModel)::Dict
     end
 
     if model.stochastic_level
-        ξ_indexes = collect((FINAL_INDEX + 1):(FINAL_INDEX + ξ_size(T, model.stochastic_start)))
+        ξ_indexes = collect(
+            (FINAL_INDEX + 1):(FINAL_INDEX + ξ_size(T, model.stochastic_start))
+        )
         FINAL_INDEX += length(ξ_indexes)
     else
         ξ_indexes = Int[]
@@ -663,7 +693,9 @@ function get_components_indexes(model::StructuralModel)::Dict
 
     if model.stochastic_trend
         ζ_indexes = collect(
-            (FINAL_INDEX + 1):(FINAL_INDEX + ζ_size(T, model.ζ_ω_threshold, model.stochastic_start))
+            (FINAL_INDEX + 1):(FINAL_INDEX + ζ_size(
+                T, model.ζ_ω_threshold, model.stochastic_start
+            )),
         )
         FINAL_INDEX += length(ζ_indexes)
     else
@@ -674,7 +706,9 @@ function get_components_indexes(model::StructuralModel)::Dict
     if model.stochastic_seasonal
         for s in model.freq_seasonal
             ω_s_indexes = collect(
-                (FINAL_INDEX + 1):(FINAL_INDEX + ω_size(T, s, model.ζ_ω_threshold, model.stochastic_start))
+                (FINAL_INDEX + 1):(FINAL_INDEX + ω_size(
+                    T, s, model.ζ_ω_threshold, model.stochastic_start
+                )),
             )
             FINAL_INDEX += length(ω_s_indexes)
             push!(ω_indexes, ω_s_indexes)
@@ -687,7 +721,9 @@ function get_components_indexes(model::StructuralModel)::Dict
     if model.stochastic_cycle
         for _ in eachindex(model.cycle_matrix)
             ϕ_i_indexes = collect(
-                (FINAL_INDEX + 1):(FINAL_INDEX + ϕ_size(T, model.ζ_ω_threshold, model.stochastic_start))
+                (FINAL_INDEX + 1):(FINAL_INDEX + ϕ_size(
+                    T, model.ζ_ω_threshold, model.stochastic_start
+                )),
             )
             FINAL_INDEX += length(ϕ_i_indexes)
             push!(ϕ_indexes, ϕ_i_indexes)
@@ -697,7 +733,9 @@ function get_components_indexes(model::StructuralModel)::Dict
     end
 
     if model.outlier
-        o_indexes = collect((FINAL_INDEX + 1):(FINAL_INDEX + o_size(T, model.stochastic_start)))
+        o_indexes = collect(
+            (FINAL_INDEX + 1):(FINAL_INDEX + o_size(T, model.stochastic_start))
+        )
         FINAL_INDEX += length(o_indexes)
     else
         o_indexes = Int[]
@@ -723,7 +761,6 @@ function get_components_indexes(model::StructuralModel)::Dict
         if model.stochastic_seasonal
             components_indexes_dict["ω_$s"] = ω_indexes[i]
         end
-        
     end
 
     if !isempty(model.cycle_matrix)
@@ -733,7 +770,7 @@ function get_components_indexes(model::StructuralModel)::Dict
                 components_indexes_dict["ϕ_$i"] = ϕ_indexes[i]
             end
         end
-    end 
+    end
 
     return components_indexes_dict
 end
@@ -876,8 +913,16 @@ function get_innovation_simulation_X(
         return create_ω(length(model.y) + steps_ahead + 1, s, 0, 1, model.stochastic_start)
     elseif occursin("ϕ_", innovation)
         i = parse(Int, split(innovation, "_")[2])
-        deterministic_cycle_matrix = create_deterministic_cycle_matrix(model.cycle_matrix, length(model.y), steps_ahead)
-        return create_ϕ(deterministic_cycle_matrix[i], length(model.y), steps_ahead, model.ζ_ω_threshold, model.stochastic_start)
+        deterministic_cycle_matrix = create_deterministic_cycle_matrix(
+            model.cycle_matrix, length(model.y), steps_ahead
+        )
+        return create_ϕ(
+            deterministic_cycle_matrix[i],
+            length(model.y),
+            steps_ahead,
+            model.ζ_ω_threshold,
+            model.stochastic_start,
+        )
     end
 end
 

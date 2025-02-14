@@ -4,7 +4,9 @@
     model1 = StateSpaceLearning.StructuralModel(y1)
     model2 = StateSpaceLearning.StructuralModel(y1; freq_seasonal=[3, 10])
     model3 = StateSpaceLearning.StructuralModel(y1; cycle_period=[3, 10.2])
-    model4 = StateSpaceLearning.StructuralModel(y1; cycle_period=[3, 10.2], dumping_cycle=0.5)
+    model4 = StateSpaceLearning.StructuralModel(
+        y1; cycle_period=[3, 10.2], dumping_cycle=0.5
+    )
 
     @test typeof(model1) == StateSpaceLearning.StructuralModel
     @test typeof(model2) == StateSpaceLearning.StructuralModel
@@ -12,12 +14,18 @@
     @test typeof(model4) == StateSpaceLearning.StructuralModel
 
     @test_throws AssertionError StateSpaceLearning.StructuralModel(y1; stochastic_start=0)
-    @test_throws AssertionError StateSpaceLearning.StructuralModel(y1; stochastic_start=1000)
+    @test_throws AssertionError StateSpaceLearning.StructuralModel(
+        y1; stochastic_start=1000
+    )
 
     @test_throws AssertionError StateSpaceLearning.StructuralModel(y1; freq_seasonal=1000)
 
-    @test_throws AssertionError StateSpaceLearning.StructuralModel(y1; cycle_period=[3, 10.2], dumping_cycle=-1.0)
-    @test_throws AssertionError StateSpaceLearning.StructuralModel(y1; cycle_period=[3, 10.2], dumping_cycle=2.0)
+    @test_throws AssertionError StateSpaceLearning.StructuralModel(
+        y1; cycle_period=[3, 10.2], dumping_cycle=-1.0
+    )
+    @test_throws AssertionError StateSpaceLearning.StructuralModel(
+        y1; cycle_period=[3, 10.2], dumping_cycle=2.0
+    )
 
     exog_error = ones(100, 3)
     @test_throws AssertionError StateSpaceLearning.StructuralModel(
@@ -28,19 +36,19 @@ end
 @testset "create_deterministic_cycle_matrix" begin
     cycle_matrix = Vector{Matrix}(undef, 1)
     A = 1 * cos(2 * pi / 12)
-    B = 1 * sin(2 * pi / 12) 
+    B = 1 * sin(2 * pi / 12)
     cycle_matrix[1] = [A B; -B A]
     det_matrix1 = StateSpaceLearning.create_deterministic_cycle_matrix(cycle_matrix, 5, 0)
     exp_det_matrix1 = [
-        1.0          0.0;
-        0.866025     0.5;
-        0.5          0.866025;
-        2.77556e-16  1.0;
-       -0.5          0.866025;
+        1.0 0.0
+        0.866025 0.5
+        0.5 0.866025
+        2.77556e-16 1.0
+        -0.5 0.866025
     ]
 
     n, p = size(det_matrix1[1])
-    for i in 1:n 
+    for i in 1:n
         for j in 1:p
             @test isapprox(det_matrix1[1][i, j], exp_det_matrix1[i, j]; atol=1e-6)
         end
@@ -50,32 +58,33 @@ end
     cycle_matrix = Vector{Matrix}(undef, length(cycle_period))
     for i in eachindex(cycle_period)
         A = 1 * cos(2 * pi / cycle_period[i])
-        B = 1 * sin(2 * pi / cycle_period[i]) 
+        B = 1 * sin(2 * pi / cycle_period[i])
         cycle_matrix[i] = [A B; -B A]
     end
 
     ####
 
     det_matrix2 = StateSpaceLearning.create_deterministic_cycle_matrix(cycle_matrix, 5, 0)
-    exp_det_matrix2 = [[
-        1.0   0.0
-        -0.5   0.866025
-        -0.5  -0.866025
-         1.0  -6.10623e-16
-        -0.5   0.866025
-    ], 
-    [
-        1.0        0.0;
-        0.870285   0.492548;
-        0.514793   0.857315;
-        0.0257479  0.999668;
-       -0.469977   0.882679;
-    ]
+    exp_det_matrix2 = [
+        [
+            1.0 0.0
+            -0.5 0.866025
+            -0.5 -0.866025
+            1.0 -6.10623e-16
+            -0.5 0.866025
+        ],
+        [
+            1.0 0.0
+            0.870285 0.492548
+            0.514793 0.857315
+            0.0257479 0.999668
+            -0.469977 0.882679
+        ],
     ]
 
     n, p = 5, 2
     for h in eachindex(det_matrix2)
-        for i in 1:n 
+        for i in 1:n
             for j in 1:p
                 @test isapprox(det_matrix2[h][i, j], exp_det_matrix2[h][i, j]; atol=1e-6)
             end
@@ -237,28 +246,33 @@ end
 
     cycle_matrix = Vector{Matrix}(undef, 1)
     A = 1 * cos(2 * pi / 12)
-    B = 1 * sin(2 * pi / 12) 
+    B = 1 * sin(2 * pi / 12)
     cycle_matrix[1] = [A B; -B A]
     det_matrix1 = StateSpaceLearning.create_deterministic_cycle_matrix(cycle_matrix, 5, 0)
     X_ϕ1 = StateSpaceLearning.create_ϕ(det_matrix1[1], 5, 0, 0, 1)
 
-    @test all(isapprox.(
-        X_ϕ1, 
-        [
-            1.0          0.0       0.0          0.0       0.0       0.0       0.0       0.0  0.0  0.0;
-            0.866025     0.5       1.0          0.0       0.0       0.0       0.0       0.0  0.0  0.0;
-            0.5          0.866025  0.866025     0.5       1.0       0.0       0.0       0.0  0.0  0.0;
-            2.77556e-16  1.0       0.5          0.866025  0.866025  0.5       1.0       0.0  0.0  0.0;
-           -0.5          0.866025  2.77556e-16  1.0       0.5       0.866025  0.866025  0.5  1.0  0.0
-        ],
-        atol=1e-6
-    ))
+    @test all(
+        isapprox.(
+            X_ϕ1,
+            [
+                1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                0.866025 0.5 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                0.5 0.866025 0.866025 0.5 1.0 0.0 0.0 0.0 0.0 0.0
+                2.77556e-16 1.0 0.5 0.866025 0.866025 0.5 1.0 0.0 0.0 0.0
+                -0.5 0.866025 2.77556e-16 1.0 0.5 0.866025 0.866025 0.5 1.0 0.0
+            ],
+            atol=1e-6,
+        ),
+    )
 end
 
 @testset "Initial State Matrix" begin
-    
-    X1 = StateSpaceLearning.create_initial_states_Matrix(5, 2, 0, true, true, true, Vector{Matrix}(undef, 0))
-    X2 = StateSpaceLearning.create_initial_states_Matrix(5, 2, 2, true, true, true, Vector{Matrix}(undef, 0))
+    X1 = StateSpaceLearning.create_initial_states_Matrix(
+        5, 2, 0, true, true, true, Vector{Matrix}(undef, 0)
+    )
+    X2 = StateSpaceLearning.create_initial_states_Matrix(
+        5, 2, 2, true, true, true, Vector{Matrix}(undef, 0)
+    )
 
     @test X1 == [
         1.0 0.0 1.0 0.0
@@ -278,8 +292,12 @@ end
         1.0 6.0 1.0 0.0
     ]
 
-    X3 = StateSpaceLearning.create_initial_states_Matrix(5, 2, 0, true, true, false, Vector{Matrix}(undef, 0))
-    X4 = StateSpaceLearning.create_initial_states_Matrix(5, 2, 2, true, true, false, Vector{Matrix}(undef, 0))
+    X3 = StateSpaceLearning.create_initial_states_Matrix(
+        5, 2, 0, true, true, false, Vector{Matrix}(undef, 0)
+    )
+    X4 = StateSpaceLearning.create_initial_states_Matrix(
+        5, 2, 2, true, true, false, Vector{Matrix}(undef, 0)
+    )
 
     @test X3 == [
         1.0 0.0
@@ -299,53 +317,69 @@ end
         1.0 6.0
     ]
 
-    X5 = StateSpaceLearning.create_initial_states_Matrix(5, 2, 0, true, false, false, Vector{Matrix}(undef, 0))
-    X6 = StateSpaceLearning.create_initial_states_Matrix(5, 2, 2, true, false, false, Vector{Matrix}(undef, 0))
+    X5 = StateSpaceLearning.create_initial_states_Matrix(
+        5, 2, 0, true, false, false, Vector{Matrix}(undef, 0)
+    )
+    X6 = StateSpaceLearning.create_initial_states_Matrix(
+        5, 2, 2, true, false, false, Vector{Matrix}(undef, 0)
+    )
 
     @test X5 == ones(5, 1)
     @test X6 == ones(7, 1)
 
-    X7 = StateSpaceLearning.create_initial_states_Matrix(5, 2, 0, false, true, false, Vector{Matrix}(undef, 0))
-    X8 = StateSpaceLearning.create_initial_states_Matrix(5, 2, 2, false, true, false, Vector{Matrix}(undef, 0))
+    X7 = StateSpaceLearning.create_initial_states_Matrix(
+        5, 2, 0, false, true, false, Vector{Matrix}(undef, 0)
+    )
+    X8 = StateSpaceLearning.create_initial_states_Matrix(
+        5, 2, 2, false, true, false, Vector{Matrix}(undef, 0)
+    )
 
     @test X7 == [0.0; 1.0; 2.0; 3.0; 4.0][:, :]
     @test X8 == [0.0; 1.0; 2.0; 3.0; 4.0; 5.0; 6.0][:, :]
 
     cycle_matrix = Vector{Matrix}(undef, 1)
     A = 1 * cos(2 * pi / 12)
-    B = 1 * sin(2 * pi / 12) 
+    B = 1 * sin(2 * pi / 12)
     cycle_matrix[1] = [A B; -B A]
     det_matrix1 = StateSpaceLearning.create_deterministic_cycle_matrix(cycle_matrix, 5, 0)
     det_matrix2 = StateSpaceLearning.create_deterministic_cycle_matrix(cycle_matrix, 5, 2)
 
-    X9 = StateSpaceLearning.create_initial_states_Matrix(5, 2, 0, true, true, true, det_matrix1)
-    X10 = StateSpaceLearning.create_initial_states_Matrix(5, 2, 2, true, true, true, det_matrix2)
+    X9 = StateSpaceLearning.create_initial_states_Matrix(
+        5, 2, 0, true, true, true, det_matrix1
+    )
+    X10 = StateSpaceLearning.create_initial_states_Matrix(
+        5, 2, 2, true, true, true, det_matrix2
+    )
 
-    @test all(isapprox.(
-        X9, 
-        [
-            1.0  0.0  1.0  0.0   1.0          0.0;
-            1.0  1.0  0.0  1.0   0.866025     0.5;
-            1.0  2.0  1.0  0.0   0.5          0.866025;
-            1.0  3.0  0.0  1.0   2.77556e-16  1.0;
-            1.0  4.0  1.0  0.0  -0.5          0.866025;
-        ],
-        atol=1e-6
-    ))
+    @test all(
+        isapprox.(
+            X9,
+            [
+                1.0 0.0 1.0 0.0 1.0 0.0
+                1.0 1.0 0.0 1.0 0.866025 0.5
+                1.0 2.0 1.0 0.0 0.5 0.866025
+                1.0 3.0 0.0 1.0 2.77556e-16 1.0
+                1.0 4.0 1.0 0.0 -0.5 0.866025
+            ],
+            atol=1e-6,
+        ),
+    )
 
-    @test all(isapprox.(
-        X10, 
-        [
-            1.0  0.0  1.0  0.0   1.0          0.0;
-            1.0  1.0  0.0  1.0   0.866025     0.5;
-            1.0  2.0  1.0  0.0   0.5          0.866025;
-            1.0  3.0  0.0  1.0   2.77556e-16  1.0;
-            1.0  4.0  1.0  0.0  -0.5          0.866025;
-            1.0  5.0  0.0  1.0  -0.866025     0.5;
-            1.0  6.0  1.0  0.0  -1.0          5.55112e-16
-        ],
-        atol=1e-6
-    ))
+    @test all(
+        isapprox.(
+            X10,
+            [
+                1.0 0.0 1.0 0.0 1.0 0.0
+                1.0 1.0 0.0 1.0 0.866025 0.5
+                1.0 2.0 1.0 0.0 0.5 0.866025
+                1.0 3.0 0.0 1.0 2.77556e-16 1.0
+                1.0 4.0 1.0 0.0 -0.5 0.866025
+                1.0 5.0 0.0 1.0 -0.866025 0.5
+                1.0 6.0 1.0 0.0 -1.0 5.55112e-16
+            ],
+            atol=1e-6,
+        ),
+    )
 end
 
 @testset "Create X matrix" begin
@@ -422,9 +456,33 @@ end
     counter = 1
     for args in [
         [true, true, true, true, true, true, 2, cycle_matrix, stochastic_cycle, true, 12],
-        [true, true, false, false, false, false, 2, cycle_matrix, stochastic_cycle, true, 12],
+        [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            2,
+            cycle_matrix,
+            stochastic_cycle,
+            true,
+            12,
+        ],
         [true, true, true, true, false, false, 2, cycle_matrix, stochastic_cycle, true, 12],
-        [true, false, true, true, false, false, 2, cycle_matrix, stochastic_cycle, true, 12],
+        [
+            true,
+            false,
+            true,
+            true,
+            false,
+            false,
+            2,
+            cycle_matrix,
+            stochastic_cycle,
+            true,
+            12,
+        ],
     ]
         args = [x in [0, 1] ? Bool(x) : x for x in args]
         for param in param_combination
@@ -435,9 +493,13 @@ end
                     args..., stochastic_start, Exogenous_X1, param[3], Exogenous_forecast1
                 )
             else
-                X1 = StateSpaceLearning.create_X(args..., stochastic_start, Exogenous_X1, param[3])
+                X1 = StateSpaceLearning.create_X(
+                    args..., stochastic_start, Exogenous_X1, param[3]
+                )
             end
-            X2 = StateSpaceLearning.create_X(args..., stochastic_start, Exogenous_X2, param[3])
+            X2 = StateSpaceLearning.create_X(
+                args..., stochastic_start, Exogenous_X2, param[3]
+            )
             @test size(X1) == size_vec1[counter]
             @test size(X2) == size_vec2[counter]
             counter += 1
@@ -597,10 +659,20 @@ end
         Exogenous_X=Exogenous_X2,
     )
 
-    models = [Basic_Structural, Basic_Structural2, Local_Level, Local_Linear_Trend, Local_Linear_Trend_cycle]
+    models = [
+        Basic_Structural,
+        Basic_Structural2,
+        Local_Level,
+        Local_Linear_Trend,
+        Local_Linear_Trend_cycle,
+    ]
 
     params_vec = [
-        ["ξ", "ζ", "ω_2", "ε"], ["ξ", "ζ", "ω_2", "ω_5", "ε"], ["ξ", "ε"], ["ξ", "ζ", "ε"], ["ξ", "ζ", "ε", "ϕ_1"]
+        ["ξ", "ζ", "ω_2", "ε"],
+        ["ξ", "ζ", "ω_2", "ω_5", "ε"],
+        ["ξ", "ε"],
+        ["ξ", "ζ", "ε"],
+        ["ξ", "ζ", "ε", "ϕ_1"],
     ]
 
     for idx in eachindex(models)
@@ -698,7 +770,11 @@ end
     models = [model1, model2, model3, model4]
 
     keys_vec = [
-        ["ξ", "ζ", "ω_2"], ["ζ", "ω_2"], ["ξ", "ω_2"], ["ξ", "ζ"], ["ξ", "ω_2", "ω_5", "ϕ_1"]
+        ["ξ", "ζ", "ω_2"],
+        ["ζ", "ω_2"],
+        ["ξ", "ω_2"],
+        ["ξ", "ζ"],
+        ["ξ", "ω_2", "ω_5", "ϕ_1"],
     ]
 
     for idx in eachindex(models)
@@ -762,15 +838,17 @@ end
     ]
 
     X4 = StateSpaceLearning.get_innovation_simulation_X(model, innovation4, steps_ahead)
-    @assert all(isapprox.(
-        X4, 
-        [
-            1.0   0.0           0.0   0.0           0.0   0.0;
-            -0.5   0.866025      1.0   0.0           0.0   0.0;
-            -0.5  -0.866025     -0.5   0.866025      1.0   0.0;
-             1.0  -6.10623e-16  -0.5  -0.866025     -0.5   0.866025;
-            -0.5   0.866025      1.0  -6.10623e-16  -0.5  -0.866025;
-        ],
-        atol=1e-6
-    ))
+    @assert all(
+        isapprox.(
+            X4,
+            [
+                1.0 0.0 0.0 0.0 0.0 0.0
+                -0.5 0.866025 1.0 0.0 0.0 0.0
+                -0.5 -0.866025 -0.5 0.866025 1.0 0.0
+                1.0 -6.10623e-16 -0.5 -0.866025 -0.5 0.866025
+                -0.5 0.866025 1.0 -6.10623e-16 -0.5 -0.866025
+            ],
+            atol=1e-6,
+        ),
+    )
 end
