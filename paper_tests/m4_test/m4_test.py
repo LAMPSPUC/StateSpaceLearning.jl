@@ -3,7 +3,12 @@ import math
 import statsmodels.api as sm
 import numpy as np
 
-df_train = pd.read_csv("paper_tests/m4_test/Monthly-train.csv")
+df_train1 = pd.read_csv("paper_tests/m4_test/Monthly-train1.csv")
+df_train2 = pd.read_csv("paper_tests/m4_test/Monthly-train2.csv")
+df_train3 = pd.read_csv("paper_tests/m4_test/Monthly-train3.csv")
+df_train4 = pd.read_csv("paper_tests/m4_test/Monthly-train4.csv")
+df_train = pd.concat([df_train1, df_train2, df_train3, df_train4])
+m4_info = pd.read_csv("paper_tests/m4_test/M4-info.csv")
 df_test = pd.read_csv("paper_tests/m4_test/Monthly-test.csv")
 ssl_init_df = pd.read_csv("paper_tests/m4_test/init_SSL/SSL_aic_0.1_false.csv")
 

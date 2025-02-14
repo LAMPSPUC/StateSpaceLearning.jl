@@ -25,6 +25,8 @@ function append_results(filepath, results_df)
     if isfile(filepath)
         df_old = CSV.read(filepath, DataFrame)
         results_df = vcat(df_old, results_df)
+        @info "MASE avg = $(mean(results_df[:, :MASE]))"
+        @info "sMAPE avg = $(mean(results_df[:, :sMAPE]))"
     end
     return CSV.write(filepath, results_df)
 end
@@ -139,5 +141,3 @@ end
 create_dirs()
 
 main()
-
-#run_config(DataFrame(), false, "aic", 0.1, true, 2794)#max sample size

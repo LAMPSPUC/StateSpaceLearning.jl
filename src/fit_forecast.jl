@@ -122,15 +122,7 @@ function forecast(
 
     Exogenous_X = model.X[:, exog_idx]
     complete_matrix = create_X(
-        model.level,
-        model.stochastic_level,
-        model.trend,
-        model.stochastic_trend,
-        model.seasonal,
-        model.stochastic_seasonal,
-        model.freq_seasonal,
-        model.outlier,
-        model.ζ_ω_threshold,
+        model,
         Exogenous_X,
         steps_ahead,
         Exogenous_Forecast,

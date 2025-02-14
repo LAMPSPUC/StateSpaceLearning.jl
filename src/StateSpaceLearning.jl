@@ -1,6 +1,6 @@
 module StateSpaceLearning
 
-using LinearAlgebra, Statistics, GLMNet, Distributions
+using LinearAlgebra, Statistics, GLMNet, Distributions, SparseArrays
 
 abstract type StateSpaceLearningModel end
 
