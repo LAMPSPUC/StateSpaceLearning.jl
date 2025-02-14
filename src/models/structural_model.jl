@@ -352,7 +352,7 @@ function create_o_matrix(T::Int, steps_ahead::Int, stochastic_start::Int)::Matri
 end
 
 """
-create_ϕ(X_cycle::Matrix, T::Int, steps_ahead::Int64, ζ_ω_threshold::Int, stochastic_start::Int)::Matrix
+create_ϕ(X_cycle::Matrix, T::Int, steps_ahead::Int, ζ_ω_threshold::Int, stochastic_start::Int)::Matrix
 
     Creates a matrix of innovations ϕ based on the input sizes, and the desired steps ahead (this is necessary for the forecast function).
 
@@ -367,7 +367,7 @@ create_ϕ(X_cycle::Matrix, T::Int, steps_ahead::Int64, ζ_ω_threshold::Int, sto
     - `Matrix`: Matrix of innovations ϕ constructed based on the input sizes.
 """
 function create_ϕ(
-    c_matrix::Matrix, T::Int, steps_ahead::Int64, ζ_ω_threshold::Int, stochastic_start::Int
+    c_matrix::Matrix, T::Int, steps_ahead::Int, ζ_ω_threshold::Int, stochastic_start::Int
 )::Matrix
     num_cols = 2 * (T - stochastic_start + 1)
     X = Matrix{Float64}(undef, T + steps_ahead, num_cols)
