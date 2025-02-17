@@ -131,6 +131,12 @@ mutable struct StructuralModel <: StateSpaceLearningModel
             stochastic_start,
             Exogenous_X,
         )
+        # convert y format into vector or matrix of AbstractFloat
+        if typeof(y) <: Vector
+            y = convert(Vector{AbstractFloat}, y)
+        else
+            y = convert(Matrix{AbstractFloat}, y)
+        end
         return new(
             y,
             X,
