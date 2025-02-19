@@ -116,6 +116,19 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         else
             cycle_matrix = Vector{Matrix}(undef, 0)
         end
+
+        if typeof(freq_seasonal) <: Vector
+            @assert all(freq_seasonal .> 0) "Seasonal period must be greater than 0"
+        end
+
+        if typeof(cycle_period) <: Vector
+            @assert all(cycle_period .>= 0) "Cycle period must be greater than or equal to 0"
+        end
+        
+        if cycle_period == 0
+            @assert !stochastic_cycle "stochastic_cycle must be false if cycle_period is 0"
+        end
+
         X = create_X(
             level,
             stochastic_level,
