@@ -124,7 +124,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         if typeof(cycle_period) <: Vector
             @assert all(cycle_period .>= 0) "Cycle period must be greater than or equal to 0"
         end
-        
+
         if cycle_period == 0
             @assert !stochastic_cycle "stochastic_cycle must be false if cycle_period is 0"
         end
