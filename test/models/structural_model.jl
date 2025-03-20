@@ -852,4 +852,37 @@ end
             atol=1e-6,
         ),
     )
+
+    model2 = StateSpaceLearning.StructuralModel(
+        rand(4);
+        level=true,
+        stochastic_level=true,
+        trend=true,
+        stochastic_trend=true,
+        seasonal=true,
+        stochastic_seasonal=true,
+        freq_seasonal=2,
+        outlier=true,
+        cycle_period=3,
+        stochastic_cycle=true,
+        ζ_ω_threshold=0,
+        Exogenous_X=zeros(10, 0),
+        stochastic_start=3
+    )
+    X5 = StateSpaceLearning.get_innovation_simulation_X(model2, innovation4, steps_ahead)
+    @assert all(
+        isapprox.(
+            X5,
+            [
+                0.0   0.0           0.0   0.0           0.0   0.0        0.0  0.0
+                0.0   0.0           0.0   0.0           0.0   0.0        0.0  0.0
+                1.0   0.0           0.0   0.0           0.0   0.0        0.0  0.0
+               -0.5   0.866025      1.0   0.0           0.0   0.0        0.0  0.0
+               -0.5  -0.866025     -0.5   0.866025      1.0   0.0        0.0  0.0
+                1.0  -6.10623e-16  -0.5  -0.866025     -0.5   0.866025   1.0  0.0
+               -0.5   0.866025      1.0  -6.10623e-16  -0.5  -0.866025  -0.5  0.866025
+            ],
+            atol=1e-6,
+        ),
+    )
 end

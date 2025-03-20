@@ -97,7 +97,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         else
             @assert seasonal ? size(y, 1) > minimum(freq_seasonal) : true "Time series must be longer than the seasonal period"
         end
-        @assert 1 <= stochastic_start < length(y) "stochastic_start must be greater than or equal to 1"
+        @assert 1 <= stochastic_start < length(y) "stochastic_start must be greater than or equal to 1 and smaller than the length of the time series"
         @assert 0 < dumping_cycle <= 1 "dumping_cycle must be greater than 0 and less than or equal to 1"
         if cycle_period != 0 && !isempty(cycle_period)
             if typeof(cycle_period) <: Vector
