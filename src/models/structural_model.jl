@@ -937,8 +937,8 @@ function get_innovation_simulation_X(
         )
         return create_ϕ(
             deterministic_cycle_matrix[i],
-            length(model.y),
-            steps_ahead,
+            length(model.y) + steps_ahead + 1,
+            0,
             model.ζ_ω_threshold,
             model.stochastic_start,
         )
