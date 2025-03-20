@@ -97,7 +97,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         else
             @assert seasonal ? size(y, 1) > minimum(freq_seasonal) : true "Time series must be longer than the seasonal period"
         end
-        @assert 1 <= stochastic_start < length(y) "stochastic_start must be greater than or equal to 1"
+        @assert 1 <= stochastic_start < length(y) "stochastic_start must be greater than or equal to 1 and smaller than the length of the time series"
         @assert 0 < dumping_cycle <= 1 "dumping_cycle must be greater than 0 and less than or equal to 1"
         if cycle_period != 0 && !isempty(cycle_period)
             if typeof(cycle_period) <: Vector
@@ -249,8 +249,14 @@ o_size(T::Int, stochastic_start::Int)::Int = T - max(1, stochastic_start) + 1
     # Returns
     - `Int`: Size of ϕ calculated from T.
 """
-ϕ_size(T::Int, ζ_ω_threshold::Int, stochastic_start::Int) =
-    2 * (T - max(2, stochastic_start) + 1) - (ζ_ω_threshold * 2)
+function ϕ_size(T::Int, ζ_ω_threshold::Int, stochastic_start::Int)
+    ζ_ω_threshold = ζ_ω_threshold == 0 ? 1 : ζ_ω_threshold
+    if stochastic_start == 1
+        return (2 * (T - max(2, stochastic_start) + 1) - (ζ_ω_threshold * 2)) - 2
+    else
+        return (2 * (T - max(2, stochastic_start) + 1) - (ζ_ω_threshold * 2))
+    end
+end
 
 """
     create_ξ(T::Int, steps_ahead::Int, stochastic_start::Int)::Matrix
@@ -400,7 +406,12 @@ function create_ϕ(
         )
     end
 
-    return X[:, 1:(end - (ζ_ω_threshold * 2))]
+    ζ_ω_threshold = ζ_ω_threshold == 0 ? 1 : ζ_ω_threshold
+    if stochastic_start == 1
+        return X[:, 3:(end - (ζ_ω_threshold * 2))]
+    else
+        return X[:, 1:(end - (ζ_ω_threshold * 2))]
+    end
 end
 
 """
@@ -933,12 +944,12 @@ function get_innovation_simulation_X(
     elseif occursin("ϕ_", innovation)
         i = parse(Int, split(innovation, "_")[2])
         deterministic_cycle_matrix = create_deterministic_cycle_matrix(
-            model.cycle_matrix, length(model.y), steps_ahead
+            model.cycle_matrix, length(model.y), steps_ahead + 1
         )
         return create_ϕ(
             deterministic_cycle_matrix[i],
-            length(model.y),
-            steps_ahead,
+            length(model.y) + steps_ahead + 1,
+            0,
             model.ζ_ω_threshold,
             model.stochastic_start,
         )

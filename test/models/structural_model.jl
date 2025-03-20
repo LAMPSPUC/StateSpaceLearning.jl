@@ -99,8 +99,8 @@ end
     @test StateSpaceLearning.ω_size(10, 2, 0, 1) == 9
     @test StateSpaceLearning.ω_size(10, 2, 2, 1) == 7
     @test StateSpaceLearning.o_size(10, 1) == 10
-    @test StateSpaceLearning.ϕ_size(10, 0, 1) == 18
-    @test StateSpaceLearning.ϕ_size(10, 2, 1) == 14
+    @test StateSpaceLearning.ϕ_size(10, 0, 1) == 14
+    @test StateSpaceLearning.ϕ_size(10, 2, 1) == 12
 
     @test StateSpaceLearning.ξ_size(10, 5) == 5
     @test StateSpaceLearning.ζ_size(10, 2, 5) == 3
@@ -108,7 +108,7 @@ end
     @test StateSpaceLearning.ω_size(10, 2, 0, 5) == 6
     @test StateSpaceLearning.ω_size(10, 2, 2, 5) == 4
     @test StateSpaceLearning.o_size(10, 6) == 5
-    @test StateSpaceLearning.ϕ_size(10, 0, 5) == 12
+    @test StateSpaceLearning.ϕ_size(10, 0, 5) == 10
 
     X_ξ1 = StateSpaceLearning.create_ξ(5, 0, 1)
     X_ξ2 = StateSpaceLearning.create_ξ(5, 2, 1)
@@ -255,11 +255,11 @@ end
         isapprox.(
             X_ϕ1,
             [
-                1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                0.866025 0.5 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                0.5 0.866025 0.866025 0.5 1.0 0.0 0.0 0.0 0.0 0.0
-                2.77556e-16 1.0 0.5 0.866025 0.866025 0.5 1.0 0.0 0.0 0.0
-                -0.5 0.866025 2.77556e-16 1.0 0.5 0.866025 0.866025 0.5 1.0 0.0
+                0.0 0.0 0.0 0.0 0.0 0.0
+                1.0 0.0 0.0 0.0 0.0 0.0
+                0.866025 0.5 1.0 0.0 0.0 0.0
+                0.5 0.866025 0.866025 0.5 1.0 0.0
+                2.77556e-16 1.0 0.5 0.866025 0.866025 0.5
             ],
             atol=1e-6,
         ),
@@ -842,11 +842,45 @@ end
         isapprox.(
             X4,
             [
-                1.0 0.0 0.0 0.0 0.0 0.0
-                -0.5 0.866025 1.0 0.0 0.0 0.0
-                -0.5 -0.866025 -0.5 0.866025 1.0 0.0
-                1.0 -6.10623e-16 -0.5 -0.866025 -0.5 0.866025
-                -0.5 0.866025 1.0 -6.10623e-16 -0.5 -0.866025
+                0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                -0.5 0.866025 1.0 0.0 0.0 0.0 0.0 0.0
+                -0.5 -0.866025 -0.5 0.866025 1.0 0.0 0.0 0.0
+                1.0 -6.10623e-16 -0.5 -0.866025 -0.5 0.866025 1.0 0.0
+                -0.5 0.866025 1.0 -6.10623e-16 -0.5 -0.866025 -0.5 0.866025
+            ],
+            atol=1e-6,
+        ),
+    )
+
+    model2 = StateSpaceLearning.StructuralModel(
+        rand(4);
+        level=true,
+        stochastic_level=true,
+        trend=true,
+        stochastic_trend=true,
+        seasonal=true,
+        stochastic_seasonal=true,
+        freq_seasonal=2,
+        outlier=true,
+        cycle_period=3,
+        stochastic_cycle=true,
+        ζ_ω_threshold=0,
+        Exogenous_X=zeros(10, 0),
+        stochastic_start=3,
+    )
+    X5 = StateSpaceLearning.get_innovation_simulation_X(model2, innovation4, steps_ahead)
+    @assert all(
+        isapprox.(
+            X5,
+            [
+                0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                -0.5 0.866025 1.0 0.0 0.0 0.0 0.0 0.0
+                -0.5 -0.866025 -0.5 0.866025 1.0 0.0 0.0 0.0
+                1.0 -6.10623e-16 -0.5 -0.866025 -0.5 0.866025 1.0 0.0
+                -0.5 0.866025 1.0 -6.10623e-16 -0.5 -0.866025 -0.5 0.866025
             ],
             atol=1e-6,
         ),
