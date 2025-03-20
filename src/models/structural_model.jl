@@ -249,8 +249,14 @@ o_size(T::Int, stochastic_start::Int)::Int = T - max(1, stochastic_start) + 1
     # Returns
     - `Int`: Size of ϕ calculated from T.
 """
-ϕ_size(T::Int, ζ_ω_threshold::Int, stochastic_start::Int) =
-    2 * (T - max(2, stochastic_start) + 1) - (ζ_ω_threshold * 2)
+function ϕ_size(T::Int, ζ_ω_threshold::Int, stochastic_start::Int)
+    ζ_ω_threshold = ζ_ω_threshold == 0 ? 1 : ζ_ω_threshold
+    if stochastic_start == 1
+        return (2 * (T - max(2, stochastic_start) + 1) - (ζ_ω_threshold * 2)) - 2
+    else
+        return (2 * (T - max(2, stochastic_start) + 1) - (ζ_ω_threshold * 2))
+    end
+end
 
 """
     create_ξ(T::Int, steps_ahead::Int, stochastic_start::Int)::Matrix
@@ -400,7 +406,12 @@ function create_ϕ(
         )
     end
 
-    return X[:, 1:(end - (ζ_ω_threshold * 2))]
+    ζ_ω_threshold = ζ_ω_threshold == 0 ? 1 : ζ_ω_threshold 
+    if stochastic_start == 1
+        return X[:, 3:(end - (ζ_ω_threshold * 2))]
+    else
+        return X[:, 1:(end - (ζ_ω_threshold * 2))]
+    end
 end
 
 """
@@ -933,7 +944,7 @@ function get_innovation_simulation_X(
     elseif occursin("ϕ_", innovation)
         i = parse(Int, split(innovation, "_")[2])
         deterministic_cycle_matrix = create_deterministic_cycle_matrix(
-            model.cycle_matrix, length(model.y), steps_ahead
+            model.cycle_matrix, length(model.y), steps_ahead + 1
         )
         return create_ϕ(
             deterministic_cycle_matrix[i],
