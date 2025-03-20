@@ -406,7 +406,7 @@ function create_ϕ(
         )
     end
 
-    ζ_ω_threshold = ζ_ω_threshold == 0 ? 1 : ζ_ω_threshold 
+    ζ_ω_threshold = ζ_ω_threshold == 0 ? 1 : ζ_ω_threshold
     if stochastic_start == 1
         return X[:, 3:(end - (ζ_ω_threshold * 2))]
     else
