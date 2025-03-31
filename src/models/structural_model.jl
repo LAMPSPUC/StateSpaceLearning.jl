@@ -956,11 +956,11 @@ function get_innovation_simulation_X(
     end
 end
 
-function get_μ(model::StructuralModel, components::Dict, ν::Vector{Float64}) 
+function get_μ(model::StructuralModel, components::Dict, ν::Vector{AbstractFloat}) 
 
     T = size(model.y, 1)
 
-    μ    = Vector{Float64}(undef, T)
+    μ    = Vector{AbstractFloat}(undef, T)
     μ[1] = components["μ1"]["Coefs"][1]
     ξ    = vcat(0.0, components["ξ"]["Coefs"], 0.0)
 
@@ -976,7 +976,7 @@ function get_ν(model::StructuralModel, components::Dict)
     T             = size(model.y, 1)
     ζ_ω_threshold = model.ζ_ω_threshold
 
-    ν    = Vector{Float64}(undef, T)
+    ν    = Vector{AbstractFloat}(undef, T)
     ν[1] = components["ν1"]["Coefs"][1]
     ζ    = vcat(0.0, 0.0, components["ζ"]["Coefs"], zeros(ζ_ω_threshold))    
 
@@ -987,12 +987,12 @@ function get_ν(model::StructuralModel, components::Dict)
     return ν, ζ
 end
 
-function get_γ(model::StructuralModel, components::Dict, s::Int64) 
+function get_γ(model::StructuralModel, components::Dict, s::Int) 
 
     T             = size(model.y, 1)
     ζ_ω_threshold = model.ζ_ω_threshold
 
-    γ      = Vector{Float64}(undef, T)
+    γ      = Vector{AbstractFloat}(undef, T)
     γ[1:s] = components["γ1_$(s)"]["Coefs"]
     ω      = vcat(zeros(s - 1), components["ω_$(s)"]["Coefs"], zeros(ζ_ω_threshold))
     
