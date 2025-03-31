@@ -956,7 +956,21 @@ function get_innovation_simulation_X(
     end
 end
 
-function get_μ(model::StructuralModel, components::Dict, ν::Vector{AbstractFloat}) 
+"""
+    get_μ(model::StructuralModel, components::Dict, ν::Vector{AbstractFloat})::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}
+
+    Returns the level component and associated innovation vectors.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `components::Dict` : Components dict.
+    - `ν::Vector{AbstractFloat}`: Time-series of the slope component.
+
+    # Returns
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple of vectors containing the time series state and innovations.
+
+"""
+function get_μ(model::StructuralModel, components::Dict, ν::Vector{AbstractFloat})::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}} 
 
     T = size(model.y, 1)
 
@@ -971,7 +985,20 @@ function get_μ(model::StructuralModel, components::Dict, ν::Vector{AbstractFlo
     return μ, ξ
 end
 
-function get_ν(model::StructuralModel, components::Dict) 
+"""
+    get_ν(model::StructuralModel, components::Dict)::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}} 
+
+    Returns the slope component and associated innovation vectors.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `components::Dict`: Components dict..
+
+    # Returns
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple of vectors containing the time series state and innovations.
+
+"""
+function get_ν(model::StructuralModel, components::Dict)::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}
 
     T             = size(model.y, 1)
     ζ_ω_threshold = model.ζ_ω_threshold
@@ -987,7 +1014,21 @@ function get_ν(model::StructuralModel, components::Dict)
     return ν, ζ
 end
 
-function get_γ(model::StructuralModel, components::Dict, s::Int) 
+"""
+    get_γ(model::StructuralModel, components::Dict, s::Int)::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}} 
+
+    Returns the seasonality component and associated innovation vectors.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `components::Dict`: Components dict.
+    - `s::Int`: Seasonal frequency.	
+
+    # Returns
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple of vectors containing the time series state and innovations.
+
+"""
+function get_γ(model::StructuralModel, components::Dict, s::Int)::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}} 
 
     T             = size(model.y, 1)
     ζ_ω_threshold = model.ζ_ω_threshold
@@ -1003,7 +1044,20 @@ function get_γ(model::StructuralModel, components::Dict, s::Int)
     return γ, ω
 end
 
-function get_components_ts(model::StructuralModel, components::Dict)
+"""
+    get_components_ts(model::StructuralModel, components::Dict)::Dict  
+
+    Returns a dictionary with the time series state and innovations for each component.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `components::Dict`: Components dict.
+
+    # Returns
+    - `Dict`: Dictionary of time-series states and innovations.
+
+"""
+function get_components_ts(model::StructuralModel, components::Dict)::Dict
 
     freq_seasonal      = model.freq_seasonal
     components_ts_dict = Dict()
@@ -1026,7 +1080,20 @@ function get_components_ts(model::StructuralModel, components::Dict)
     return components_ts_dict
 end
 
-function get_components_ts(model::StructuralModel, components::Vector{Dict})
+"""
+    get_components_ts(model::StructuralModel, components::Vector{Dict})::Vector{Dict}  
+
+    Returns a vector of dictionaries with the time series state and innovations for each component, of each dependent time-series.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `components::Vector{Dict}`: Vector of components dict.
+
+    # Returns
+    - `Vector{Dict}`: Vector of dictionaries with the time-series states and innovations.
+
+"""
+function get_components_ts(model::StructuralModel, components::Vector{Dict})::Vector{Dict}
 
     components_ts = []
     freq_seasonal = model.freq_seasonal
