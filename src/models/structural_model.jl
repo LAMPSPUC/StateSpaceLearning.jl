@@ -956,4 +956,104 @@ function get_innovation_simulation_X(
     end
 end
 
+function get_μ(model::StructuralModel, components::Dict, ν::Vector{Float64}) 
+
+    T = size(model.y, 1)
+
+    μ    = Vector{Float64}(undef, T)
+    μ[1] = components["μ1"]["Coefs"][1]
+    ξ    = vcat(0.0, components["ξ"]["Coefs"], 0.0)
+
+    for t in 2:T
+        μ[t] = μ[t - 1] + ν[t - 1] + ξ[t]
+    end
+
+    return μ, ξ
+end
+
+function get_ν(model::StructuralModel, components::Dict) 
+
+    T             = size(model.y, 1)
+    ζ_ω_threshold = model.ζ_ω_threshold
+
+    ν    = Vector{Float64}(undef, T)
+    ν[1] = components["ν1"]["Coefs"][1]
+    ζ    = vcat(0.0, 0.0, components["ζ"]["Coefs"], zeros(ζ_ω_threshold))    
+
+    for t in 2:T
+        ν[t] = ν[t - 1] + ζ[t]
+    end
+
+    return ν, ζ
+end
+
+function get_γ(model::StructuralModel, components::Dict, s::Int64) 
+
+    T             = size(model.y, 1)
+    ζ_ω_threshold = model.ζ_ω_threshold
+
+    γ      = Vector{Float64}(undef, T)
+    γ[1:s] = components["γ1_$(s)"]["Coefs"]
+    ω      = vcat(zeros(s - 1), components["ω_$(s)"]["Coefs"], zeros(ζ_ω_threshold))
+    
+    for t in s + 1:T
+        γ[t] = -sum(γ[t - j] for j in 1:s - 1) + ω[t]
+    end
+
+    return γ, ω
+end
+
+function get_components_ts(model::StructuralModel, components::Dict)
+
+    freq_seasonal      = model.freq_seasonal
+    components_ts_dict = Dict()
+
+    ν, ζ = get_ν(model, components)
+    μ, ξ = get_μ(model, components, ν)
+
+    components_ts_dict["ν"] = ν
+    components_ts_dict["μ"] = μ 
+    components_ts_dict["ζ"] = ζ
+    components_ts_dict["ξ"] = ξ
+
+    for s in freq_seasonal
+        γ, ω = get_γ(model, components, s)
+
+        components_ts_dict["γ_$s"] = γ
+        components_ts_dict["ω_$s"] = ω
+    end
+
+    return components_ts_dict
+end
+
+function get_components_ts(model::StructuralModel, components::Vector{Dict})
+
+    components_ts = []
+    freq_seasonal = model.freq_seasonal
+
+    for component in components
+
+        components_ts_dict = Dict()
+
+        ν, ζ = get_ν(model, component)
+        μ, ξ = get_μ(model, component, ν)
+
+        components_ts_dict["ν"] = ν
+        components_ts_dict["μ"] = μ 
+        components_ts_dict["ζ"] = ζ
+        components_ts_dict["ξ"] = ξ
+
+        for s in freq_seasonal
+            γ, ω = get_γ(model, component, s)
+
+            components_ts_dict["γ_$s"] = γ
+            components_ts_dict["ω_$s"] = ω
+        end
+
+        push!(components_ts, components_ts_dict)
+    end
+
+    return components_ts
+end
+
 isfitted(model::StructuralModel) = isnothing(model.output) ? false : true

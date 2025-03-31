@@ -63,8 +63,10 @@ function fit!(
 
     ε, fitted = get_fit_and_residuals(estimation_ε, coefs, model.X, valid_indexes, T)
 
+    components_ts = get_components_ts(model, components)
+
     if typeof(model.y) <: Vector
-        output = Output(coefs, ε, fitted, residuals_variances, valid_indexes, components)
+        output = Output(coefs, ε, fitted, residuals_variances, valid_indexes, components, components_ts)
     else
         output = Output[]
         for i in eachindex(coefs)
@@ -77,6 +79,7 @@ function fit!(
                     residuals_variances[i],
                     valid_indexes,
                     components[i],
+                    components_ts[i],
                 ),
             )
         end
