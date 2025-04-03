@@ -970,13 +970,23 @@ end
     - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple of vectors containing the time series state and innovations.
 
 """
-function get_μ(model::StructuralModel, components::Dict, ν::Vector{AbstractFloat})::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}} 
-
+function get_μ(
+    model::StructuralModel, components::Dict, ν::Vector{AbstractFloat}
+)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}}
     T = size(model.y, 1)
+    μ = Vector{AbstractFloat}(undef, T)
 
-    μ    = Vector{AbstractFloat}(undef, T)
-    μ[1] = components["μ1"]["Coefs"][1]
-    ξ    = vcat(0.0, components["ξ"]["Coefs"], 0.0)
+    if model.level
+        μ[1] = components["μ1"]["Coefs"][1]
+    else
+        μ[1] = 0.0
+    end
+
+    if model.stochastic_level
+        ξ = vcat(0.0, components["ξ"]["Coefs"], 0.0)
+    else
+        ξ = zeros(AbstractFloat, T)
+    end
 
     for t in 2:T
         μ[t] = μ[t - 1] + ν[t - 1] + ξ[t]
@@ -998,14 +1008,25 @@ end
     - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple of vectors containing the time series state and innovations.
 
 """
-function get_ν(model::StructuralModel, components::Dict)::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}
+function get_ν(
+    model::StructuralModel, components::Dict
+)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}}
+    T = size(model.y, 1)
+    ν = Vector{AbstractFloat}(undef, T)
 
-    T             = size(model.y, 1)
     ζ_ω_threshold = model.ζ_ω_threshold
 
-    ν    = Vector{AbstractFloat}(undef, T)
-    ν[1] = components["ν1"]["Coefs"][1]
-    ζ    = vcat(0.0, 0.0, components["ζ"]["Coefs"], zeros(ζ_ω_threshold))    
+    if model.trend
+        ν[1] = components["ν1"]["Coefs"][1]
+    else
+        ν[1] = 0.0
+    end
+
+    if model.stochastic_trend
+        ζ = vcat(0.0, 0.0, components["ζ"]["Coefs"], zeros(ζ_ω_threshold))
+    else
+        ζ = zeros(AbstractFloat, T)
+    end
 
     for t in 2:T
         ν[t] = ν[t - 1] + ζ[t]
@@ -1028,17 +1049,28 @@ end
     - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple of vectors containing the time series state and innovations.
 
 """
-function get_γ(model::StructuralModel, components::Dict, s::Int)::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}} 
+function get_γ(
+    model::StructuralModel, components::Dict, s::Int
+)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}}
+    T = size(model.y, 1)
+    γ = Vector{AbstractFloat}(undef, T)
 
-    T             = size(model.y, 1)
     ζ_ω_threshold = model.ζ_ω_threshold
 
-    γ      = Vector{AbstractFloat}(undef, T)
-    γ[1:s] = components["γ1_$(s)"]["Coefs"]
-    ω      = vcat(zeros(s - 1), components["ω_$(s)"]["Coefs"], zeros(ζ_ω_threshold))
-    
-    for t in s + 1:T
-        γ[t] = -sum(γ[t - j] for j in 1:s - 1) + ω[t]
+    if model.seasonal
+        γ[1:s] = components["γ1_$(s)"]["Coefs"]
+    else
+        γ[1:s] = zeros(AbstractFloat, s)
+    end
+
+    if model.stochastic_seasonal
+        ω = vcat(zeros(s - 1), components["ω_$(s)"]["Coefs"], zeros(ζ_ω_threshold))
+    else
+        ω = zeros(AbstractFloat, T)
+    end
+
+    for t in (s + 1):T
+        γ[t] = -sum(γ[t - j] for j in 1:(s - 1)) + ω[t]
     end
 
     return γ, ω
@@ -1058,15 +1090,14 @@ end
 
 """
 function get_components_ts(model::StructuralModel, components::Dict)::Dict
-
-    freq_seasonal      = model.freq_seasonal
+    freq_seasonal = model.freq_seasonal
     components_ts_dict = Dict()
 
     ν, ζ = get_ν(model, components)
     μ, ξ = get_μ(model, components, ν)
 
     components_ts_dict["ν"] = ν
-    components_ts_dict["μ"] = μ 
+    components_ts_dict["μ"] = μ
     components_ts_dict["ζ"] = ζ
     components_ts_dict["ξ"] = ξ
 
@@ -1094,19 +1125,17 @@ end
 
 """
 function get_components_ts(model::StructuralModel, components::Vector{Dict})::Vector{Dict}
-
     components_ts = []
     freq_seasonal = model.freq_seasonal
 
     for component in components
-
         components_ts_dict = Dict()
 
         ν, ζ = get_ν(model, component)
         μ, ξ = get_μ(model, component, ν)
 
         components_ts_dict["ν"] = ν
-        components_ts_dict["μ"] = μ 
+        components_ts_dict["μ"] = μ
         components_ts_dict["ζ"] = ζ
         components_ts_dict["ξ"] = ξ
 
