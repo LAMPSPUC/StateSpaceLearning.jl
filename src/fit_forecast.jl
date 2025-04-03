@@ -66,7 +66,9 @@ function fit!(
     components_ts = get_components_ts(model, components)
 
     if typeof(model.y) <: Vector
-        output = Output(coefs, ε, fitted, residuals_variances, valid_indexes, components, components_ts)
+        output = Output(
+            coefs, ε, fitted, residuals_variances, valid_indexes, components, components_ts
+        )
     else
         output = Output[]
         for i in eachindex(coefs)
