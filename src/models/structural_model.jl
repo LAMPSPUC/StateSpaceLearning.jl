@@ -1124,7 +1124,9 @@ end
     - `Vector{Dict}`: Vector of dictionaries with the time-series states and innovations.
 
 """
-function get_components_ts(model::StructuralModel, components::Vector{Dict})::Vector{Dict}
+function get_components_ts(
+    model::StructuralModel, components::Vector{Dict}
+)::Vector{Dict} where {Al}
     components_ts = []
     freq_seasonal = model.freq_seasonal
 
@@ -1150,6 +1152,85 @@ function get_components_ts(model::StructuralModel, components::Vector{Dict})::Ve
     end
 
     return components_ts
+end
+
+"""
+    simulate_states(model::StructuralModel, steps_ahead::Int, N_scenarios::Int)::Vector{Dict}  
+
+    Returns a vector of dictionaries with the scenarios of each component, for each dependent time-series.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `steps_ahead::Int`: Number of steps ahead for forecasting.
+    - `N_scenarios::Int`: Number of scenarios.
+
+    # Returns
+    - `Vector{Dict}`: Vector of dictionaries with the scenarios of the components of each dependent time-series.
+
+"""
+function simulate_states(
+    model::StructuralModel, steps_ahead::Int, N_scenarios::Int
+)::Vector{Dict}
+    Random.seed!(1234)
+
+    freq_seasonal = model.freq_seasonal
+    T = size(model.y, 1)
+    idxs = rand(1:T, steps_ahead, N_scenarios)
+
+    components_ts_vec = []
+    scenarios_ts = []
+    if typeof(model.output) == Vector{StateSpaceLearning.Output}
+        for i in eachindex(model.output)
+            push!(components_ts_vec, get_components_ts(model, model.output[i].components))
+        end
+    else
+        push!(components_ts_vec, get_components_ts(model, model.output.components))
+    end
+
+    for components_ts in components_ts_vec
+        scenarios_ts_dict = Dict()
+
+        scenarios_ts_dict["μ"] = Matrix{AbstractFloat}(undef, steps_ahead, N_scenarios)
+        scenarios_ts_dict["ν"] = Matrix{AbstractFloat}(undef, steps_ahead, N_scenarios)
+
+        for f in freq_seasonal
+            scenarios_ts_dict["γ_$f"] = Matrix{AbstractFloat}(
+                undef, steps_ahead, N_scenarios
+            )
+        end
+
+        for s in 1:N_scenarios
+            ν_vec = vcat(components_ts["ν"], zeros(steps_ahead))
+            μ_vec = vcat(components_ts["μ"], zeros(steps_ahead))
+            γ_matrix = vcat(
+                hcat([components_ts["γ_$s"] for s in freq_seasonal]...),
+                zeros(steps_ahead, length(freq_seasonal)),
+            )
+
+            for t in 1:steps_ahead
+                ν_vec[T + t] = ν_vec[T + t - 1] + components_ts["ζ"][idxs[t, s]]
+                μ_vec[T + t] =
+                    μ_vec[T + t - 1] + ν_vec[T + t - 1] + components_ts["ξ"][idxs[t, s]]
+
+                for (i, f) in enumerate(freq_seasonal)
+                    γ_matrix[T + t, i] =
+                        -sum(γ_matrix[T + t - j, i] for j in 1:(f - 1)) +
+                        components_ts["ω_$f"][idxs[t, s]]
+                end
+            end
+
+            scenarios_ts_dict["μ"][:, s] = μ_vec[(T + 1):(T + steps_ahead)]
+            scenarios_ts_dict["ν"][:, s] = ν_vec[(T + 1):(T + steps_ahead)]
+
+            for (i, f) in enumerate(freq_seasonal)
+                scenarios_ts_dict["γ_$f"][:, s] = γ_matrix[(T + 1):(T + steps_ahead), i]
+            end
+        end
+
+        push!(scenarios_ts, scenarios_ts_dict)
+    end
+
+    return scenarios_ts
 end
 
 isfitted(model::StructuralModel) = isnothing(model.output) ? false : true
