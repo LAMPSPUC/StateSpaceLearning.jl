@@ -956,4 +956,200 @@ function get_innovation_simulation_X(
     end
 end
 
+"""
+    get_μ(model::StructuralModel, components::Dict, ν::Vector{AbstractFloat})::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}
+
+    Returns the level component and associated innovation vectors.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `components::Dict` : Components dict.
+    - `ν::Vector{AbstractFloat}`: Time-series of the slope component.
+
+    # Returns
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple of vectors containing the time series state and innovations.
+
+"""
+function get_μ(
+    model::StructuralModel, components::Dict, ν::Vector{AbstractFloat}
+)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}}
+    T = size(model.y, 1)
+    μ = Vector{AbstractFloat}(undef, T)
+
+    if model.level
+        μ[1] = components["μ1"]["Coefs"][1]
+    else
+        μ[1] = 0.0
+    end
+
+    if model.stochastic_level
+        ξ = vcat(0.0, components["ξ"]["Coefs"], 0.0)
+    else
+        ξ = zeros(AbstractFloat, T)
+    end
+
+    for t in 2:T
+        μ[t] = μ[t - 1] + ν[t - 1] + ξ[t]
+    end
+
+    return μ, ξ
+end
+
+"""
+    get_ν(model::StructuralModel, components::Dict)::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}} 
+
+    Returns the slope component and associated innovation vectors.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `components::Dict`: Components dict..
+
+    # Returns
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple of vectors containing the time series state and innovations.
+
+"""
+function get_ν(
+    model::StructuralModel, components::Dict
+)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}}
+    T = size(model.y, 1)
+    ν = Vector{AbstractFloat}(undef, T)
+
+    ζ_ω_threshold = model.ζ_ω_threshold
+
+    if model.trend
+        ν[1] = components["ν1"]["Coefs"][1]
+    else
+        ν[1] = 0.0
+    end
+
+    if model.stochastic_trend
+        ζ = vcat(0.0, 0.0, components["ζ"]["Coefs"], zeros(ζ_ω_threshold))
+    else
+        ζ = zeros(AbstractFloat, T)
+    end
+
+    for t in 2:T
+        ν[t] = ν[t - 1] + ζ[t]
+    end
+
+    return ν, ζ
+end
+
+"""
+    get_γ(model::StructuralModel, components::Dict, s::Int)::Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}} 
+
+    Returns the seasonality component and associated innovation vectors.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `components::Dict`: Components dict.
+    - `s::Int`: Seasonal frequency.	
+
+    # Returns
+    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple of vectors containing the time series state and innovations.
+
+"""
+function get_γ(
+    model::StructuralModel, components::Dict, s::Int
+)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}}
+    T = size(model.y, 1)
+    γ = Vector{AbstractFloat}(undef, T)
+
+    ζ_ω_threshold = model.ζ_ω_threshold
+
+    if model.seasonal
+        γ[1:s] = components["γ1_$(s)"]["Coefs"]
+    else
+        γ[1:s] = zeros(AbstractFloat, s)
+    end
+
+    if model.stochastic_seasonal
+        ω = vcat(zeros(s - 1), components["ω_$(s)"]["Coefs"], zeros(ζ_ω_threshold))
+    else
+        ω = zeros(AbstractFloat, T)
+    end
+
+    for t in (s + 1):T
+        γ[t] = -sum(γ[t - j] for j in 1:(s - 1)) + ω[t]
+    end
+
+    return γ, ω
+end
+
+"""
+    get_components_ts(model::StructuralModel, components::Dict)::Dict  
+
+    Returns a dictionary with the time series state and innovations for each component.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `components::Dict`: Components dict.
+
+    # Returns
+    - `Dict`: Dictionary of time-series states and innovations.
+
+"""
+function get_components_ts(model::StructuralModel, components::Dict)::Dict
+    freq_seasonal = model.freq_seasonal
+    components_ts_dict = Dict()
+
+    ν, ζ = get_ν(model, components)
+    μ, ξ = get_μ(model, components, ν)
+
+    components_ts_dict["ν"] = ν
+    components_ts_dict["μ"] = μ
+    components_ts_dict["ζ"] = ζ
+    components_ts_dict["ξ"] = ξ
+
+    for s in freq_seasonal
+        γ, ω = get_γ(model, components, s)
+
+        components_ts_dict["γ_$s"] = γ
+        components_ts_dict["ω_$s"] = ω
+    end
+
+    return components_ts_dict
+end
+
+"""
+    get_components_ts(model::StructuralModel, components::Vector{Dict})::Vector{Dict}  
+
+    Returns a vector of dictionaries with the time series state and innovations for each component, of each dependent time-series.
+
+    # Arguments
+    - `model::StructuralModel`: StructuralModel object.
+    - `components::Vector{Dict}`: Vector of components dict.
+
+    # Returns
+    - `Vector{Dict}`: Vector of dictionaries with the time-series states and innovations.
+
+"""
+function get_components_ts(model::StructuralModel, components::Vector{Dict})::Vector{Dict}
+    components_ts = []
+    freq_seasonal = model.freq_seasonal
+
+    for component in components
+        components_ts_dict = Dict()
+
+        ν, ζ = get_ν(model, component)
+        μ, ξ = get_μ(model, component, ν)
+
+        components_ts_dict["ν"] = ν
+        components_ts_dict["μ"] = μ
+        components_ts_dict["ζ"] = ζ
+        components_ts_dict["ξ"] = ξ
+
+        for s in freq_seasonal
+            γ, ω = get_γ(model, component, s)
+
+            components_ts_dict["γ_$s"] = γ
+            components_ts_dict["ω_$s"] = ω
+        end
+
+        push!(components_ts, components_ts_dict)
+    end
+
+    return components_ts
+end
+
 isfitted(model::StructuralModel) = isnothing(model.output) ? false : true

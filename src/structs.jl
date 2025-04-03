@@ -18,4 +18,5 @@ mutable struct Output
     residuals_variances::Dict
     valid_indexes::Vector{Int}
     components::Dict
+    components_ts::Dict
 end
