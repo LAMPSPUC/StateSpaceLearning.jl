@@ -484,6 +484,7 @@ end
 end
 
 @testset "Function: forecast_dynamic_exog_coefs" begin
+    Random.seed!(1234)
     model = StateSpaceLearning.StructuralModel(
         rand(100); seasonal="none", cycle="stochastic", cycle_period=3, outlier=false
     )
