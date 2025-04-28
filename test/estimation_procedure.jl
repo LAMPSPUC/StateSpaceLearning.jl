@@ -57,33 +57,29 @@ end
 @testset "Function: fit_lasso" begin
     Random.seed!(1234)
     y = rand(10)
-    Exogenous_X = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
+    exog = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
 
     Basic_Structural = StateSpaceLearning.StructuralModel(
         y;
-        level=true,
-        stochastic_level=true,
-        trend=true,
-        stochastic_trend=true,
-        seasonal=true,
-        stochastic_seasonal=true,
+        level="stochastic",
+        slope="stochastic",
+        seasonal="stochastic",
         freq_seasonal=2,
         outlier=true,
-        ζ_ω_threshold=0,
-        Exogenous_X=Exogenous_X,
+        ζ_threshold=0,
+        ω_threshold=0,
+        exog=exog,
     )
     Basic_Structural_w_level = StateSpaceLearning.StructuralModel(
         y;
-        level=false,
-        stochastic_level=true,
-        trend=true,
-        stochastic_trend=true,
-        seasonal=true,
-        stochastic_seasonal=true,
+        level="none",
+        slope="stochastic",
+        seasonal="stochastic",
         freq_seasonal=2,
         outlier=true,
-        ζ_ω_threshold=0,
-        Exogenous_X=Exogenous_X,
+        ζ_threshold=0,
+        ω_threshold=0,
+        exog=exog,
     )
 
     components_indexes = StateSpaceLearning.get_components_indexes(Basic_Structural)
@@ -107,6 +103,19 @@ end
     @test length(coefs0) == 43
     @test length(ε0) == 10
 
+    coefs0, ε0 = StateSpaceLearning.fit_lasso(
+        X,
+        AbstractFloat.(y),
+        0.1,
+        "aic",
+        false,
+        components_indexes,
+        ones(size(X, 2) - 1);
+        rm_average=true,
+    )
+    @test length(coefs0) == 43
+    @test length(ε0) == 10
+
     coefs1, ε1 = StateSpaceLearning.fit_lasso(
         X2,
         AbstractFloat.(y),
@@ -117,7 +126,7 @@ end
         ones(size(X2, 2));
         rm_average=false,
     )
-    @test length(coefs1) == 42
+    @test length(coefs1) == 34
     @test length(ε1) == 10
 
     coefs2, ε2 = StateSpaceLearning.fit_lasso(
@@ -145,7 +154,7 @@ end
         rm_average=true,
     )
     @test coefs3[components_indexes["o"][4]] == 0
-    @test all(coefs3[components_indexes["Exogenous_X"]] .!= 0)
+    @test all(coefs3[components_indexes["exog"]] .!= 0)
     @test length(coefs3) == 43
     @test length(ε3) == 10
 
@@ -167,33 +176,29 @@ end
 @testset "Function: estimation_procedure" begin
     Random.seed!(1234)
     y = rand(10)
-    Exogenous_X = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
+    exog = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
 
     Basic_Structural = StateSpaceLearning.StructuralModel(
         y;
-        level=true,
-        stochastic_level=true,
-        trend=true,
-        stochastic_trend=true,
-        seasonal=true,
-        stochastic_seasonal=true,
+        level="stochastic",
+        slope="stochastic",
+        seasonal="stochastic",
         freq_seasonal=2,
         outlier=true,
-        ζ_ω_threshold=0,
-        Exogenous_X=Exogenous_X,
+        ζ_threshold=0,
+        ω_threshold=0,
+        exog=exog,
     )
     Basic_Structural_w_level = StateSpaceLearning.StructuralModel(
         y;
-        level=false,
-        stochastic_level=true,
-        trend=true,
-        stochastic_trend=true,
-        seasonal=true,
-        stochastic_seasonal=true,
+        level="none",
+        slope="stochastic",
+        seasonal="stochastic",
         freq_seasonal=2,
         outlier=true,
-        ζ_ω_threshold=0,
-        Exogenous_X=Exogenous_X,
+        ζ_threshold=0,
+        ω_threshold=0,
+        exog=exog,
     )
 
     components_indexes = StateSpaceLearning.get_components_indexes(Basic_Structural)
@@ -204,20 +209,22 @@ end
     X = Basic_Structural.X
     X2 = Basic_Structural_w_level.X
 
+    innovations_names = StateSpaceLearning.get_model_innovations(Basic_Structural)
+
     coefs1, ε1 = StateSpaceLearning.estimation_procedure(
-        X, y, components_indexes, 0.1, "aic", 0.05, true, true
+        X, y, components_indexes, 0.1, "aic", 0.05, true, true, innovations_names
     )
     @test length(coefs1) == 43
     @test length(ε1) == 10
 
     coefs1, ε1 = StateSpaceLearning.estimation_procedure(
-        X2, y, components_indexes2, 0.1, "aic", 0.05, true, true
+        X2, y, components_indexes2, 0.1, "aic", 0.05, true, true, innovations_names
     )
-    @test length(coefs1) == 42
+    @test length(coefs1) == 34
     @test length(ε1) == 10
 
     coefs2, ε2 = StateSpaceLearning.estimation_procedure(
-        X, y, components_indexes, 0.1, "aic", 0.05, true, false
+        X, y, components_indexes, 0.1, "aic", 0.05, true, false, innovations_names
     )
     @test length(coefs2) == 43
     @test length(ε2) == 10
@@ -225,47 +232,43 @@ end
 end
 
 @testset "Function: get_dummy_indexes" begin
-    Exogenous_X1 = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
-    Exogenous_X2 = hcat(rand(10, 3))
+    exog1 = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
+    exog2 = hcat(rand(10, 3))
 
-    dummy_indexes1 = StateSpaceLearning.get_dummy_indexes(Exogenous_X1)
+    dummy_indexes1 = StateSpaceLearning.get_dummy_indexes(exog1)
     @test dummy_indexes1 == [4]
 
-    dummy_indexes2 = StateSpaceLearning.get_dummy_indexes(Exogenous_X2)
+    dummy_indexes2 = StateSpaceLearning.get_dummy_indexes(exog2)
     @test dummy_indexes2 == []
 end
 
 @testset "Function: get_outlier_duplicate_columns" begin
     Random.seed!(1234)
     y = rand(10)
-    Exogenous_X = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
-    Exogenous_X2 = rand(10, 3)
+    exog = hcat(rand(10, 3), vcat(zeros(3), ones(1), zeros(6)))
+    exog2 = rand(10, 3)
 
     Basic_Structural = StateSpaceLearning.StructuralModel(
         y;
-        level=true,
-        stochastic_level=true,
-        trend=true,
-        stochastic_trend=true,
-        seasonal=true,
-        stochastic_seasonal=true,
+        level="stochastic",
+        slope="stochastic",
+        seasonal="stochastic",
         freq_seasonal=2,
         outlier=true,
-        ζ_ω_threshold=0,
-        Exogenous_X=Exogenous_X,
+        ζ_threshold=0,
+        ω_threshold=0,
+        exog=exog,
     )
     Basic_Structural_w_out = StateSpaceLearning.StructuralModel(
         y;
-        level=true,
-        stochastic_level=true,
-        trend=true,
-        stochastic_trend=true,
-        seasonal=true,
-        stochastic_seasonal=true,
+        level="stochastic",
+        slope="stochastic",
+        seasonal="stochastic",
         freq_seasonal=2,
         outlier=true,
-        ζ_ω_threshold=0,
-        Exogenous_X=Exogenous_X2,
+        ζ_threshold=0,
+        ω_threshold=0,
+        exog=exog2,
     )
 
     components_indexes = StateSpaceLearning.get_components_indexes(Basic_Structural)

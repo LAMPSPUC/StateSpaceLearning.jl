@@ -1,22 +1,22 @@
 """
-    get_dummy_indexes(Exogenous_X::Matrix{Fl}) where {Fl}
+    get_dummy_indexes(exog::Matrix{Fl}) where {Fl}
 
     Identifies and returns the indexes of columns in the exogenous matrix that contain dummy variables.
 
     # Arguments
-    - `Exogenous_X::Matrix{Fl}`: Exogenous variables matrix.
+    - `exog::Matrix{Fl}`: Exogenous variables matrix.
 
     # Returns
     - `Vector{Int}`: Vector containing the indexes of columns with dummy variables.
 
 """
-function get_dummy_indexes(Exogenous_X::Matrix{Fl}) where {Fl}
-    T, p = size(Exogenous_X)
+function get_dummy_indexes(exog::Matrix{Fl}) where {Fl}
+    T, p = size(exog)
     dummy_indexes = []
 
     for i in 1:p
-        if count(iszero.(Exogenous_X[:, i])) == T - 1
-            push!(dummy_indexes, findfirst(i -> i != 0.0, Exogenous_X[:, i]))
+        if count(iszero.(exog[:, i])) == T - 1
+            push!(dummy_indexes, findfirst(i -> i != 0.0, exog[:, i]))
         end
     end
 
@@ -43,7 +43,7 @@ function get_outlier_duplicate_columns(
         return []
     else
         o_indexes = components_indexes["o"]
-        exogenous_indexes = components_indexes["Exogenous_X"]
+        exogenous_indexes = components_indexes["exog"]
 
         dummy_indexes = get_dummy_indexes(Estimation_X[:, exogenous_indexes])
 
@@ -203,14 +203,14 @@ function fit_lasso(
     hasintercept = has_intercept(Estimation_X)
     if hasintercept
         if !penalize_exogenous
-            penalty_factor[components_indexes["Exogenous_X"] .- 1] .= 0
+            penalty_factor[components_indexes["exog"] .- 1] .= 0
         else
             nothing
         end
         Lasso_X = Estimation_X[:, 2:end]
     else
         if !penalize_exogenous
-            penalty_factor[components_indexes["Exogenous_X"]] .= 0
+            penalty_factor[components_indexes["exog"]] .= 0
         else
             nothing
         end
@@ -257,6 +257,8 @@ end
     ϵ::AbstractFloat,
     penalize_exogenous::Bool,
     penalize_initial_states::Bool,
+    innovations_names::Vector{String},
+    initial_states_names::Vector{String},
 )::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
 
     Fits an Adaptive Lasso (AdaLasso) regression model to the provided data and returns coefficients and residuals.
@@ -270,6 +272,9 @@ end
     - `ϵ::AbstractFloat`: Non negative value to handle 0 coefs on the first lasso step (default: 0.05).
     - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
     - `penalize_initial_states::Bool`: Flag for selecting initial states. When false the penalty factor for these variables will be set to 0.
+    - `innovations_names::Vector{String}`: Vector of strings containing the names of the innovations.
+    - `initial_states_names::Vector{String}`: Vector of strings containing the names of the initial states.
+
 
     # Returns
     - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple containing coefficients and residuals of the fitted AdaLasso model.
@@ -284,6 +289,7 @@ function estimation_procedure(
     ϵ::AbstractFloat,
     penalize_exogenous::Bool,
     penalize_initial_states::Bool,
+    innovations_names::Vector{String},
 )::Tuple{
     Vector{AbstractFloat},Vector{AbstractFloat}
 } where {Fl<:AbstractFloat,Tl<:AbstractFloat}
@@ -292,11 +298,15 @@ function estimation_procedure(
 
     hasintercept = has_intercept(Estimation_X)
 
+    # all zero columns in X 
+    all_zero_idx = findall(i -> all(iszero, Estimation_X[:, i]), 1:size(Estimation_X, 2))
+
     if hasintercept
         penalty_factor = ones(size(Estimation_X, 2) - 1)
         if length(penalty_factor) != length(components_indexes["initial_states"][2:end])
             penalty_factor[components_indexes["initial_states"][2:end] .- 1] .= 0
         end
+        penalty_factor[all_zero_idx .- 1] .= Inf
         coefs, _ = fit_lasso(
             Estimation_X,
             estimation_y,
@@ -312,6 +322,7 @@ function estimation_procedure(
         if length(penalty_factor) != length(components_indexes["initial_states"])
             penalty_factor[components_indexes["initial_states"][1:end]] .= 0
         end
+        penalty_factor[all_zero_idx] .= Inf
         coefs, _ = fit_lasso(
             Estimation_X,
             estimation_y,
@@ -330,10 +341,7 @@ function estimation_procedure(
     for key in keys(components_indexes)
         if key != "initial_states" && key != "μ1"
             component = components_indexes[key]
-            if key != "Exogenous_X" &&
-                key != "o" &&
-                !(key in ["ν1"]) &&
-                !(occursin("γ", key))
+            if key in innovations_names
                 κ = count(i -> i != 0, coefs[component]) < 1 ? 0 : std(coefs[component])
                 if hasintercept
                     ts_penalty_factor[component .- 1] .= (1 / (κ + ϵ))
@@ -356,12 +364,14 @@ function estimation_procedure(
         else
             nothing
         end
+        ts_penalty_factor[all_zero_idx .- 1] .= Inf
     else
         if !penalize_initial_states
             ts_penalty_factor[components_indexes["initial_states"][1:end]] .= 0
         else
             nothing
         end
+        ts_penalty_factor[all_zero_idx] .= Inf
     end
 
     return fit_lasso(
@@ -374,65 +384,4 @@ function estimation_procedure(
         ts_penalty_factor;
         rm_average=false,
     )
-end
-
-"""
-    estimation_procedure(
-    Estimation_X::Matrix{Tl},
-    estimation_y::Matrix{Fl},
-    components_indexes::Dict{String,Vector{Int}},
-    α::AbstractFloat,
-    information_criteria::String,
-    ϵ::AbstractFloat,
-    penalize_exogenous::Bool,
-    penalize_initial_states::Bool,
-)::Tuple{Vector{Vector{AbstractFloat}},Vector{Vector{AbstractFloat}}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
-
-    Fits an Adaptive Lasso (AdaLasso) regression model to the provided data and returns coefficients and residuals.
-
-    # Arguments
-    - `Estimation_X::Matrix{Fl}`: Matrix of predictors for estimation.
-    - `estimation_y::Matrix{Fl}`: Matrix of response values for estimation.
-    - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
-    - `α::AbstractFloat`: Elastic net control factor between ridge (α=0) and lasso (α=1) (default: 0.1).
-    - `information_criteria::String`: Information Criteria method for hyperparameter selection (default: aic).
-    - `ϵ::AbstractFloat`: Non negative value to handle 0 coefs on the first lasso step (default: 0.05).
-    - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
-    - `penalize_initial_states::Bool`: Flag for selecting initial states. When false the penalty factor for these variables will be set to 0.
-
-    # Returns
-    - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple containing coefficients and residuals of the fitted AdaLasso model.
-
-"""
-function estimation_procedure(
-    Estimation_X::Matrix{Tl},
-    estimation_y::Matrix{Fl},
-    components_indexes::Dict{String,Vector{Int}},
-    α::AbstractFloat,
-    information_criteria::String,
-    ϵ::AbstractFloat,
-    penalize_exogenous::Bool,
-    penalize_initial_states::Bool,
-)::Tuple{
-    Vector{Vector{AbstractFloat}},Vector{Vector{AbstractFloat}}
-} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
-    coefs_vec = Vector{AbstractFloat}[]
-    ε_vec = Vector{AbstractFloat}[]
-    N_series = size(estimation_y, 2)
-
-    for i in 1:N_series
-        coef_i, ε_i = estimation_procedure(
-            Estimation_X,
-            estimation_y[:, i],
-            components_indexes,
-            α,
-            information_criteria,
-            ϵ,
-            penalize_exogenous,
-            penalize_initial_states,
-        )
-        push!(coefs_vec, coef_i)
-        push!(ε_vec, ε_i)
-    end
-    return coefs_vec, ε_vec
 end

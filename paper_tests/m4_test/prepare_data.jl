@@ -2,7 +2,7 @@ function normalize(y::Vector, max_y::AbstractFloat, min_y::AbstractFloat)
     return (y .- min_y) ./ (max_y - min_y)
 end
 
-function de_normalize(y::Vector, max_y::AbstractFloat, min_y::AbstractFloat)
+function de_normalize(y, max_y::AbstractFloat, min_y::AbstractFloat)
     return (y .* (max_y - min_y)) .+ min_y
 end
 

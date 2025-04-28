@@ -23,7 +23,14 @@ simulation = StateSpaceLearning.simulate(model, 12, 1000) #Gets 1000 scenarios p
 ```
 ## Models
 
-The package currently supports the implementation of the StructuralModel. If you have suggestions for additional models to include, we encourage you to contribute by opening an issue or submitting a pull request.
+The package currently supports the implementation of the StructuralModel, which includes capabilities for handling dynamic exogenous coefficients. If you have suggestions for additional models to include, we encourage you to contribute by opening an issue or submitting a pull request.
+
+```
+
+When using dynamic coefficients:
+- The model will create time-varying coefficients for each specified exogenous variable
+- Each coefficient will follow the specified cyclical pattern
+- When forecasting, you must provide future values for exogenous variables using the `Exogenous_Forecast` parameter
 
 ```@docs
 StateSpaceLearning.StructuralModel
@@ -39,7 +46,11 @@ StateSpaceLearning.fit!
 
 ## Forecasting and Simulating
 
-The package has functions to make point forecasts multiple steps ahead and to simulate scenarios based on those forecasts. These functions are implemented both for the univariate and to the multivariate cases.
+The package has functions to make point forecasts multiple steps ahead and to simulate scenarios based on those forecasts. These functions are implemented for both univariate and multivariate cases, with support for exogenous variables and dynamic coefficients.
+
+When using models with exogenous variables:
+- For standard exogenous variables, provide future values using the `Exogenous_Forecast` parameter
+- For dynamic coefficients, use the same `Exogenous_Forecast` parameter with values for each exogenous variable
 
 ```@docs
 StateSpaceLearning.forecast

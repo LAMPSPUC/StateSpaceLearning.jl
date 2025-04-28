@@ -46,7 +46,7 @@ y = solars[!, "y1"]
 T = length(y)
 steps_ahead = 48
 
-model = StructuralModel(y; freq_seasonal=24, trend=false, level=false)
+model = StructuralModel(y; freq_seasonal=24, slope="none", level="none", outlier=false)
 fit!(model; penalize_initial_states=false)
 simulation = StateSpaceLearning.simulate(model, steps_ahead, 100) #Gets a 12 steps ahead prediction
 plot_scenarios(y, simulation)
@@ -63,7 +63,7 @@ y = solars[!, "y1"]
 T = length(y)
 steps_ahead = 48
 
-model = StructuralModel(y; freq_seasonal=24, trend=false, level=false)
+model = StructuralModel(y; freq_seasonal=24, slope="none", level="none", outlier = false)
 fit!(model; penalize_initial_states=false)
 simulation = StateSpaceLearning.simulate(model, steps_ahead, 100; seasonal_innovation_simulation=24) #Gets a 12 steps ahead prediction
 plot_scenarios(y, simulation)
@@ -115,3 +115,34 @@ plot_point_forecast(y, prediction)
 ![two_seas](assets/two_seas.png)
 
 Note that the model was able to capture both seasonalities in this case.
+
+## Dynamic Exogenous Coefficients
+
+Dynamic exogenous coefficients allow the effect of exogenous variables to vary over time with specific patterns (e.g., level, slope, seasonal or cyclical). This is configured through the `dynamic_exog_coefs` parameter in the StructuralModel constructor.
+
+The `dynamic_exog_coefs` parameter accepts a vector of tuples, where each tuple contains:
+- First element: A vector of an exogenous variable
+- Second element: The name of the component that the exogenous variable will be associated with
+- Third element (optional): For the seasonal component, the freq_seasonal parameter and for cycle component, the cycle_period parameter.
+
+For example:
+```julia
+# Make X1's effect vary annually and X2's effect vary semi-annually
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
+y = log.(airp.passengers)
+X = vcat(collect(1:90), collect(90.5:-0.5:64)) + (rand(144) .* 10)
+y += X * -0.03
+
+dynamic_coefs = [(X, "level")]
+
+model = StructuralModel(y;
+    dynamic_exog_coefs=dynamic_coefs
+)
+
+fit!(model)
+
+prediction = forecast(model, 30; dynamic_exog_coefs_forecasts = [collect(63.5:-0.5:49)])
+
+plot_point_forecast(y, prediction)
+```
+![dynamic_exog](assets/dynamic_exog.png)

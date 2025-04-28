@@ -20,35 +20,41 @@ model = StructuralModel(y)
 fit!(model)
 
 # Point Forecast
-prediction = StateSpaceLearning.forecast(model, 12) #Gets a 12 steps ahead prediction
+prediction = forecast(model, 12) # Gets a 12 steps ahead prediction
 
 # Scenarios Path Simulation
-simulation = StateSpaceLearning.simulate(model, 12, 1000) #Gets 1000 scenarios path of 12 steps ahead predictions
+simulation = simulate(model, 12, 1000) # Gets 1000 scenarios path of 12 steps ahead predictions
 ```
 
 ## StructuralModel Arguments
 
-* `y::Vector`: Vector of data.
-* `level::Bool`: Boolean where to consider intercept in the model (default: true)
-* `stochastic_level::Bool`: Boolean where to consider stochastic level component in the model (default: true)
-* `trend::Bool`: Boolean where to consider trend component in the model (default: true)
-* `stochastic_trend::Bool`: Boolean where to consider stochastic trend component in the model (default: true)
-* `seasonal::Bool`: Boolean where to consider seasonal component in the model (default: true)
-* `stochastic_seasonal::Bool`: Boolean where to consider stochastic seasonal component in the model (default: true)
-* `freq_seasonal::Int`: Seasonal frequency to be considered in the model (default: 12)
-* `outlier::Bool`: Boolean where to consider outlier component in the model (default: true)
-* `ζ_ω_threshold::Int`: Argument to stabilize `stochastic trend` and `stochastic seasonal` components (default: 12)
+* `y::Union{Vector,Matrix}`: Time series data
+* `level::String`: Level component type: "stochastic", "deterministic", or "none" (default: "stochastic")
+* `slope::String`: Slope component type: "stochastic", "deterministic", or "none" (default: "stochastic")
+* `seasonal::String`: Seasonal component type: "stochastic", "deterministic", or "none" (default: "stochastic")
+* `cycle::String`: Cycle component type: "stochastic", "deterministic", or "none" (default: "none")
+* `freq_seasonal::Union{Int,Vector{Int}}`: Seasonal frequency or vector of frequencies (default: 12)
+* `cycle_period::Union{Union{Int,<:AbstractFloat},Vector{Int},Vector{<:AbstractFloat}}`: Cycle period or vector of periods (default: 0)
+* `outlier::Bool`: Include outlier component (default: true)
+* `ζ_threshold::Int`: Threshold for slope innovations (default: 12)
+* `ω_threshold::Int`: Threshold for seasonal innovations (default: 12)
+* `ϕ_threshold::Int`: Threshold for cycle innovations (default: 12)
+* `stochastic_start::Int`: Starting point for stochastic components (default: 1)
+* `exog::Matrix`: Matrix of exogenous variables (default: zeros(length(y), 0))
+* `dynamic_exog_coefs::Union{Vector{<:Tuple}, Nothing}`: Dynamic exogenous coefficients (default: nothing)
 
 ## Features
 
 Current features include:
-* Estimation
-* Components decomposition
-* Forecasting
-* Completion of missing values
-* Predefined models, including:
-* Outlier detection
-* Outlier robust models
+* Model estimation using elastic net based regularization
+* Automatic component decomposition (trend, seasonal, cycle)
+* Point forecasting and scenario simulation
+* Missing value imputation
+* Outlier detection and robust modeling
+* Multiple seasonal frequencies support
+* Deterministic and stochastic component options
+* Dynamic exogenous variable handling
+* Best subset selection for exogenous variables
 
 ## Quick Examples
 
@@ -67,7 +73,7 @@ steps_ahead = 30
 
 model = StructuralModel(log_air_passengers)
 fit!(model)
-prediction_log = StateSpaceLearning.forecast(model, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
+prediction_log = forecast(model, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
 prediction = exp.(prediction_log)
 
 plot_point_forecast(airp.passengers, prediction)
@@ -76,7 +82,7 @@ plot_point_forecast(airp.passengers, prediction)
 
 ```julia
 N_scenarios = 1000
-simulation = StateSpaceLearning.simulate(model, steps_ahead, N_scenarios) # arguments are the output of the fitted model, number of steps ahead the user wants to forecast and number of scenario paths
+simulation = simulate(model, steps_ahead, N_scenarios) # arguments are the output of the fitted model, number of steps ahead the user wants to forecast and number of scenario paths
 
 plot_scenarios(airp.passengers, exp.(simulation))
 
@@ -97,22 +103,20 @@ log_air_passengers = log.(airp.passengers)
 model = StructuralModel(log_air_passengers)
 fit!(model)
 
-level = model.output.components["μ1"]["Values"] + model.output.components["ξ"]["Values"]
-slope = model.output.components["ν1"]["Values"] + model.output.components["ζ"]["Values"]
-seasonal = model.output.components["γ1_12"]["Values"] + model.output.components["ω_12"]["Values"]
-trend = level + slope
+# Access decomposed components directly
+trend = model.output.decomposition["trend"]
+seasonal = model.output.decomposition["seasonal_12"]
 
-plot(trend, w=2 , color = "Black", lab = "Trend Component", legend = :outerbottom)
-plot(seasonal, w=2 , color = "Black", lab = "Seasonal Component", legend = :outerbottom)
-
+plot(trend, w=2, color = "Black", lab = "Trend Component", legend = :outerbottom)
+plot(seasonal, w=2, color = "Black", lab = "Seasonal Component", legend = :outerbottom)
 ```
 
 | ![quick_example_trend](./docs/src/assets/trend.svg) | ![quick_example_seas](./docs/src/assets/seasonal.svg)|
 |:------------------------------:|:-----------------------------:|
 
 
-### Best Subset Selection
-Quick example on how to perform best subset selection in time series utilizing StateSpaceLearning.
+### Best Subset Selection and Dynamic Coefficients
+Example of performing best subset selection and using dynamic coefficients:
 
 ```julia
 using StateSpaceLearning
@@ -122,21 +126,32 @@ using Random
 
 Random.seed!(2024)
 
+# Load data
 airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |> DataFrame
 log_air_passengers = log.(airp.passengers)
-X = rand(length(log_air_passengers), 10) # Create 10 exogenous features 
+
+# Create exogenous features
+X = rand(length(log_air_passengers), 10)
 β = rand(3)
+y = log_air_passengers + X[:, 1:3]*β
 
-y = log_air_passengers + X[:, 1:3]*β # add to the log_air_passengers series a contribution from only 3 exogenous features.
+# Create model with exogenous variables
+model = StructuralModel(y; 
+    exog = X
+)
 
-model = StructuralModel(y; Exogenous_X = X)
-fit!(model; α = 1.0, information_criteria = "bic", ϵ = 0.05, penalize_exogenous = true, penalize_initial_states = true)
+# Fit model with elastic net regularization
+fit!(model; 
+    α = 1.0, # 1.0 for Lasso, 0.0 for Ridge
+    information_criteria = "bic",
+    ϵ = 0.05,
+    penalize_exogenous = true,
+    penalize_initial_states = true
+)
 
-Selected_exogenous = model.output.components["Exogenous_X"]["Selected"]
-
+# Get selected features
+selected_exog = model.output.components["exog"]["Selected"]
 ```
-
-In this example, the selected exogenous features were 1, 2, 3, as expected.
 
 ### Missing values imputation
 Quick example of completion of missing values for the air passengers time-series (artificial NaN values are added to the original time-series).
@@ -209,7 +224,7 @@ fit!(model)
 residuals_variances = model.output.residuals_variances
 
 ss_model = BasicStructural(log_air_passengers, 12)
-set_initial_hyperparameters!(ss_model, Dict("sigma2_ε" => residuals_variances["ε"], 
+StateSpaceModels.set_initial_hyperparameters!(ss_model, Dict("sigma2_ε" => residuals_variances["ε"], 
                                          "sigma2_ξ" =>residuals_variances["ξ"], 
                                          "sigma2_ζ" =>residuals_variances["ζ"], 
                                          "sigma2_ω" =>residuals_variances["ω_12"]))

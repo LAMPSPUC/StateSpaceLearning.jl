@@ -19,15 +19,13 @@ function evaluate_SSL(
 
     model = StateSpaceLearning.StructuralModel(
         normalized_y;
-        level=true,
-        stochastic_level=true,
-        trend=true,
-        stochastic_trend=true,
-        seasonal=true,
-        stochastic_seasonal=true,
+        level="stochastic",
+        slope="stochastic",
+        seasonal="stochastic",
         freq_seasonal=12,
         outlier=outlier,
-        ζ_ω_threshold=12,
+        ζ_threshold=12,
+        ω_threshold=12,
     )
     StateSpaceLearning.fit!(
         model;
