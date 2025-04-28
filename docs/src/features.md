@@ -104,10 +104,10 @@ X = rand(length(log_air_passengers), 10) # Create 10 exogenous features
 
 y = log_air_passengers + X[:, 1:3]*β # add to the log_air_passengers series a contribution from only 3 exogenous features.
 
-model = StructuralModel(y; Exogenous_X = X)
+model = StructuralModel(y; exog = X)
 fit!(model; α = 1.0, information_criteria = "bic", ϵ = 0.05, penalize_exogenous = true, penalize_initial_states = true)
 
-Selected_exogenous = model.output.components["Exogenous_X"]["Selected"]
+Selected_exogenous = model.output.components["exog"]["Selected"]
 
 ```
 

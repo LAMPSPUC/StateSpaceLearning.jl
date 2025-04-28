@@ -50,7 +50,7 @@ function run_config(
     save_init ? CSV.write(init_filepath, initialization_df) : nothing # Initialize empty CSV
 
     for i in 1:48000
-        if i in [10001, 20001, 30001, 40001] # Clear DataFrame to save memory
+        if i % 1000 == 1 # Clear DataFrame to save memory
             results_df = DataFrame()
             initialization_df = DataFrame()
         end
@@ -66,7 +66,8 @@ function run_config(
             information_criteria,
         )
 
-        if i in [10000, 20000, 30000, 40000, 48000]
+        if i % 1000 == 0
+            @info "Saving results for $i series"
             !save_init ? append_results(filepath, results_df) : nothing
             save_init ? append_results(init_filepath, initialization_df) : nothing
         end
@@ -100,9 +101,9 @@ end
 # Main script
 function main()
     results_table = DataFrame()
-    for outlier in [true]
-        for information_criteria in ["aic"]
-            for α in [0.1]
+    for outlier in [true, false]
+        for information_criteria in ["aic", "bic"]
+            for α in [0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
                 @info "Running SSL with outlier = $outlier, information_criteria = $information_criteria, α = $α"
                 results_table = run_config(
                     results_table, outlier, information_criteria, α, false, 60

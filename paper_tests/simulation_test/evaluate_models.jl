@@ -28,7 +28,7 @@ function get_SSL_results(
         freq_seasonal=12,
         outlier=false,
         ζ_ω_threshold=12,
-        Exogenous_X=X_train,
+        exog=X_train,
     )
     t = @elapsed StateSpaceLearning.fit!(
         model;
@@ -39,13 +39,13 @@ function get_SSL_results(
         penalize_initial_states=true,
     )
 
-    selected = model.output.components["Exogenous_X"]["Selected"]
+    selected = model.output.components["exog"]["Selected"]
     true_positives, false_positives, false_negatives, true_negatives = get_confusion_matrix(
         selected, true_features, false_features
     )
 
-    mse = mse_func(model.output.components["Exogenous_X"]["Coefs"], true_β)
-    bias = bias_func(model.output.components["Exogenous_X"]["Coefs"], true_β)
+    mse = mse_func(model.output.components["exog"]["Coefs"], true_β)
+    bias = bias_func(model.output.components["exog"]["Coefs"], true_β)
 
     series_result = DataFrame(
         [
