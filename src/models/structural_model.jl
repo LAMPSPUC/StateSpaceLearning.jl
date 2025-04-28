@@ -542,8 +542,8 @@ function create_dynamic_exog_coefs_matrix(
                 nothing
             else
                 state_components_dict["level"] = hcat(
-                ones(T, 1), create_ξ(T, stochastic_start)
-            )
+                    ones(T, 1), create_ξ(T, stochastic_start)
+                )
             end
             key_name = "level"
         elseif combination[2] == "slope"
@@ -551,8 +551,9 @@ function create_dynamic_exog_coefs_matrix(
                 nothing
             else
                 state_components_dict["slope"] = hcat(
-                vcat([0], collect(1:(T - 1))), create_ζ(T, ζ_threshold, stochastic_start)
-            )
+                    vcat([0], collect(1:(T - 1))),
+                    create_ζ(T, ζ_threshold, stochastic_start),
+                )
             end
             key_name = "slope"
         elseif combination[2] == "seasonal"
@@ -560,9 +561,9 @@ function create_dynamic_exog_coefs_matrix(
                 nothing
             else
                 state_components_dict["seasonal_$(combination[3])"] = hcat(
-                create_deterministic_seasonal(T, combination[3]),
-                create_ω(T, combination[3], ω_threshold, stochastic_start),
-            )
+                    create_deterministic_seasonal(T, combination[3]),
+                    create_ω(T, combination[3], ω_threshold, stochastic_start),
+                )
             end
             key_name = "seasonal_$(combination[3])"
         elseif combination[2] == "cycle"
@@ -570,9 +571,9 @@ function create_dynamic_exog_coefs_matrix(
                 nothing
             else
                 state_components_dict["cycle_$(combination[3])"] = hcat(
-                create_deterministic_cycle(T, combination[3]),
-                create_ϕ(combination[3], T, ϕ_threshold, stochastic_start),
-            )
+                    create_deterministic_cycle(T, combination[3]),
+                    create_ϕ(combination[3], T, ϕ_threshold, stochastic_start),
+                )
             end
             key_name = "cycle_$(combination[3])"
         end
@@ -617,10 +618,10 @@ function create_forecast_dynamic_exog_coefs_matrix(
                 nothing
             else
                 state_components_dict["level"] = hcat(
-                ones(T + steps_ahead, 1), create_ξ(T + steps_ahead, stochastic_start)
-            )[
-                (end - steps_ahead + 1):end, 1:combination[4]
-            ]
+                    ones(T + steps_ahead, 1), create_ξ(T + steps_ahead, stochastic_start)
+                )[
+                    (end - steps_ahead + 1):end, 1:combination[4]
+                ]
             end
             key_name = "level"
         elseif combination[2] == "slope"
@@ -628,11 +629,11 @@ function create_forecast_dynamic_exog_coefs_matrix(
                 nothing
             else
                 state_components_dict["slope"] = hcat(
-                vcat([0], collect(1:(T + steps_ahead - 1))),
-                create_ζ(T + steps_ahead, ζ_threshold, stochastic_start),
-            )[
-                (end - steps_ahead + 1):end, 1:combination[4]
-            ]
+                    vcat([0], collect(1:(T + steps_ahead - 1))),
+                    create_ζ(T + steps_ahead, ζ_threshold, stochastic_start),
+                )[
+                    (end - steps_ahead + 1):end, 1:combination[4]
+                ]
             end
             key_name = "slope"
         elseif combination[2] == "seasonal"
@@ -640,11 +641,13 @@ function create_forecast_dynamic_exog_coefs_matrix(
                 nothing
             else
                 state_components_dict["seasonal_$(combination[3])"] = hcat(
-                create_deterministic_seasonal(T + steps_ahead, combination[3]),
-                create_ω(T + steps_ahead, combination[3], ω_threshold, stochastic_start),
-            )[
-                (end - steps_ahead + 1):end, 1:combination[4]
-            ]
+                    create_deterministic_seasonal(T + steps_ahead, combination[3]),
+                    create_ω(
+                        T + steps_ahead, combination[3], ω_threshold, stochastic_start
+                    ),
+                )[
+                    (end - steps_ahead + 1):end, 1:combination[4]
+                ]
             end
             key_name = "seasonal_$(combination[3])"
         elseif combination[2] == "cycle"
@@ -652,11 +655,13 @@ function create_forecast_dynamic_exog_coefs_matrix(
                 nothing
             else
                 state_components_dict["cycle_$(combination[3])"] = hcat(
-                create_deterministic_cycle(T + steps_ahead, combination[3]),
-                create_ϕ(combination[3], T + steps_ahead, ϕ_threshold, stochastic_start),
-            )[
-                (end - steps_ahead + 1):end, 1:combination[4]
-            ]
+                    create_deterministic_cycle(T + steps_ahead, combination[3]),
+                    create_ϕ(
+                        combination[3], T + steps_ahead, ϕ_threshold, stochastic_start
+                    ),
+                )[
+                    (end - steps_ahead + 1):end, 1:combination[4]
+                ]
             end
             key_name = "cycle_$(combination[3])"
         end
