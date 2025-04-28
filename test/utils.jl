@@ -108,24 +108,53 @@ end
     T = 10
     start_idx = 1
     final_idx = 10
-    seasonal_innovation_simulation1 = 0 
+    seasonal_innovation_simulation1 = 0
     seasonal_innovation_simulation2 = 2
-    
-    st_values1 = StateSpaceLearning.get_stochastic_values(estimated_stochastic, steps_ahead, T, start_idx, final_idx, seasonal_innovation_simulation1)
-    st_values2 = StateSpaceLearning.get_stochastic_values(estimated_stochastic, steps_ahead, T, start_idx, final_idx, seasonal_innovation_simulation2)
+
+    st_values1 = StateSpaceLearning.get_stochastic_values(
+        estimated_stochastic,
+        steps_ahead,
+        T,
+        start_idx,
+        final_idx,
+        seasonal_innovation_simulation1,
+    )
+    st_values2 = StateSpaceLearning.get_stochastic_values(
+        estimated_stochastic,
+        steps_ahead,
+        T,
+        start_idx,
+        final_idx,
+        seasonal_innovation_simulation2,
+    )
 
     @test length(st_values1) == steps_ahead
     @test length(st_values2) == steps_ahead
 
-    @test all(isapprox.(st_values1, [  0.6395615996802734
-                                        -0.8396219340580711
-                                        0.6395615996802734
-                                        -0.5798621201341324
-                                        0.967142768915383], atol=1e-6))
-    @test all(isapprox.(st_values2, [   0.520354993723718
-                                        -0.014908849285099945
-                                        -0.13102565622085904
-                                        -0.6395615996802734
-                                        -0.520354993723718], atol=1e-6))
+    @test all(
+        isapprox.(
+            st_values1,
+            [
+                0.6395615996802734
+                -0.8396219340580711
+                0.6395615996802734
+                -0.5798621201341324
+                0.967142768915383
+            ],
+            atol=1e-6,
+        ),
+    )
+    @test all(
+        isapprox.(
+            st_values2,
+            [
+                0.520354993723718
+                -0.014908849285099945
+                -0.13102565622085904
+                -0.6395615996802734
+                -0.520354993723718
+            ],
+            atol=1e-6,
+        ),
+    )
 end
-

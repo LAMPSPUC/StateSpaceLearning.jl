@@ -68,8 +68,7 @@ function fit!(
 
     decomposition = get_model_decomposition(model, components)
 
-    model.output = Output(
+    return model.output = Output(
         coefs, ε, fitted, residuals_variances, valid_indexes, components, decomposition
     )
-
 end

@@ -70,7 +70,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
     ϕ_threshold::Int
     stochastic_start::Int
     n_exogenous::Int
-    dynamic_exog_coefs::Union{Vector{<:Tuple}, Nothing}
+    dynamic_exog_coefs::Union{Vector{<:Tuple},Nothing}
     output::Union{Vector{Output},Output,Nothing}
 
     function StructuralModel(
@@ -87,7 +87,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         ϕ_threshold::Int=12,
         stochastic_start::Int=1,
         exog::Matrix=zeros(length(y), 0),
-        dynamic_exog_coefs::Union{Vector{<:Tuple}, Nothing}=nothing
+        dynamic_exog_coefs::Union{Vector{<:Tuple},Nothing}=nothing,
     )
         n_exogenous = size(exog, 2)
 
@@ -99,20 +99,49 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         @assert cycle in ["deterministic", "stochastic", "none"] "cycle must be either deterministic, stochastic or no"
         @assert seasonal != "none" ? length(y) > minimum(freq_seasonal) : true "Time series must be longer than the seasonal period if seasonal is added"
 
-        typeof(freq_seasonal) <: Vector ? (@assert all(freq_seasonal .> 0) "Seasonal period must be greater than 0") : (@assert freq_seasonal > 0 "Seasonal period must be greater than 0")
+        if typeof(freq_seasonal) <: Vector
+            (@assert all(freq_seasonal .> 0) "Seasonal period must be greater than 0")
+        else
+            (@assert freq_seasonal > 0 "Seasonal period must be greater than 0")
+        end
 
-        typeof(cycle_period) <: Vector ? (@assert all(cycle_period .>= 0) "Cycle period must be greater than or equal to 0") : (@assert cycle_period >= 0 "Cycle period must be greater than or equal to 0")
+        if typeof(cycle_period) <: Vector
+            (@assert all(cycle_period .>= 0) "Cycle period must be greater than or equal to 0")
+        else
+            (@assert cycle_period >= 0 "Cycle period must be greater than or equal to 0")
+        end
 
-        cycle_period == 0 ? (@assert cycle == "none" "stochastic_cycle and cycle must be false if cycle_period is 0") : nothing
-        freq_seasonal == 0 ? (@assert seasonal == "none" "stochastic_seasonal and seasonal must be false if freq_seasonal is 0") : nothing
+        if cycle_period == 0
+            (@assert cycle == "none" "stochastic_cycle and cycle must be false if cycle_period is 0")
+        else
+            nothing
+        end
+        if freq_seasonal == 0
+            (@assert seasonal == "none" "stochastic_seasonal and seasonal must be false if freq_seasonal is 0")
+        else
+            nothing
+        end
 
         if !isnothing(dynamic_exog_coefs)
-            @assert all(typeof(dynamic_exog_coefs[i][1]) <: Vector for i in eachindex(dynamic_exog_coefs)) "The first element of each tuple in dynamic_exog_coefs must be a vector"
-            @assert all(typeof(dynamic_exog_coefs[i][2]) <: String for i in eachindex(dynamic_exog_coefs)) "The second element of each tuple in dynamic_exog_coefs must be a string"
-            @assert all([length(dynamic_exog_coefs[i][1]) .== length(y) for i in eachindex(dynamic_exog_coefs)]) "The exogenous features that will be combined with state space components must have the same length as the time series"
-            @assert all(dynamic_exog_coefs[i][2] in ["level", "slope", "seasonal", "cycle"] for i in eachindex(dynamic_exog_coefs)) "The second element of each tuple in dynamic_exog_coefs must be a string that is either level, slope, seasonal or cycle"
+            @assert all(
+                typeof(dynamic_exog_coefs[i][1]) <: Vector for
+                i in eachindex(dynamic_exog_coefs)
+            ) "The first element of each tuple in dynamic_exog_coefs must be a vector"
+            @assert all(
+                typeof(dynamic_exog_coefs[i][2]) <: String for
+                i in eachindex(dynamic_exog_coefs)
+            ) "The second element of each tuple in dynamic_exog_coefs must be a string"
+            @assert all([
+                length(dynamic_exog_coefs[i][1]) .== length(y) for
+                i in eachindex(dynamic_exog_coefs)
+            ]) "The exogenous features that will be combined with state space components must have the same length as the time series"
+            @assert all(
+                dynamic_exog_coefs[i][2] in ["level", "slope", "seasonal", "cycle"] for
+                i in eachindex(dynamic_exog_coefs)
+            ) "The second element of each tuple in dynamic_exog_coefs must be a string that is either level, slope, seasonal or cycle"
             for i in eachindex(dynamic_exog_coefs)
-                if dynamic_exog_coefs[i][2] == "seasonal" || dynamic_exog_coefs[i][2] == "cycle"
+                if dynamic_exog_coefs[i][2] == "seasonal" ||
+                    dynamic_exog_coefs[i][2] == "cycle"
                     @assert length(dynamic_exog_coefs[i]) == 3 "The tuple in dynamic_exog_coefs must have 3 elements if the second element is seasonal or cycle"
                     @assert typeof(dynamic_exog_coefs[i][3]) <: Int "The third element of each tuple in dynamic_exog_coefs must be an integer if the second element is seasonal or cycle"
                     @assert dynamic_exog_coefs[i][3] > 1 "The third element of each tuple in dynamic_exog_coefs must be greater than 1 if the second element is seasonal or cycle"
@@ -137,7 +166,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
             ϕ_threshold,
             stochastic_start,
             exog,
-            dynamic_exog_coefs
+            dynamic_exog_coefs,
         )
         # convert y format into vector of AbstractFloat
         y = convert(Vector{AbstractFloat}, y)
@@ -245,7 +274,8 @@ o_size(T::Int, stochastic_start::Int)::Int = T - max(1, stochastic_start) + 1
     # Returns
     - `Int`: Size of ϕ calculated from T.
 """
-ϕ_size(T::Int, ϕ_threshold::Int, stochastic_start::Int)::Int = (2 * (T - max(2, stochastic_start) + 1) - (max(1, ϕ_threshold) * 2))
+ϕ_size(T::Int, ϕ_threshold::Int, stochastic_start::Int)::Int =
+    (2 * (T - max(2, stochastic_start) + 1) - (max(1, ϕ_threshold) * 2))
 
 """
     create_ξ(T::Int, stochastic_start::Int)::Matrix
@@ -285,9 +315,7 @@ create_ζ(T::Int, ζ_threshold::Int, stochastic_start::Int)::Matrix
     - `Matrix`: Matrix of innovations ζ constructed based on the input sizes.
 
 """
-function create_ζ(
-    T::Int, ζ_threshold::Int, stochastic_start::Int
-)::Matrix
+function create_ζ(T::Int, ζ_threshold::Int, stochastic_start::Int)::Matrix
     stochastic_start = max(2, stochastic_start)
     ζ_matrix = zeros(T, T - stochastic_start)
 
@@ -376,12 +404,11 @@ create_ϕ(c_period::Union{Int, Fl}, T::Int, ϕ_threshold::Int, stochastic_start:
     - `Matrix`: Matrix of innovations ϕ constructed based on the input sizes.
 """
 function create_ϕ(
-    c_period::Union{Int, Fl}, T::Int, ϕ_threshold::Int, stochastic_start::Int
+    c_period::Union{Int,Fl}, T::Int, ϕ_threshold::Int, stochastic_start::Int
 )::Matrix where {Fl<:AbstractFloat}
-    
     X = Matrix{Float64}(undef, T, 0)
     λ = 2 * pi * (1:T) / c_period
-    
+
     for t in max(2, stochastic_start):(T - max(1, ϕ_threshold)) # one of last two columns might be full of zeros
         X_t = hcat(cos.(λ), sin.(λ))
         X_t[1:(t - 1), :] .= 0
@@ -417,7 +444,9 @@ create_deterministic_cycle(T::Int, c_period::Union{Int, Fl})::Matrix where {Fl<:
     - `T::Int`: Length of the original time series.
     - `c_period::Int`: Cycle period.
 """
-function create_deterministic_cycle(T::Int, c_period::Union{Int, Fl})::Matrix where {Fl<:AbstractFloat}
+function create_deterministic_cycle(
+    T::Int, c_period::Union{Int,Fl}
+)::Matrix where {Fl<:AbstractFloat}
     λ = 2 * pi * (1:T) / c_period
     cycle1_matrix = hcat(cos.(λ), sin.(λ))
     return cycle1_matrix
@@ -459,9 +488,7 @@ function create_initial_states_Matrix(
         nothing
     end
     if trend
-        initial_states_matrix = hcat(
-            initial_states_matrix, vcat([0], collect(1:(T - 1)))
-        )
+        initial_states_matrix = hcat(initial_states_matrix, vcat([0], collect(1:(T - 1))))
     else
         nothing
     end
@@ -499,24 +526,59 @@ create_dynamic_exog_coefs_matrix(dynamic_exog_coefs::Vector{<:Tuple}, T::Int,ζ_
     # Returns
     - `Matrix`: Matrix of combination components constructed based on the input parameters.
 """
-function create_dynamic_exog_coefs_matrix(dynamic_exog_coefs::Vector{<:Tuple}, T::Int,ζ_threshold::Int, ω_threshold::Int, ϕ_threshold::Int, stochastic_start::Int)::Matrix
-    state_components_dict = Dict{String, Matrix}()
+function create_dynamic_exog_coefs_matrix(
+    dynamic_exog_coefs::Vector{<:Tuple},
+    T::Int,
+    ζ_threshold::Int,
+    ω_threshold::Int,
+    ϕ_threshold::Int,
+    stochastic_start::Int,
+)::Matrix
+    state_components_dict = Dict{String,Matrix}()
     dynamic_exog_coefs_matrix = zeros(T, 0)
     for combination in dynamic_exog_coefs
         if combination[2] == "level"
-            haskey(state_components_dict, "level") ? nothing : state_components_dict["level"] = hcat(ones(T, 1), create_ξ(T, stochastic_start))
+            if haskey(state_components_dict, "level")
+                nothing
+            else
+                state_components_dict["level"] = hcat(
+                ones(T, 1), create_ξ(T, stochastic_start)
+            )
+            end
             key_name = "level"
         elseif combination[2] == "slope"
-            haskey(state_components_dict, "slope") ? nothing : state_components_dict["slope"] = hcat(vcat([0], collect(1:(T - 1))), create_ζ(T, ζ_threshold, stochastic_start))
+            if haskey(state_components_dict, "slope")
+                nothing
+            else
+                state_components_dict["slope"] = hcat(
+                vcat([0], collect(1:(T - 1))), create_ζ(T, ζ_threshold, stochastic_start)
+            )
+            end
             key_name = "slope"
         elseif combination[2] == "seasonal"
-            haskey(state_components_dict, "seasonal_$(combination[3])") ? nothing : state_components_dict["seasonal_$(combination[3])"] = hcat(create_deterministic_seasonal(T, combination[3]), create_ω(T, combination[3], ω_threshold, stochastic_start))
+            if haskey(state_components_dict, "seasonal_$(combination[3])")
+                nothing
+            else
+                state_components_dict["seasonal_$(combination[3])"] = hcat(
+                create_deterministic_seasonal(T, combination[3]),
+                create_ω(T, combination[3], ω_threshold, stochastic_start),
+            )
+            end
             key_name = "seasonal_$(combination[3])"
         elseif combination[2] == "cycle"
-            haskey(state_components_dict, "cycle_$(combination[3])") ? nothing : state_components_dict["cycle_$(combination[3])"] = hcat(create_deterministic_cycle(T, combination[3]), create_ϕ(combination[3], T, ϕ_threshold, stochastic_start))
+            if haskey(state_components_dict, "cycle_$(combination[3])")
+                nothing
+            else
+                state_components_dict["cycle_$(combination[3])"] = hcat(
+                create_deterministic_cycle(T, combination[3]),
+                create_ϕ(combination[3], T, ϕ_threshold, stochastic_start),
+            )
+            end
             key_name = "cycle_$(combination[3])"
         end
-        dynamic_exog_coefs_matrix = hcat(dynamic_exog_coefs_matrix, combination[1] .* state_components_dict[key_name])
+        dynamic_exog_coefs_matrix = hcat(
+            dynamic_exog_coefs_matrix, combination[1] .* state_components_dict[key_name]
+        )
     end
     return dynamic_exog_coefs_matrix
 end
@@ -538,24 +600,69 @@ create_forecast_dynamic_exog_coefs_matrix(dynamic_exog_coefs::Vector{<:Tuple}, T
     # Returns
     - `Matrix`: Matrix of combination components constructed based on the input parameters.
 """
-function create_forecast_dynamic_exog_coefs_matrix(dynamic_exog_coefs::Vector{<:Tuple}, T::Int, steps_ahead::Int, ζ_threshold::Int, ω_threshold::Int, ϕ_threshold::Int, stochastic_start::Int)::Matrix
-    state_components_dict = Dict{String, Matrix}()
+function create_forecast_dynamic_exog_coefs_matrix(
+    dynamic_exog_coefs::Vector{<:Tuple},
+    T::Int,
+    steps_ahead::Int,
+    ζ_threshold::Int,
+    ω_threshold::Int,
+    ϕ_threshold::Int,
+    stochastic_start::Int,
+)::Matrix
+    state_components_dict = Dict{String,Matrix}()
     dynamic_exog_coefs_matrix = zeros(steps_ahead, 0)
     for combination in dynamic_exog_coefs
         if combination[2] == "level"
-            haskey(state_components_dict, "level") ? nothing : state_components_dict["level"] = hcat(ones(T + steps_ahead, 1), create_ξ(T + steps_ahead, stochastic_start))[end - steps_ahead + 1:end, 1:combination[4]]
+            if haskey(state_components_dict, "level")
+                nothing
+            else
+                state_components_dict["level"] = hcat(
+                ones(T + steps_ahead, 1), create_ξ(T + steps_ahead, stochastic_start)
+            )[
+                (end - steps_ahead + 1):end, 1:combination[4]
+            ]
+            end
             key_name = "level"
         elseif combination[2] == "slope"
-            haskey(state_components_dict, "slope") ? nothing : state_components_dict["slope"] = hcat(vcat([0], collect(1:(T + steps_ahead - 1))), create_ζ(T + steps_ahead, ζ_threshold, stochastic_start))[end - steps_ahead + 1:end, 1:combination[4]]
+            if haskey(state_components_dict, "slope")
+                nothing
+            else
+                state_components_dict["slope"] = hcat(
+                vcat([0], collect(1:(T + steps_ahead - 1))),
+                create_ζ(T + steps_ahead, ζ_threshold, stochastic_start),
+            )[
+                (end - steps_ahead + 1):end, 1:combination[4]
+            ]
+            end
             key_name = "slope"
         elseif combination[2] == "seasonal"
-            haskey(state_components_dict, "seasonal_$(combination[3])") ? nothing : state_components_dict["seasonal_$(combination[3])"] = hcat(create_deterministic_seasonal(T + steps_ahead, combination[3]), create_ω(T + steps_ahead, combination[3], ω_threshold, stochastic_start))[end - steps_ahead + 1:end, 1:combination[4]]
+            if haskey(state_components_dict, "seasonal_$(combination[3])")
+                nothing
+            else
+                state_components_dict["seasonal_$(combination[3])"] = hcat(
+                create_deterministic_seasonal(T + steps_ahead, combination[3]),
+                create_ω(T + steps_ahead, combination[3], ω_threshold, stochastic_start),
+            )[
+                (end - steps_ahead + 1):end, 1:combination[4]
+            ]
+            end
             key_name = "seasonal_$(combination[3])"
         elseif combination[2] == "cycle"
-            haskey(state_components_dict, "cycle_$(combination[3])") ? nothing : state_components_dict["cycle_$(combination[3])"] = hcat(create_deterministic_cycle(T + steps_ahead, combination[3]), create_ϕ(combination[3], T + steps_ahead, ϕ_threshold, stochastic_start))[end - steps_ahead + 1:end, 1:combination[4]]
+            if haskey(state_components_dict, "cycle_$(combination[3])")
+                nothing
+            else
+                state_components_dict["cycle_$(combination[3])"] = hcat(
+                create_deterministic_cycle(T + steps_ahead, combination[3]),
+                create_ϕ(combination[3], T + steps_ahead, ϕ_threshold, stochastic_start),
+            )[
+                (end - steps_ahead + 1):end, 1:combination[4]
+            ]
+            end
             key_name = "cycle_$(combination[3])"
         end
-        dynamic_exog_coefs_matrix = hcat(dynamic_exog_coefs_matrix, combination[1] .* state_components_dict[key_name])
+        dynamic_exog_coefs_matrix = hcat(
+            dynamic_exog_coefs_matrix, combination[1] .* state_components_dict[key_name]
+        )
     end
     return dynamic_exog_coefs_matrix
 end
@@ -620,7 +727,7 @@ function create_X(
     ϕ_threshold::Int,
     stochastic_start::Int,
     exog::Matrix{Fl},
-    dynamic_exog_coefs::Union{Vector{<:Tuple}, Nothing},
+    dynamic_exog_coefs::Union{Vector{<:Tuple},Nothing},
 ) where {Fl<:AbstractFloat}
     T = size(exog, 1)
 
@@ -638,19 +745,14 @@ function create_X(
     ω_matrix = zeros(T, 0)
     if stochastic_seasonal
         for s in freq_seasonal
-            ω_matrix = hcat(
-                ω_matrix, create_ω(T, s, ω_threshold, stochastic_start)
-            )
+            ω_matrix = hcat(ω_matrix, create_ω(T, s, ω_threshold, stochastic_start))
         end
     end
 
     ϕ_matrix = zeros(T, 0)
     if stochastic_cycle
         for c_period in cycle_period
-            ϕ_matrix = hcat(
-                ϕ_matrix,
-                create_ϕ(c_period, T, ϕ_threshold, stochastic_start),
-            )
+            ϕ_matrix = hcat(ϕ_matrix, create_ϕ(c_period, T, ϕ_threshold, stochastic_start))
         end
     end
 
@@ -665,7 +767,14 @@ function create_X(
     )
 
     dynamic_exog_coefs_matrix = if !isnothing(dynamic_exog_coefs)
-        create_dynamic_exog_coefs_matrix(dynamic_exog_coefs, T, ζ_threshold, ω_threshold, ϕ_threshold, stochastic_start)
+        create_dynamic_exog_coefs_matrix(
+            dynamic_exog_coefs,
+            T,
+            ζ_threshold,
+            ω_threshold,
+            ϕ_threshold,
+            stochastic_start,
+        )
     else
         zeros(T, 0)
     end
@@ -678,7 +787,7 @@ function create_X(
         ϕ_matrix,
         o_matrix,
         exog,
-        dynamic_exog_coefs_matrix
+        dynamic_exog_coefs_matrix,
     )
 end
 
@@ -1011,7 +1120,11 @@ function get_slope_decomposition(
     end
 
     if model.stochastic_slope
-        ζ = vcat(zeros(max(2, model.stochastic_start)), components["ζ"]["Coefs"], zeros(model.ζ_threshold))
+        ζ = vcat(
+            zeros(max(2, model.stochastic_start)),
+            components["ζ"]["Coefs"],
+            zeros(model.ζ_threshold),
+        )
         @assert length(ζ) == T
     else
         ζ = zeros(AbstractFloat, T)
@@ -1043,7 +1156,7 @@ function get_seasonal_decomposition(
 )::Vector{AbstractFloat}
     T = size(model.y, 1)
     seasonal = Vector{AbstractFloat}(undef, T)
-    
+
     if model.seasonal
         seasonal[1:s] = components["γ1_$(s)"]["Coefs"]
     else
@@ -1051,7 +1164,11 @@ function get_seasonal_decomposition(
     end
 
     if model.stochastic_seasonal
-        ω = vcat(zeros(s - 1 + max(0, max(2, model.stochastic_start) - s)), components["ω_$(s)"]["Coefs"], zeros(model.ω_threshold))
+        ω = vcat(
+            zeros(s - 1 + max(0, max(2, model.stochastic_start) - s)),
+            components["ω_$(s)"]["Coefs"],
+            zeros(model.ω_threshold),
+        )
         @assert length(ω) == T
     else
         ω = zeros(AbstractFloat, T)
@@ -1079,21 +1196,28 @@ end
 
 """
 function get_cycle_decomposition(
-    model::StructuralModel, components::Dict, cycle_period::Union{AbstractFloat, Int}
+    model::StructuralModel, components::Dict, cycle_period::Union{AbstractFloat,Int}
 )::Vector{AbstractFloat}
-
     T = size(model.y, 1)
     cycle = Vector{AbstractFloat}(undef, T)
-    
+
     if cycle_period != 0
         λ = 2 * pi * (1:T) / cycle_period
         c1 = components["c1_$(cycle_period)"]["Coefs"]
-        
+
         cycle[1] = (dot(c1, [cos(λ[1]), sin(λ[1])]))
-    
+
         if model.stochastic_cycle
-            ϕ_cos = vcat(zeros(max(2, model.stochastic_start) - 1), components["ϕ_$(cycle_period)"]["Coefs"][1:2:end], zeros(max(1, model.ϕ_threshold)))
-            ϕ_sin = vcat(zeros(max(2, model.stochastic_start) - 1), components["ϕ_$(cycle_period)"]["Coefs"][2:2:end], zeros(max(1, model.ϕ_threshold)))
+            ϕ_cos = vcat(
+                zeros(max(2, model.stochastic_start) - 1),
+                components["ϕ_$(cycle_period)"]["Coefs"][1:2:end],
+                zeros(max(1, model.ϕ_threshold)),
+            )
+            ϕ_sin = vcat(
+                zeros(max(2, model.stochastic_start) - 1),
+                components["ϕ_$(cycle_period)"]["Coefs"][2:2:end],
+                zeros(max(1, model.ϕ_threshold)),
+            )
             @assert length(ϕ_cos) == T
             @assert length(ϕ_sin) == T
         else
@@ -1102,9 +1226,13 @@ function get_cycle_decomposition(
         end
 
         for t in 2:T
-            ϕ_indexes = max(2, model.stochastic_start):min(t, (T - max(1, model.ϕ_threshold)))
-            cycle[t] = dot(c1, [cos(λ[t]), sin(λ[t])])  + 
-                            sum(ϕ_cos[i] * cos(λ[t]) + ϕ_sin[i] * sin(λ[t]) for i in eachindex(ϕ_indexes))
+            ϕ_indexes =
+                max(2, model.stochastic_start):min(t, (T - max(1, model.ϕ_threshold)))
+            cycle[t] =
+                dot(c1, [cos(λ[t]), sin(λ[t])]) + sum(
+                    ϕ_cos[i] * cos(λ[t]) + ϕ_sin[i] * sin(λ[t]) for
+                    i in eachindex(ϕ_indexes)
+                )
         end
 
     else
@@ -1136,7 +1264,7 @@ function get_model_decomposition(model::StructuralModel, components::Dict)::Dict
         slope = get_slope_decomposition(model, components)
         model_decomposition["slope"] = slope
     end
-    
+
     if model.level || model.slope
         slope = model.slope ? slope : convert(Vector{AbstractFloat}, zeros(length(model.y)))
         trend = get_trend_decomposition(model, components, slope)
@@ -1177,8 +1305,11 @@ end
     - `Vector{AbstractFloat}`: Vector of states.
 """
 function simulate_states(
-    model::StructuralModel, steps_ahead::Int, punctual::Bool, seasonal_innovation_simulation::Int
-    )::Vector{AbstractFloat}
+    model::StructuralModel,
+    steps_ahead::Int,
+    punctual::Bool,
+    seasonal_innovation_simulation::Int,
+)::Vector{AbstractFloat}
     T = length(model.y)
 
     prediction = AbstractFloat[]
@@ -1189,14 +1320,20 @@ function simulate_states(
         final_idx = T - model.ζ_threshold
         if model.stochastic_slope && !punctual
             if seasonal_innovation_simulation != 0
-                ζ_values = vcat(zeros(start_idx - 1), model.output.components["ζ"]["Coefs"], zeros(model.ζ_threshold))
+                ζ_values = vcat(
+                    zeros(start_idx - 1),
+                    model.output.components["ζ"]["Coefs"],
+                    zeros(model.ζ_threshold),
+                )
             else
                 ζ_values = model.output.components["ζ"]["Coefs"]
             end
         else
             ζ_values = zeros(T)
         end
-        stochastic_slope_set = get_stochastic_values(ζ_values, steps_ahead, T, start_idx, final_idx, seasonal_innovation_simulation)   
+        stochastic_slope_set = get_stochastic_values(
+            ζ_values, steps_ahead, T, start_idx, final_idx, seasonal_innovation_simulation
+        )
     else
         slope = zeros(T)
     end
@@ -1207,35 +1344,67 @@ function simulate_states(
         final_idx = T - 1
         if model.stochastic_level && !punctual
             if seasonal_innovation_simulation != 0
-                ξ_values = vcat(zeros(start_idx - 1), model.output.components["ξ"]["Coefs"], zeros(1))
+                ξ_values = vcat(
+                    zeros(start_idx - 1), model.output.components["ξ"]["Coefs"], zeros(1)
+                )
             else
                 ξ_values = model.output.components["ξ"]["Coefs"]
             end
         else
             ξ_values = zeros(T)
         end
-        stochastic_level_set = get_stochastic_values(ξ_values, steps_ahead, T, start_idx, final_idx, seasonal_innovation_simulation)
+        stochastic_level_set = get_stochastic_values(
+            ξ_values, steps_ahead, T, start_idx, final_idx, seasonal_innovation_simulation
+        )
     end
 
     if model.seasonal
-        seasonals = [deepcopy(model.output.decomposition["seasonal_$s"]) for s in model.freq_seasonal]
-        start_idx = [model.freq_seasonal[i] - 1 + max(0, max(2, model.stochastic_start) - model.freq_seasonal[i]) for i in eachindex(model.freq_seasonal)]
+        seasonals = [
+            deepcopy(model.output.decomposition["seasonal_$s"]) for s in model.freq_seasonal
+        ]
+        start_idx = [
+            model.freq_seasonal[i] - 1 +
+            max(0, max(2, model.stochastic_start) - model.freq_seasonal[i]) for
+            i in eachindex(model.freq_seasonal)
+        ]
         final_idx = [T - model.ω_threshold for _ in eachindex(model.freq_seasonal)]
         if model.ω_threshold == 0
-            final_ω = [model.output.components["ω_$(s)"]["Coefs"][end] for s in model.freq_seasonal]
+            final_ω = [
+                model.output.components["ω_$(s)"]["Coefs"][end] for s in model.freq_seasonal
+            ]
         else
             final_ω = [0.0 for _ in model.freq_seasonal]
         end
         if model.stochastic_seasonal && !punctual
             if seasonal_innovation_simulation != 0
-                ω_values = [vcat(zeros(s - 1 + max(0, max(2, model.stochastic_start) - s)), model.output.components["ω_$(s)"]["Coefs"], zeros(model.ω_threshold)) for s in model.freq_seasonal]
+                ω_values = [
+                    vcat(
+                        zeros(s - 1 + max(0, max(2, model.stochastic_start) - s)),
+                        model.output.components["ω_$(s)"]["Coefs"],
+                        zeros(model.ω_threshold),
+                    ) for s in model.freq_seasonal
+                ]
             else
-                ω_values = [model.output.components["ω_$(s)"]["Coefs"] for s in model.freq_seasonal]
+                ω_values = [
+                    model.output.components["ω_$(s)"]["Coefs"] for s in model.freq_seasonal
+                ]
             end
         else
             ω_values = [zeros(T) for _ in model.freq_seasonal]
         end
-        stochastic_seasonals_set = [vcat(final_ω[i], get_stochastic_values(ω_values[i], steps_ahead, T, start_idx[i], final_idx[i], seasonal_innovation_simulation)) for i in eachindex(model.freq_seasonal)]
+        stochastic_seasonals_set = [
+            vcat(
+                final_ω[i],
+                get_stochastic_values(
+                    ω_values[i],
+                    steps_ahead,
+                    T,
+                    start_idx[i],
+                    final_idx[i],
+                    seasonal_innovation_simulation,
+                ),
+            ) for i in eachindex(model.freq_seasonal)
+        ]
     end
 
     if model.cycle
@@ -1243,18 +1412,53 @@ function simulate_states(
         final_idx = [T - max(1, model.ϕ_threshold) for _ in eachindex(model.cycle_period)]
         if model.stochastic_cycle && !punctual
             if seasonal_innovation_simulation != 0
-                ϕ_cos_values = [vcat(zeros(max(2, model.stochastic_start) - 1), model.output.components["ϕ_$(i)"]["Coefs"][1:2:end], zeros(max(1, model.ϕ_threshold))) for i in model.cycle_period]
-                ϕ_sin_values = [vcat(zeros(max(2, model.stochastic_start) - 1), model.output.components["ϕ_$(i)"]["Coefs"][2:2:end], zeros(max(1, model.ϕ_threshold))) for i in model.cycle_period]
+                ϕ_cos_values = [
+                    vcat(
+                        zeros(max(2, model.stochastic_start) - 1),
+                        model.output.components["ϕ_$(i)"]["Coefs"][1:2:end],
+                        zeros(max(1, model.ϕ_threshold)),
+                    ) for i in model.cycle_period
+                ]
+                ϕ_sin_values = [
+                    vcat(
+                        zeros(max(2, model.stochastic_start) - 1),
+                        model.output.components["ϕ_$(i)"]["Coefs"][2:2:end],
+                        zeros(max(1, model.ϕ_threshold)),
+                    ) for i in model.cycle_period
+                ]
             else
-                ϕ_cos_values = [model.output.components["ϕ_$(i)"]["Coefs"] for i in model.cycle_period]
-                ϕ_sin_values = [model.output.components["ϕ_$(i)"]["Coefs"][2:2:end] for i in model.cycle_period]
+                ϕ_cos_values = [
+                    model.output.components["ϕ_$(i)"]["Coefs"] for i in model.cycle_period
+                ]
+                ϕ_sin_values = [
+                    model.output.components["ϕ_$(i)"]["Coefs"][2:2:end] for
+                    i in model.cycle_period
+                ]
             end
         else
             ϕ_cos_values = [zeros(T) for _ in model.cycle_period]
             ϕ_sin_values = [zeros(T) for _ in model.cycle_period]
         end
-        stochastic_cycles_cos_set = [get_stochastic_values(ϕ_cos_values[i], steps_ahead, T, start_idx[i], final_idx[i], seasonal_innovation_simulation) for i in eachindex(model.cycle_period)]
-        stochastic_cycles_sin_set = [get_stochastic_values(ϕ_sin_values[i], steps_ahead, T, start_idx[i], final_idx[i], seasonal_innovation_simulation) for i in eachindex(model.cycle_period)]
+        stochastic_cycles_cos_set = [
+            get_stochastic_values(
+                ϕ_cos_values[i],
+                steps_ahead,
+                T,
+                start_idx[i],
+                final_idx[i],
+                seasonal_innovation_simulation,
+            ) for i in eachindex(model.cycle_period)
+        ]
+        stochastic_cycles_sin_set = [
+            get_stochastic_values(
+                ϕ_sin_values[i],
+                steps_ahead,
+                T,
+                start_idx[i],
+                final_idx[i],
+                seasonal_innovation_simulation,
+            ) for i in eachindex(model.cycle_period)
+        ]
     end
 
     if model.outlier && !punctual
@@ -1269,15 +1473,22 @@ function simulate_states(
         #stochastic_residuals_set = get_stochastic_values(model.output.ε, steps_ahead, T, 1, T, seasonal_innovation_simulation)
         stochastic_residuals_set = rand(model.output.ε, steps_ahead)
     end
-        
-    for t in T + 1:T + steps_ahead
-        
+
+    for t in (T + 1):(T + steps_ahead)
         slope_t = model.slope ? slope[end] + stochastic_slope_set[t - T] : 0.0
 
-        trend_t = (model.level || model.slope) ? trend[end] + slope[end] + stochastic_level_set[t - T] : 0.0
+        trend_t = if (model.level || model.slope)
+            trend[end] + slope[end] + stochastic_level_set[t - T]
+        else
+            0.0
+        end
 
         if model.seasonal
-            seasonals_t = [seasonals[i][t - model.freq_seasonal[i]] + stochastic_seasonals_set[i][t - T + 1] - stochastic_seasonals_set[i][t - T] for i in eachindex(model.freq_seasonal)]
+            seasonals_t = [
+                seasonals[i][t - model.freq_seasonal[i]] +
+                stochastic_seasonals_set[i][t - T + 1] - stochastic_seasonals_set[i][t - T]
+                for i in eachindex(model.freq_seasonal)
+            ]
         else
             seasonals_t = zeros(AbstractFloat, length(model.freq_seasonal))
         end
@@ -1287,13 +1498,23 @@ function simulate_states(
             for i in eachindex(model.cycle_period)
                 ϕ_cos = model.output.components["ϕ_$(model.cycle_period[i])"]["Coefs"][1:2:end]
                 ϕ_sin = model.output.components["ϕ_$(model.cycle_period[i])"]["Coefs"][2:2:end]
-                λ = 2 * pi * (1:T + steps_ahead) / model.cycle_period[i]
+                λ = 2 * pi * (1:(T + steps_ahead)) / model.cycle_period[i]
 
-                cycle_t = dot(model.output.components["c1_$(model.cycle_period[i])"]["Coefs"], [cos(λ[t]), sin(λ[t])]) + 
-                              sum(ϕ_cos[j] * cos(λ[t]) + ϕ_sin[j] * sin(λ[t]) for j in eachindex(ϕ_cos)) + 
-                              sum(stochastic_cycles_cos_set[i][j] * cos(λ[t]) + stochastic_cycles_sin_set[i][j] * sin(λ[t]) for j in eachindex(stochastic_cycles_cos_set[i][1:t - T]))
+                cycle_t =
+                    dot(
+                        model.output.components["c1_$(model.cycle_period[i])"]["Coefs"],
+                        [cos(λ[t]), sin(λ[t])],
+                    ) +
+                    sum(
+                        ϕ_cos[j] * cos(λ[t]) + ϕ_sin[j] * sin(λ[t]) for
+                        j in eachindex(ϕ_cos)
+                    ) +
+                    sum(
+                        stochastic_cycles_cos_set[i][j] * cos(λ[t]) +
+                        stochastic_cycles_sin_set[i][j] * sin(λ[t]) for
+                        j in eachindex(stochastic_cycles_cos_set[i][1:(t - T)])
+                    )
                 cycles_t[i] = cycle_t
-
             end
         else
             cycles_t = zeros(AbstractFloat, length(model.cycle_period))
@@ -1302,7 +1523,9 @@ function simulate_states(
         outlier_t = (model.outlier && !punctual) ? stochastic_outliers_set[t - T] : 0.0
         residuals_t = !punctual ? stochastic_residuals_set[t - T] : 0.0
 
-        push!(prediction, trend_t + sum(seasonals_t) + sum(cycles_t) + outlier_t + residuals_t)
+        push!(
+            prediction, trend_t + sum(seasonals_t) + sum(cycles_t) + outlier_t + residuals_t
+        )
         model.slope ? push!(slope, slope_t) : nothing
         model.level ? push!(trend, trend_t) : nothing
         if model.seasonal
@@ -1310,7 +1533,6 @@ function simulate_states(
                 seasonals[i] = vcat(seasonals[i], seasonals_t[i])
             end
         end
-
     end
 
     return prediction
@@ -1329,7 +1551,9 @@ end
     # Returns
     - `Vector{AbstractFloat}`: Vector of combination components forecasts.
 """
-function forecast_dynamic_exog_coefs(model::StructuralModel, steps_ahead::Int, dynamic_exog_coefs_forecasts::Vector{<:Vector})::Vector{AbstractFloat}
+function forecast_dynamic_exog_coefs(
+    model::StructuralModel, steps_ahead::Int, dynamic_exog_coefs_forecasts::Vector{<:Vector}
+)::Vector{AbstractFloat}
     if !isempty(dynamic_exog_coefs_forecasts)
         T = length(model.y)
         dynamic_exog_coefs = Vector{Tuple}(undef, length(model.dynamic_exog_coefs))
@@ -1341,16 +1565,37 @@ function forecast_dynamic_exog_coefs(model::StructuralModel, steps_ahead::Int, d
                 n_coefs = 1 + ζ_size(T, model.ζ_threshold, model.stochastic_start)
                 extra_param = ""
             elseif model.dynamic_exog_coefs[i][2] == "seasonal"
-                n_coefs = model.dynamic_exog_coefs[i][3] + ω_size(T, model.dynamic_exog_coefs[i][3], model.ω_threshold, model.stochastic_start)
+                n_coefs =
+                    model.dynamic_exog_coefs[i][3] + ω_size(
+                        T,
+                        model.dynamic_exog_coefs[i][3],
+                        model.ω_threshold,
+                        model.stochastic_start,
+                    )
                 extra_param = model.dynamic_exog_coefs[i][3]
             elseif model.dynamic_exog_coefs[i][2] == "cycle"
                 n_coefs = 2 + ϕ_size(T, model.ϕ_threshold, model.stochastic_start)
                 extra_param = model.dynamic_exog_coefs[i][3]
             end
-            dynamic_exog_coefs[i] = (dynamic_exog_coefs_forecasts[i], model.dynamic_exog_coefs[i][2], extra_param, n_coefs)
+            dynamic_exog_coefs[i] = (
+                dynamic_exog_coefs_forecasts[i],
+                model.dynamic_exog_coefs[i][2],
+                extra_param,
+                n_coefs,
+            )
         end
-        dynamic_exog_coefs_forecasts_matrix = create_forecast_dynamic_exog_coefs_matrix(dynamic_exog_coefs, T, steps_ahead, model.ζ_threshold, model.ω_threshold, model.ϕ_threshold, model.stochastic_start)
-        dynamic_exog_coefs_prediction = dynamic_exog_coefs_forecasts_matrix * model.output.components["dynamic_exog_coefs"]["Coefs"]
+        dynamic_exog_coefs_forecasts_matrix = create_forecast_dynamic_exog_coefs_matrix(
+            dynamic_exog_coefs,
+            T,
+            steps_ahead,
+            model.ζ_threshold,
+            model.ω_threshold,
+            model.ϕ_threshold,
+            model.stochastic_start,
+        )
+        dynamic_exog_coefs_prediction =
+            dynamic_exog_coefs_forecasts_matrix *
+            model.output.components["dynamic_exog_coefs"]["Coefs"]
     else
         dynamic_exog_coefs_prediction = zeros(steps_ahead)
     end
@@ -1370,22 +1615,38 @@ end
 
 """
 function forecast(
-    model::StructuralModel, steps_ahead::Int;
+    model::StructuralModel,
+    steps_ahead::Int;
     Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0),
-    dynamic_exog_coefs_forecasts::Vector{<:Vector}=Vector{Vector}(undef, 0)
-)::Vector{AbstractFloat}  where {Fl<:AbstractFloat}
-
+    dynamic_exog_coefs_forecasts::Vector{<:Vector}=Vector{Vector}(undef, 0),
+)::Vector{AbstractFloat} where {Fl<:AbstractFloat}
     states_prediction = simulate_states(model, steps_ahead, true, 0)
 
     @assert size(Exogenous_Forecast, 1) == steps_ahead
-    @assert all(length(dynamic_exog_coefs_forecasts[i]) == steps_ahead for i in eachindex(dynamic_exog_coefs_forecasts))
-    !isnothing(model.dynamic_exog_coefs) ? (@assert length(dynamic_exog_coefs_forecasts) == length(model.dynamic_exog_coefs)) : nothing
-    (dynamic_exog_coefs_forecasts == Vector{Vector}(undef, 0)) ? (@assert isnothing(model.dynamic_exog_coefs)) : nothing
+    @assert all(
+        length(dynamic_exog_coefs_forecasts[i]) == steps_ahead for
+        i in eachindex(dynamic_exog_coefs_forecasts)
+    )
+    if !isnothing(model.dynamic_exog_coefs)
+        (@assert length(dynamic_exog_coefs_forecasts) == length(model.dynamic_exog_coefs))
+    else
+        nothing
+    end
+    if (dynamic_exog_coefs_forecasts == Vector{Vector}(undef, 0))
+        (@assert isnothing(model.dynamic_exog_coefs))
+    else
+        nothing
+    end
     @assert size(Exogenous_Forecast, 2) == model.n_exogenous
 
-    dynamic_exog_coefs_prediction = forecast_dynamic_exog_coefs(model, steps_ahead, dynamic_exog_coefs_forecasts)
+    dynamic_exog_coefs_prediction = forecast_dynamic_exog_coefs(
+        model, steps_ahead, dynamic_exog_coefs_forecasts
+    )
 
-    prediction = states_prediction + (Exogenous_Forecast * model.output.components["exog"]["Coefs"]) + dynamic_exog_coefs_prediction
+    prediction =
+        states_prediction +
+        (Exogenous_Forecast * model.output.components["exog"]["Coefs"]) +
+        dynamic_exog_coefs_prediction
 
     return prediction
 end
@@ -1408,21 +1669,28 @@ end
     - `Matrix{AbstractFloat}`: Matrix of scenarios of the states of the model.
 """
 function simulate(
-    model::StructuralModel, steps_ahead::Int, N_scenarios::Int;
+    model::StructuralModel,
+    steps_ahead::Int,
+    N_scenarios::Int;
     Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0),
     dynamic_exog_coefs_forecasts::Vector{<:Vector}=Vector{Vector}(undef, 0),
     seasonal_innovation_simulation::Int=0,
-    seed::Int=1234
+    seed::Int=1234,
 )::Matrix{AbstractFloat} where {Fl<:AbstractFloat}
-
     scenarios = Matrix{AbstractFloat}(undef, steps_ahead, N_scenarios)
     Random.seed!(seed)
     for s in 1:N_scenarios
-        scenarios[:, s] = simulate_states(model, steps_ahead, false, seasonal_innovation_simulation)
+        scenarios[:, s] = simulate_states(
+            model, steps_ahead, false, seasonal_innovation_simulation
+        )
     end
 
-    dynamic_exog_coefs_prediction = forecast_dynamic_exog_coefs(model, steps_ahead, dynamic_exog_coefs_forecasts)
-    scenarios .+= (Exogenous_Forecast * model.output.components["exog"]["Coefs"]) + dynamic_exog_coefs_prediction
+    dynamic_exog_coefs_prediction = forecast_dynamic_exog_coefs(
+        model, steps_ahead, dynamic_exog_coefs_forecasts
+    )
+    scenarios .+=
+        (Exogenous_Forecast * model.output.components["exog"]["Coefs"]) +
+        dynamic_exog_coefs_prediction
 
     return scenarios
 end

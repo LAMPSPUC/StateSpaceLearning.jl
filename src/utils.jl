@@ -29,9 +29,7 @@ function build_components(
             X[:, components_indexes[key]] * coefs[components_indexes[key]]
     end
     if haskey(components, "exog")
-        components["exog"]["Selected"] = findall(
-            i -> i != 0, components["exog"]["Coefs"]
-        )
+        components["exog"]["Selected"] = findall(i -> i != 0, components["exog"]["Coefs"])
     end
     return components
 end
@@ -134,14 +132,21 @@ get_stochastic_values(estimated_stochastic::Vector{Fl}, steps_ahead::Int, T::Int
     # Returns
     - `Vector{AbstractFloat}`: Vector of stochastic seasonal values.
 """
-function get_stochastic_values(estimated_stochastic::Vector{Fl}, steps_ahead::Int, T::Int, start_idx::Int, final_idx::Int, seasonal_innovation_simulation::Int)::Vector{AbstractFloat} where {Fl<:AbstractFloat}
-   
+function get_stochastic_values(
+    estimated_stochastic::Vector{Fl},
+    steps_ahead::Int,
+    T::Int,
+    start_idx::Int,
+    final_idx::Int,
+    seasonal_innovation_simulation::Int,
+)::Vector{AbstractFloat} where {Fl<:AbstractFloat}
     if seasonal_innovation_simulation != 0
         stochastic_term = Vector{AbstractFloat}(undef, steps_ahead)
         for t in 1:steps_ahead
 
             # Generate potential seasonal indices
-            seasonal_indices = (T + t) % seasonal_innovation_simulation : seasonal_innovation_simulation : T
+            seasonal_indices =
+                ((T + t) % seasonal_innovation_simulation):seasonal_innovation_simulation:T
 
             # Filter indices to be within the valid range
             valid_indices = filter(idx -> start_idx <= idx <= final_idx, seasonal_indices)
@@ -150,9 +155,9 @@ function get_stochastic_values(estimated_stochastic::Vector{Fl}, steps_ahead::In
             stochastic_term[t] = rand(estimated_stochastic[valid_indices]) * rand([1, -1])
         end
     else
-        stochastic_term = rand(estimated_stochastic, steps_ahead) .* rand([1, -1], steps_ahead)
+        stochastic_term =
+            rand(estimated_stochastic, steps_ahead) .* rand([1, -1], steps_ahead)
     end
 
     return stochastic_term
-
 end

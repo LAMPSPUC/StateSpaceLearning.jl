@@ -4,9 +4,7 @@
     model1 = StateSpaceLearning.StructuralModel(y1)
     model2 = StateSpaceLearning.StructuralModel(y1; freq_seasonal=[3, 10])
     model3 = StateSpaceLearning.StructuralModel(y1; cycle_period=[3, 10.2])
-    model4 = StateSpaceLearning.StructuralModel(
-        y1; cycle_period=[3, 10.2]
-    )
+    model4 = StateSpaceLearning.StructuralModel(y1; cycle_period=[3, 10.2])
 
     @test typeof(model1) == StateSpaceLearning.StructuralModel
     @test typeof(model2) == StateSpaceLearning.StructuralModel
@@ -21,9 +19,7 @@
     @test_throws AssertionError StateSpaceLearning.StructuralModel(y1; freq_seasonal=1000)
 
     exog_error = ones(100, 3)
-    @test_throws AssertionError StateSpaceLearning.StructuralModel(
-        y1; exog=exog_error
-    )
+    @test_throws AssertionError StateSpaceLearning.StructuralModel(y1; exog=exog_error)
 end
 
 @testset "create deterministic matrices" begin
@@ -34,27 +30,16 @@ end
     @test size(X2) == (100, 12)
 
     X3 = StateSpaceLearning.create_initial_states_Matrix(
-        100,
-        [12, 20],
-        true,
-        true,
-        true,
-        true,
-        [3, 10.2])
+        100, [12, 20], true, true, true, true, [3, 10.2]
+    )
 
     @test size(X3) == (100, 38)
 
     X4 = StateSpaceLearning.create_initial_states_Matrix(
-        100,
-        12,
-        true,
-        true,
-        true,
-        false,
-        3)
+        100, 12, true, true, true, false, 3
+    )
 
     @test size(X4) == (100, 14)
-        
 end
 
 @testset "Innovation matrices" begin
@@ -115,88 +100,108 @@ end
         4.0 3.0
     ]
 
-    @test X_ζ3 == zeros(5,0)
+    @test X_ζ3 == zeros(5, 0)
 
     X_ω1 = StateSpaceLearning.create_ω(5, 2, 0, 1)
     X_ω2 = StateSpaceLearning.create_ω(5, 2, 2, 1)
     X_ω3 = StateSpaceLearning.create_ω(5, 2, 0, 3)
 
     @test X_ω1 == [
-        0.0   0.0   0.0  0.0
-        0.0   0.0   0.0  0.0
-       -1.0   1.0   0.0  0.0
-        0.0  -1.0   1.0  0.0
-       -1.0   1.0  -1.0  1.0
+        0.0 0.0 0.0 0.0
+        0.0 0.0 0.0 0.0
+        -1.0 1.0 0.0 0.0
+        0.0 -1.0 1.0 0.0
+        -1.0 1.0 -1.0 1.0
     ]
 
     @test X_ω2 == [
-        0.0   0.0
-        0.0   0.0
-       -1.0   1.0
-        0.0  -1.0
-       -1.0   1.0
+        0.0 0.0
+        0.0 0.0
+        -1.0 1.0
+        0.0 -1.0
+        -1.0 1.0
     ]
 
     @test X_ω3 == [
-        0.0   0.0  0.0
-        0.0   0.0  0.0
-        1.0   0.0  0.0
-       -1.0   1.0  0.0
-        1.0  -1.0  1.0
+        0.0 0.0 0.0
+        0.0 0.0 0.0
+        1.0 0.0 0.0
+        -1.0 1.0 0.0
+        1.0 -1.0 1.0
     ]
 
     X_o1 = StateSpaceLearning.create_o_matrix(3, 1)
     X_o3 = StateSpaceLearning.create_o_matrix(3, 2)
 
     @test X_o1 == Matrix(1.0 * I, 3, 3)
-    @test X_o3 == [ 0.0  0.0
-    1.0  0.0
-    0.0  1.0]
+    @test X_o3 == [
+        0.0 0.0
+        1.0 0.0
+        0.0 1.0
+    ]
 
     X_ϕ1 = StateSpaceLearning.create_ϕ(3, 5, 0, 1)
     X_ϕ2 = StateSpaceLearning.create_ϕ(3, 5, 3, 1)
     X_ϕ3 = StateSpaceLearning.create_ϕ(3, 5, 0, 2)
 
     @test X_ϕ1 == [
-        0.0   0.0       0.0   0.0       0.0   0.0
-        -0.5  -0.86603   0.0   0.0       0.0   0.0
-         1.0  -0.0       1.0  -0.0       0.0   0.0
-        -0.5   0.86603  -0.5   0.86603  -0.5   0.86603
-        -0.5  -0.86603  -0.5  -0.86603  -0.5  -0.86603
+        0.0 0.0 0.0 0.0 0.0 0.0
+        -0.5 -0.86603 0.0 0.0 0.0 0.0
+        1.0 -0.0 1.0 -0.0 0.0 0.0
+        -0.5 0.86603 -0.5 0.86603 -0.5 0.86603
+        -0.5 -0.86603 -0.5 -0.86603 -0.5 -0.86603
     ]
 
     @test X_ϕ2 == [
-        0.0   0.0
-        -0.5  -0.86603
-         1.0  -0.0
-        -0.5   0.86603
-        -0.5  -0.86603
+        0.0 0.0
+        -0.5 -0.86603
+        1.0 -0.0
+        -0.5 0.86603
+        -0.5 -0.86603
     ]
 
     @test X_ϕ3 == [
-        0.0   0.0       0.0   0.0       0.0   0.0
-        -0.5  -0.86603   0.0   0.0       0.0   0.0
-         1.0  -0.0       1.0  -0.0       0.0   0.0
-        -0.5   0.86603  -0.5   0.86603  -0.5   0.86603
-        -0.5  -0.86603  -0.5  -0.86603  -0.5  -0.86603
+        0.0 0.0 0.0 0.0 0.0 0.0
+        -0.5 -0.86603 0.0 0.0 0.0 0.0
+        1.0 -0.0 1.0 -0.0 0.0 0.0
+        -0.5 0.86603 -0.5 0.86603 -0.5 0.86603
+        -0.5 -0.86603 -0.5 -0.86603 -0.5 -0.86603
     ]
 end
 
 @testset "dynamic_exog_coefs" begin
+    dynamic_exog_coefs = [
+        (collect(1:5), "level"),
+        (collect(1:5), "slope"),
+        (collect(1:5), "seasonal", 2),
+        (collect(1:5), "cycle", 3),
+    ]
 
-    dynamic_exog_coefs = [(collect(1:5), "level"), (collect(1:5), "slope"), (collect(1:5), "seasonal", 2), (collect(1:5), "cycle", 3)]
-
-    X = StateSpaceLearning.create_dynamic_exog_coefs_matrix(dynamic_exog_coefs, 5, 0, 0, 0, 1)
+    X = StateSpaceLearning.create_dynamic_exog_coefs_matrix(
+        dynamic_exog_coefs, 5, 0, 0, 0, 1
+    )
     @test size(X) == (5, 22)
 
-    dynamic_exog_coefs = [(collect(6:7), "level", "", 4), (collect(6:7), "slope", "", 4), (collect(6:7), "seasonal", 2, 7), (collect(6:7), "cycle", 3, 8)]
-    X_f = StateSpaceLearning.create_forecast_dynamic_exog_coefs_matrix(dynamic_exog_coefs, 5, 2, 0, 0, 0, 1)
+    dynamic_exog_coefs = [
+        (collect(6:7), "level", "", 4),
+        (collect(6:7), "slope", "", 4),
+        (collect(6:7), "seasonal", 2, 7),
+        (collect(6:7), "cycle", 3, 8),
+    ]
+    X_f = StateSpaceLearning.create_forecast_dynamic_exog_coefs_matrix(
+        dynamic_exog_coefs, 5, 2, 0, 0, 0, 1
+    )
     @test size(X_f) == (2, 23)
 end
 
 @testset "Create X matrix" begin
     exog1 = rand(5, 3)
-    dynamic_exog_coefs = [(collect(1:5), "level"), (collect(1:5), "slope"), (collect(1:5), "seasonal", 2), (collect(1:5), "cycle", 3)]
+    dynamic_exog_coefs = [
+        (collect(1:5), "level"),
+        (collect(1:5), "slope"),
+        (collect(1:5), "seasonal", 2),
+        (collect(1:5), "cycle", 3),
+    ]
 
     X1 = StateSpaceLearning.create_X(
         true,
@@ -215,11 +220,16 @@ end
         0,
         1,
         exog1,
-        dynamic_exog_coefs
+        dynamic_exog_coefs,
     )
 
     exog2 = zeros(10, 3)
-    dynamic_exog_coefs2 = [(collect(1:10), "level"), (collect(1:10), "slope"), (collect(1:10), "seasonal", 2), (collect(1:10), "cycle", 3)]
+    dynamic_exog_coefs2 = [
+        (collect(1:10), "level"),
+        (collect(1:10), "slope"),
+        (collect(1:10), "seasonal", 2),
+        (collect(1:10), "cycle", 3),
+    ]
 
     X2 = StateSpaceLearning.create_X(
         true,
@@ -238,12 +248,11 @@ end
         4,
         1,
         exog2,
-        dynamic_exog_coefs2
+        dynamic_exog_coefs2,
     )
 
     @test size(X1) == (5, 52)
     @test size(X2) == (10, 85)
-
 end
 
 @testset "Function: get_components" begin
@@ -251,12 +260,7 @@ end
     exog2 = zeros(10, 0)
 
     Basic_Structural = StateSpaceLearning.StructuralModel(
-        rand(10);
-        freq_seasonal=2,
-        outlier=true,
-        ζ_threshold=0,
-        ω_threshold=0,
-        exog=exog1,
+        rand(10); freq_seasonal=2, outlier=true, ζ_threshold=0, ω_threshold=0, exog=exog1
     )
     Local_Level = StateSpaceLearning.StructuralModel(
         rand(10);
@@ -269,12 +273,7 @@ end
         exog=exog1,
     )
     Local_Linear_Trend1 = StateSpaceLearning.StructuralModel(
-        rand(10);
-        seasonal="none",
-        cycle="none",
-        outlier=false,
-        ζ_threshold=0,
-        exog=exog1,
+        rand(10); seasonal="none", cycle="none", outlier=false, ζ_threshold=0, exog=exog1
     )
     Local_Linear_Trend2 = StateSpaceLearning.StructuralModel(
         rand(10);
@@ -314,18 +313,10 @@ end
     exog2 = zeros(10, 0)
 
     Basic_Structural = StateSpaceLearning.StructuralModel(
-        rand(10);
-        freq_seasonal=2,
-        outlier=true,
-        ζ_threshold=0,
-        exog=exog2,
+        rand(10); freq_seasonal=2, outlier=true, ζ_threshold=0, exog=exog2
     )
     Basic_Structural2 = StateSpaceLearning.StructuralModel(
-        rand(10);
-        freq_seasonal=[2, 5],
-        outlier=true,
-        ζ_threshold=0,
-        exog=exog2,
+        rand(10); freq_seasonal=[2, 5], outlier=true, ζ_threshold=0, exog=exog2
     )
     Local_Level = StateSpaceLearning.StructuralModel(
         rand(10);
@@ -373,11 +364,7 @@ end
     ]
 
     models_innovations = [
-        ["ξ", "ζ", "ω_2"],
-        ["ξ", "ζ", "ω_2", "ω_5"],
-        ["ξ"],
-        ["ξ", "ζ"],
-        ["ξ", "ζ", "ϕ_3"],
+        ["ξ", "ζ", "ω_2"], ["ξ", "ζ", "ω_2", "ω_5"], ["ξ"], ["ξ", "ζ"], ["ξ", "ζ", "ϕ_3"]
     ]
 
     for idx in eachindex(models)
@@ -390,70 +377,127 @@ end
         model_innovations = StateSpaceLearning.get_model_innovations(model)
         @test model_innovations == models_innovations[idx]
     end
-
 end
 
 @testset "Decomposion functions" begin
     Random.seed!(123)
-    model = StateSpaceLearning.StructuralModel(vcat(collect(1:5), collect(5:-1:1));level="deterministic", seasonal="none", cycle="none", outlier=false, slope="stochastic", ζ_threshold=0)
+    model = StateSpaceLearning.StructuralModel(
+        vcat(collect(1:5), collect(5:-1:1));
+        level="deterministic",
+        seasonal="none",
+        cycle="none",
+        outlier=false,
+        slope="stochastic",
+        ζ_threshold=0,
+    )
     StateSpaceLearning.fit!(model)
     slope = StateSpaceLearning.get_slope_decomposition(model, model.output.components)
-    @test all(isapprox.(slope, 
-            [  0.3195538151032132
-            0.3195538151032132
-            1.0535772194857598
-            1.1323058058970006
-            0.9011191905923782
-            0.07553685115943187
-           -0.8838426390957513
-           -1.044032162858364
-           -1.0251744597550265
-           -1.0019651980300468], atol=1e-6))
+    @test all(
+        isapprox.(
+            slope,
+            [
+                0.3195538151032132
+                0.3195538151032132
+                1.0535772194857598
+                1.1323058058970006
+                0.9011191905923782
+                0.07553685115943187
+                -0.8838426390957513
+                -1.044032162858364
+                -1.0251744597550265
+                -1.0019651980300468
+            ],
+            atol=1e-4,
+        ),
+    )
 
-    model = StateSpaceLearning.StructuralModel(vcat(rand(5) .+ 5, rand(5) .- 5) + vcat(collect(1:5), collect(5:-1:1));seasonal="none", cycle="none", outlier=false, slope="stochastic", ζ_threshold=0)
+    model = StateSpaceLearning.StructuralModel(
+        vcat(rand(5) .+ 5, rand(5) .- 5) + vcat(collect(1:5), collect(5:-1:1));
+        seasonal="none",
+        cycle="none",
+        outlier=false,
+        slope="stochastic",
+        ζ_threshold=0,
+    )
     StateSpaceLearning.fit!(model)
-    @test all(isapprox.(StateSpaceLearning.get_trend_decomposition(model, model.output.components, slope), 
-            [       6.544506301918287
-            7.9278752338886775
-           10.266929548367902
-           11.728283090188654
-           13.666722760765126
-            4.077371477199227
-            1.7029908259414626
-            0.5101771103035202
-           -2.2199584710270805
-           -3.2219236690571273
-          ], atol=1e-6))
+    @test all(
+        isapprox.(
+            StateSpaceLearning.get_trend_decomposition(
+                model, model.output.components, slope
+            ),
+            [
+                6.544506301918287
+                7.9278752338886775
+                10.266929548367902
+                11.728283090188654
+                13.666722760765126
+                4.077371477199227
+                1.7029908259414626
+                0.5101771103035202
+                -2.2199584710270805
+                -3.2219236690571273
+            ],
+            atol=1e-4,
+        ),
+    )
 
-    model = StateSpaceLearning.StructuralModel(rand(10); cycle="stochastic", cycle_period=3, outlier=false, slope="stochastic", ζ_threshold=0, freq_seasonal=3, ω_threshold=0, ϕ_threshold=0)
+    model = StateSpaceLearning.StructuralModel(
+        rand(10);
+        cycle="stochastic",
+        cycle_period=3,
+        outlier=false,
+        slope="stochastic",
+        ζ_threshold=0,
+        freq_seasonal=3,
+        ω_threshold=0,
+        ϕ_threshold=0,
+    )
     StateSpaceLearning.fit!(model)
-    @test all(isapprox.(StateSpaceLearning.get_seasonal_decomposition(model, model.output.components, 3), 
-            [       -0.011114430313782316
-            0.016993897901375513
-            0.0
-           -0.06137711460224293
-           -0.028221145277986203
-            0.045215043179361716
-           -0.0027753371516487588
-           -0.08682292272858037
-           -0.036923166352424444
-            0.13243351808078532
-          ], atol=1e-6))
+    @test all(
+        isapprox.(
+            StateSpaceLearning.get_seasonal_decomposition(
+                model, model.output.components, 3
+            ),
+            [
+                -0.011114430313782316
+                0.016993897901375513
+                0.0
+                -0.06137711460224293
+                -0.028221145277986203
+                0.045215043179361716
+                -0.0027753371516487588
+                -0.08682292272858037
+                -0.036923166352424444
+                0.13243351808078532
+            ],
+            atol=1e-6,
+        ),
+    )
 
-    @test all(isapprox.(StateSpaceLearning.get_cycle_decomposition(model, model.output.components, 3), 
-            [     0.0
-            0.0
-            1.6111635465327112e-18
-           -0.005696779520104198
-           -0.030765036256794644
-            0.08224069806471179
-            0.030974382058151183
-           -0.15828117942894446
-            0.037361403241860734
-            0.17009485813575637], atol=1e-6))
+    @test all(
+        isapprox.(
+            StateSpaceLearning.get_cycle_decomposition(model, model.output.components, 3),
+            [
+                0.0
+                0.0
+                1.6111635465327112e-18
+                -0.005696779520104198
+                -0.030765036256794644
+                0.08224069806471179
+                0.030974382058151183
+                -0.15828117942894446
+                0.037361403241860734
+                0.17009485813575637
+            ],
+            atol=1e-6,
+        ),
+    )
 
-    model_decomposition = StateSpaceLearning.get_model_decomposition(model, model.output.components)
-    @test sort(collect(keys(model_decomposition))) == sort([ "cycle_3", "cycle_hat_3", "seasonal_3", "slope", "trend"])
+    model_decomposition = StateSpaceLearning.get_model_decomposition(
+        model, model.output.components
+    )
+    @test sort(collect(keys(model_decomposition))) ==
+        sort(["cycle_3", "cycle_hat_3", "seasonal_3", "slope", "trend"])
 end
 
 @testset "Function: simulate_states" begin
@@ -463,7 +507,9 @@ end
     @test length(StateSpaceLearning.simulate_states(model, 8, false, 12)) == 8
     @test length(StateSpaceLearning.simulate_states(model, 10, false, 0)) == 10
 
-    model = StateSpaceLearning.StructuralModel(rand(100); seasonal="none", cycle="stochastic", cycle_period=3, outlier=false)
+    model = StateSpaceLearning.StructuralModel(
+        rand(100); seasonal="none", cycle="stochastic", cycle_period=3, outlier=false
+    )
     StateSpaceLearning.fit!(model)
     @test length(StateSpaceLearning.simulate_states(model, 10, true, 12)) == 10
     @test length(StateSpaceLearning.simulate_states(model, 8, false, 12)) == 8
@@ -471,17 +517,38 @@ end
 end
 
 @testset "Function: forecast_dynamic_exog_coefs" begin
-    model = StateSpaceLearning.StructuralModel(rand(100); seasonal="none", cycle="stochastic", cycle_period=3, outlier=false)
+    model = StateSpaceLearning.StructuralModel(
+        rand(100); seasonal="none", cycle="stochastic", cycle_period=3, outlier=false
+    )
     StateSpaceLearning.fit!(model)
-    @test StateSpaceLearning.forecast_dynamic_exog_coefs(model, 10, Vector{Vector}(undef, 0)) == zeros(10)
-    @test StateSpaceLearning.forecast_dynamic_exog_coefs(model, 8, Vector{Vector}(undef, 0)) == zeros(8)
+    @test StateSpaceLearning.forecast_dynamic_exog_coefs(
+        model, 10, Vector{Vector}(undef, 0)
+    ) == zeros(10)
+    @test StateSpaceLearning.forecast_dynamic_exog_coefs(
+        model, 8, Vector{Vector}(undef, 0)
+    ) == zeros(8)
 
-    dynamic_exog_coefs = [(collect(1:100), "level"), (collect(1:100), "slope"), (collect(1:100), "seasonal", 2), (collect(1:100), "cycle", 3)]
-    forecast_dynamic_exog_coefs = [collect(101:110), collect(101:110), collect(101:110), collect(101:110)]
-    model2 = StateSpaceLearning.StructuralModel(rand(100); dynamic_exog_coefs = dynamic_exog_coefs)
+    dynamic_exog_coefs = [
+        (collect(1:100), "level"),
+        (collect(1:100), "slope"),
+        (collect(1:100), "seasonal", 2),
+        (collect(1:100), "cycle", 3),
+    ]
+    forecast_dynamic_exog_coefs = [
+        collect(101:110), collect(101:110), collect(101:110), collect(101:110)
+    ]
+    model2 = StateSpaceLearning.StructuralModel(
+        rand(100); dynamic_exog_coefs=dynamic_exog_coefs
+    )
     StateSpaceLearning.fit!(model2)
-    @test StateSpaceLearning.forecast_dynamic_exog_coefs(model2, 10, forecast_dynamic_exog_coefs) != zeros(10)
-    @test length(StateSpaceLearning.forecast_dynamic_exog_coefs(model2, 10, forecast_dynamic_exog_coefs)) == 10
+    @test StateSpaceLearning.forecast_dynamic_exog_coefs(
+        model2, 10, forecast_dynamic_exog_coefs
+    ) != zeros(10)
+    @test length(
+        StateSpaceLearning.forecast_dynamic_exog_coefs(
+            model2, 10, forecast_dynamic_exog_coefs
+        ),
+    ) == 10
 end
 
 @testset "Function: forecast" begin
@@ -686,15 +753,35 @@ end
     model5 = StateSpaceLearning.StructuralModel(y3; exog=exog)
     StateSpaceLearning.fit!(model5)
     exog_forecast = rand(18, 3)
-    forecast5 = trunc.(StateSpaceLearning.forecast(model5, 18; Exogenous_Forecast=exog_forecast); digits=3)
+    forecast5 =
+        trunc.(
+            StateSpaceLearning.forecast(model5, 18; Exogenous_Forecast=exog_forecast);
+            digits=3,
+        )
     @test length(forecast5) == 18
 
-    dynamic_exog_coefs = [(collect(1:length(y3)), "level"), (collect(1:length(y3)), "slope"), (collect(1:length(y3)), "seasonal", 2), (collect(1:length(y3)), "cycle", 3)]
-    forecast_dynamic_exog_coefs = [collect(length(y3) + 1:length(y3) + 10), collect(length(y3) + 1:length(y3) + 10), collect(length(y3) + 1:length(y3) + 10), collect(length(y3) + 1:length(y3) + 10)]
-    model6 = StateSpaceLearning.StructuralModel(y3; dynamic_exog_coefs = dynamic_exog_coefs)
+    dynamic_exog_coefs = [
+        (collect(1:length(y3)), "level"),
+        (collect(1:length(y3)), "slope"),
+        (collect(1:length(y3)), "seasonal", 2),
+        (collect(1:length(y3)), "cycle", 3),
+    ]
+    forecast_dynamic_exog_coefs = [
+        collect((length(y3) + 1):(length(y3) + 10)),
+        collect((length(y3) + 1):(length(y3) + 10)),
+        collect((length(y3) + 1):(length(y3) + 10)),
+        collect((length(y3) + 1):(length(y3) + 10)),
+    ]
+    model6 = StateSpaceLearning.StructuralModel(y3; dynamic_exog_coefs=dynamic_exog_coefs)
     StateSpaceLearning.fit!(model6)
-    @test StateSpaceLearning.forecast_dynamic_exog_coefs(model6, 10, forecast_dynamic_exog_coefs) != zeros(10)
-    @test length(StateSpaceLearning.forecast_dynamic_exog_coefs(model6, 10, forecast_dynamic_exog_coefs)) == 10
+    @test StateSpaceLearning.forecast_dynamic_exog_coefs(
+        model6, 10, forecast_dynamic_exog_coefs
+    ) != zeros(10)
+    @test length(
+        StateSpaceLearning.forecast_dynamic_exog_coefs(
+            model6, 10, forecast_dynamic_exog_coefs
+        ),
+    ) == 10
 end
 
 @testset "Function: simulate" begin
@@ -724,14 +811,25 @@ end
         StateSpaceLearning.simulate(model5, 10, 100; Exogenous_Forecast=exog_forecast)
     ) == (10, 100)
 
-    dynamic_exog_coefs = [(collect(1:length(y2)), "level"), (collect(1:length(y2)), "slope"), (collect(1:length(y2)), "seasonal", 2), (collect(1:length(y2)), "cycle", 3)]
-    forecast_dynamic_exog_coefs = [collect(length(y2) + 1:length(y2) + 10), collect(length(y2) + 1:length(y2) + 10), collect(length(y2) + 1:length(y2) + 10), collect(length(y2) + 1:length(y2) + 10)]
-    model6 = StateSpaceLearning.StructuralModel(y2; dynamic_exog_coefs = dynamic_exog_coefs)
+    dynamic_exog_coefs = [
+        (collect(1:length(y2)), "level"),
+        (collect(1:length(y2)), "slope"),
+        (collect(1:length(y2)), "seasonal", 2),
+        (collect(1:length(y2)), "cycle", 3),
+    ]
+    forecast_dynamic_exog_coefs = [
+        collect((length(y2) + 1):(length(y2) + 10)),
+        collect((length(y2) + 1):(length(y2) + 10)),
+        collect((length(y2) + 1):(length(y2) + 10)),
+        collect((length(y2) + 1):(length(y2) + 10)),
+    ]
+    model6 = StateSpaceLearning.StructuralModel(y2; dynamic_exog_coefs=dynamic_exog_coefs)
     StateSpaceLearning.fit!(model6)
     @test size(
-        StateSpaceLearning.simulate(model6, 10, 100; dynamic_exog_coefs_forecasts=forecast_dynamic_exog_coefs)
+        StateSpaceLearning.simulate(
+            model6, 10, 100; dynamic_exog_coefs_forecasts=forecast_dynamic_exog_coefs
+        ),
     ) == (10, 100)
-
 end
 
 @testset "Basics" begin
