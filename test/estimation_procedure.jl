@@ -103,6 +103,19 @@ end
     @test length(coefs0) == 43
     @test length(ε0) == 10
 
+    coefs0, ε0 = StateSpaceLearning.fit_lasso(
+        X,
+        AbstractFloat.(y),
+        0.1,
+        "aic",
+        false,
+        components_indexes,
+        ones(size(X, 2) - 1);
+        rm_average=true,
+    )
+    @test length(coefs0) == 43
+    @test length(ε0) == 10
+
     coefs1, ε1 = StateSpaceLearning.fit_lasso(
         X2,
         AbstractFloat.(y),

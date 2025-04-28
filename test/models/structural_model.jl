@@ -170,6 +170,20 @@ end
 end
 
 @testset "dynamic_exog_coefs" begin
+    dynamic_exog_coefs1 = [(collect(1:5), "level")]
+
+    X1 = StateSpaceLearning.create_dynamic_exog_coefs_matrix(
+        dynamic_exog_coefs1, 5, 0, 0, 0, 1
+    )
+    @test size(X1) == (5, 4)
+
+    dynamic_exog_coefs2 = [(collect(1:5), "slope")]
+
+    X2 = StateSpaceLearning.create_dynamic_exog_coefs_matrix(
+        dynamic_exog_coefs2, 5, 0, 0, 0, 1
+    )
+    @test size(X2) == (5, 4)
+
     dynamic_exog_coefs = [
         (collect(1:5), "level"),
         (collect(1:5), "slope"),
@@ -192,6 +206,20 @@ end
         dynamic_exog_coefs, 5, 2, 0, 0, 0, 1
     )
     @test size(X_f) == (2, 23)
+
+    dynamic_exog_coefs2 = [(collect(6:7), "level", "", 4)]
+
+    X_f2 = StateSpaceLearning.create_forecast_dynamic_exog_coefs_matrix(
+        dynamic_exog_coefs2, 5, 2, 0, 0, 0, 1
+    )
+    @test size(X_f2) == (2, 4)
+
+    dynamic_exog_coefs3 = [(collect(6:7), "slope", "", 4)]
+
+    X_f3 = StateSpaceLearning.create_forecast_dynamic_exog_coefs_matrix(
+        dynamic_exog_coefs3, 5, 2, 0, 0, 0, 1
+    )
+    @test size(X_f3) == (2, 4)
 end
 
 @testset "Create X matrix" begin
@@ -465,6 +493,21 @@ end
     )
     @test sort(collect(keys(model_decomposition))) ==
         sort(["cycle_3", "cycle_hat_3", "seasonal_3", "slope", "trend"])
+
+    model = StateSpaceLearning.StructuralModel(
+        vcat(rand(5) .+ 5, rand(5) .- 5) + vcat(collect(1:5), collect(5:-1:1));
+        level="deterministic",
+        seasonal="none",
+        cycle="none",
+        outlier=false,
+        slope="stochastic",
+        ζ_threshold=0,
+    )
+    StateSpaceLearning.fit!(model)
+    trend = StateSpaceLearning.get_trend_decomposition(
+        model, model.output.components, slope
+    )
+    @test length(trend) == 10
 end
 
 @testset "Function: simulate_states" begin

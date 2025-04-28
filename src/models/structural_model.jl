@@ -116,11 +116,6 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         else
             nothing
         end
-        if freq_seasonal == 0
-            (@assert seasonal == "none" "stochastic_seasonal and seasonal must be false if freq_seasonal is 0")
-        else
-            nothing
-        end
 
         if !isnothing(dynamic_exog_coefs)
             @assert all(
