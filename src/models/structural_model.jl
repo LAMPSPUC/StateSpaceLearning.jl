@@ -1226,13 +1226,17 @@ function get_cycle_decomposition(
         end
 
         for t in 2:T
-            ϕ_indexes =
-                max(2, model.stochastic_start):min(t, (T - max(1, model.ϕ_threshold)))
-            cycle[t] =
-                dot(c1, [cos(λ[t]), sin(λ[t])]) + sum(
-                    ϕ_cos[i] * cos(λ[t]) + ϕ_sin[i] * sin(λ[t]) for
-                    i in eachindex(ϕ_indexes)
-                )
+            if max(2, model.stochastic_start) <= min(t, (T - max(1, model.ϕ_threshold)))
+                ϕ_indexes =
+                    max(2, model.stochastic_start):min(t, (T - max(1, model.ϕ_threshold)))
+                cycle[t] =
+                    dot(c1, [cos(λ[t]), sin(λ[t])]) + sum(
+                        ϕ_cos[i] * cos(λ[t]) + ϕ_sin[i] * sin(λ[t]) for
+                        i in eachindex(ϕ_indexes)
+                    )
+            else
+                cycle[t] = dot(c1, [cos(λ[t]), sin(λ[t])])
+            end
         end
 
     else
