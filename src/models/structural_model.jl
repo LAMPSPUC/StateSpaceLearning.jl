@@ -1080,7 +1080,7 @@ function get_trend_decomposition(
         trend[1] = 0.0
     end
 
-    if model.stochastic_level
+    if model.stochastic_level && !isempty(components["ξ"]["Coefs"])
         ξ = vcat(zeros(max(2, model.stochastic_start) - 1), components["ξ"]["Coefs"], 0.0)
         @assert length(ξ) == T
     else
@@ -1119,7 +1119,7 @@ function get_slope_decomposition(
         slope[1] = 0.0
     end
 
-    if model.stochastic_slope
+    if model.stochastic_slope && !isempty(components["ζ"]["Coefs"])
         ζ = vcat(
             zeros(max(2, model.stochastic_start)),
             components["ζ"]["Coefs"],
@@ -1163,7 +1163,7 @@ function get_seasonal_decomposition(
         seasonal[1:s] = zeros(AbstractFloat, s)
     end
 
-    if model.stochastic_seasonal
+    if model.stochastic_seasonal && !isempty(components["ω_$(s)"]["Coefs"])
         ω = vcat(
             zeros(s - 1 + max(0, max(2, model.stochastic_start) - s)),
             components["ω_$(s)"]["Coefs"],
