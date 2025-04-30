@@ -508,6 +508,23 @@ end
         model, model.output.components, slope
     )
     @test length(trend) == 10
+
+    model = StateSpaceLearning.StructuralModel(
+        rand(100);
+        cycle="stochastic",
+        cycle_period=3,
+        outlier=false,
+        slope="stochastic",
+        ζ_threshold=0,
+        freq_seasonal=3,
+        ω_threshold=0,
+        ϕ_threshold=0,
+        stochastic_start=30,
+    )
+    StateSpaceLearning.fit!(model)
+    @test length(
+        StateSpaceLearning.get_cycle_decomposition(model, model.output.components, 3)
+    ) == 100
 end
 
 @testset "Function: simulate_states" begin
