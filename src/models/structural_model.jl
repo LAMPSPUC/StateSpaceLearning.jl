@@ -1469,7 +1469,9 @@ function simulate_states(
     end
 
     if !punctual
-        stochastic_residuals_set = rand(model.output.ε[findall(i -> !isnan(i), model.output.ε)], steps_ahead)
+        stochastic_residuals_set = rand(
+            model.output.ε[findall(i -> !isnan(i), model.output.ε)], steps_ahead
+        )
     end
 
     for t in (T + 1):(T + steps_ahead)
