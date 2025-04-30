@@ -1465,13 +1465,13 @@ function simulate_states(
         start_idx = 1
         final_idx = T
         outlier_values = model.output.components["o"]["Coefs"]
-        #stochastic_outliers_set = get_stochastic_values(outlier_values, steps_ahead, T, 1, T, seasonal_innovation_simulation)
         stochastic_outliers_set = rand(outlier_values, steps_ahead)
     end
 
     if !punctual
-        #stochastic_residuals_set = get_stochastic_values(model.output.ε, steps_ahead, T, 1, T, seasonal_innovation_simulation)
-        stochastic_residuals_set = rand(model.output.ε, steps_ahead)
+        stochastic_residuals_set = rand(
+            model.output.ε[findall(i -> !isnan(i), model.output.ε)], steps_ahead
+        )
     end
 
     for t in (T + 1):(T + steps_ahead)
