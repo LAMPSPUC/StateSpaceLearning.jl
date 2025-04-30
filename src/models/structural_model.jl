@@ -444,7 +444,7 @@ function create_deterministic_cycle(
 )::Matrix where {Fl<:AbstractFloat}
     λ = 2 * pi * (1:T) / c_period
     cycle1_matrix = hcat(cos.(λ), sin.(λ))
-    return cycle1_matrix
+    return round.(cycle1_matrix, digits=5)
 end
 
 """
@@ -1500,24 +1500,33 @@ function simulate_states(
         if model.cycle_period != 0
             cycles_t = zeros(AbstractFloat, length(model.cycle_period))
             for i in eachindex(model.cycle_period)
-                ϕ_cos = model.output.components["ϕ_$(model.cycle_period[i])"]["Coefs"][1:2:end]
-                ϕ_sin = model.output.components["ϕ_$(model.cycle_period[i])"]["Coefs"][2:2:end]
+                
                 λ = 2 * pi * (1:(T + steps_ahead)) / model.cycle_period[i]
 
-                cycle_t =
-                    dot(
-                        model.output.components["c1_$(model.cycle_period[i])"]["Coefs"],
-                        [cos(λ[t]), sin(λ[t])],
-                    ) +
-                    sum(
-                        ϕ_cos[j] * cos(λ[t]) + ϕ_sin[j] * sin(λ[t]) for
-                        j in eachindex(ϕ_cos)
-                    ) +
-                    sum(
-                        stochastic_cycles_cos_set[i][j] * cos(λ[t]) +
-                        stochastic_cycles_sin_set[i][j] * sin(λ[t]) for
-                        j in eachindex(stochastic_cycles_cos_set[i][1:(t - T)])
-                    )
+                if model.stochastic_cycle
+                    ϕ_cos = model.output.components["ϕ_$(model.cycle_period[i])"]["Coefs"][1:2:end]
+                    ϕ_sin = model.output.components["ϕ_$(model.cycle_period[i])"]["Coefs"][2:2:end]
+                    cycle_t =
+                        dot(
+                            model.output.components["c1_$(model.cycle_period[i])"]["Coefs"],
+                            [cos(λ[t]), sin(λ[t])],
+                        ) +
+                        sum(
+                            ϕ_cos[j] * cos(λ[t]) + ϕ_sin[j] * sin(λ[t]) for
+                            j in eachindex(ϕ_cos)
+                        ) +
+                        sum(
+                            stochastic_cycles_cos_set[i][j] * cos(λ[t]) +
+                            stochastic_cycles_sin_set[i][j] * sin(λ[t]) for
+                            j in eachindex(stochastic_cycles_cos_set[i][1:(t - T)])
+                        )
+                else
+                    cycle_t =
+                        dot(
+                            model.output.components["c1_$(model.cycle_period[i])"]["Coefs"],
+                            [cos(λ[t]), sin(λ[t])],
+                        )
+                end
                 cycles_t[i] = cycle_t
             end
         else
