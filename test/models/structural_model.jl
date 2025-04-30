@@ -811,12 +811,16 @@ end
         ),
     ) == 10
 
-    model7 = StateSpaceLearning.StructuralModel(y3; seasonal="none", cycle="deterministic", cycle_period=[12, 6, 4, 3, 12/5, 2])
+    model7 = StateSpaceLearning.StructuralModel(
+        y3; seasonal="none", cycle="deterministic", cycle_period=[12, 6, 4, 3, 12 / 5, 2]
+    )
     StateSpaceLearning.fit!(model7)
     forecast7 = trunc.(StateSpaceLearning.forecast(model7, 18); digits=3)
     @test length(forecast7) == 18
 
-    model8 = StateSpaceLearning.StructuralModel(y3; seasonal="none", cycle="stochastic", cycle_period=[12, 6, 4, 3, 12/5, 2])
+    model8 = StateSpaceLearning.StructuralModel(
+        y3; seasonal="none", cycle="stochastic", cycle_period=[12, 6, 4, 3, 12 / 5, 2]
+    )
     StateSpaceLearning.fit!(model8)
     forecast8 = trunc.(StateSpaceLearning.forecast(model8, 18); digits=3)
     @test length(forecast8) == 18
