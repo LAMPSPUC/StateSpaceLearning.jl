@@ -905,8 +905,10 @@ function get_components_indexes(model::StructuralModel)::Dict
     end
 
     exogenous_indexes = collect((FINAL_INDEX + 1):(FINAL_INDEX + model.n_exogenous))
+    FINAL_INDEX += length(exogenous_indexes)
 
     dynamic_exog_coefs_indexes = collect((FINAL_INDEX + 1):size(model.X, 2))
+    FINAL_INDEX += length(dynamic_exog_coefs_indexes)
 
     components_indexes_dict = Dict(
         "μ1" => μ1_indexes,
