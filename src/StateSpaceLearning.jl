@@ -17,6 +17,7 @@ export fit!,
     forecast,
     simulate,
     StructuralModel,
+    BasicStructuralModel,
     plot_point_forecast,
     plot_scenarios,
     simulate_states
