@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · StateSpaceLearning.jl</title><meta name="title" content="Examples · StateSpaceLearning.jl"/><meta property="og:title" content="Examples · StateSpaceLearning.jl"/><meta property="twitter:title" content="Examples · StateSpaceLearning.jl"/><meta name="description" content="Documentation for StateSpaceLearning.jl."/><meta property="og:description" content="Documentation for StateSpaceLearning.jl."/><meta property="twitter:description" content="Documentation for StateSpaceLearning.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">StateSpaceLearning.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../manual/">Manual</a></li><li><a class="tocitem" href="../features/">Extra Features</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#Univariate-Forecast"><span>Univariate Forecast</span></a></li><li><a class="tocitem" href="#Forecasting-intermittent-series"><span>Forecasting intermittent series</span></a></li><li><a class="tocitem" href="#Forecasting-with-Multiple-Seasonality"><span>Forecasting with Multiple Seasonality</span></a></li><li><a class="tocitem" href="#Dynamic-Exogenous-Coefficients"><span>Dynamic Exogenous Coefficients</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/LAMPSPUC/StateSpaceLearning.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/LAMPSPUC/StateSpaceLearning.jl/blob/main/docs/src/examples.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Examples"><a class="docs-heading-anchor" href="#Examples">Examples</a><a id="Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Examples" title="Permalink"></a></h1><p>In this page, we present examples of applications and use cases for the package.</p><h2 id="Univariate-Forecast"><a class="docs-heading-anchor" href="#Univariate-Forecast">Univariate Forecast</a><a id="Univariate-Forecast-1"></a><a class="docs-heading-anchor-permalink" href="#Univariate-Forecast" title="Permalink"></a></h2><p>Here we forecast the US airline passengers from 1949 to 1960.</p><pre><code class="language-julia hljs">using CSV, DataFrames, Plots, StateSpaceLearning
+
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |&gt; DataFrame
+log_air_passengers = log.(airp.passengers)
+T = length(log_air_passengers)
+steps_ahead = 30
+
+model = StructuralModel(log_air_passengers)
+fit!(model)
+prediction_log = StateSpaceLearning.forecast(model, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
+prediction = exp.(prediction_log)
+
+plot_point_forecast(airp.passengers, prediction)</code></pre><p><img src="../assets/quick_example_airp.PNG" alt="quick_example_airp"/></p><pre><code class="language-julia hljs">N_scenarios = 1000
+simulation = StateSpaceLearning.simulate(model, steps_ahead, N_scenarios) # arguments are the output of the fitted model, number of steps ahead the user wants to forecast and number of scenario paths
+
+plot_scenarios(airp.passengers, exp.(simulation))
+</code></pre><p><img src="../assets/airp_sim.svg" alt="airp_sim"/></p><h2 id="Forecasting-intermittent-series"><a class="docs-heading-anchor" href="#Forecasting-intermittent-series">Forecasting intermittent series</a><a id="Forecasting-intermittent-series-1"></a><a class="docs-heading-anchor-permalink" href="#Forecasting-intermittent-series" title="Permalink"></a></h2><p>The <span>$StateSpaceLearning.jl$</span> package offers a convenient approach for managing intermittent series. Within the <span>$simulate$</span> function, the <span>$seasonal\_innovation\_simulation$</span> hyperparameter can be configured to ensure that the variability in the simulations also exhibits a seasonal pattern.</p><p>We first execute the code with the default parameters to highlight the importance of adapting the model to handle this type of time series effectively:</p><pre><code class="language-julia hljs">using CSV, DataFrames, Plots, StateSpaceLearning
+
+solars = CSV.File(StateSpaceLearning.ARTIFICIAL_SOLARS) |&gt; DataFrame
+y = solars[!, &quot;y1&quot;]
+T = length(y)
+steps_ahead = 48
+
+model = StructuralModel(y; freq_seasonal=24, slope=&quot;none&quot;, level=&quot;none&quot;, outlier=false)
+fit!(model; penalize_initial_states=false)
+simulation = StateSpaceLearning.simulate(model, steps_ahead, 100) #Gets a 12 steps ahead prediction
+plot_scenarios(y, simulation)</code></pre><p><img src="../assets/solar_sim_raw.png" alt="solar_sim_raw"/></p><p>Now we present the results by setting the <span>$seasonal\_innovation\_simulation$</span> hyperparameter to 24 (given that it is a solar hourly time series).</p><pre><code class="language-julia hljs">using CSV, DataFrames, Plots, StateSpaceLearning
+
+solars = CSV.File(StateSpaceLearning.ARTIFICIAL_SOLARS) |&gt; DataFrame
+y = solars[!, &quot;y1&quot;]
+T = length(y)
+steps_ahead = 48
+
+model = StructuralModel(y; freq_seasonal=24, slope=&quot;none&quot;, level=&quot;none&quot;, outlier = false)
+fit!(model; penalize_initial_states=false)
+simulation = StateSpaceLearning.simulate(model, steps_ahead, 100; seasonal_innovation_simulation=24) #Gets a 12 steps ahead prediction
+plot_scenarios(y, simulation)</code></pre><p><img src="../assets/solar_sim_treated.png" alt="solar_sim_treated"/></p><p>Thus, the model has demonstrated its capability to effectively capture the intermittent nature of the solar time series, providing a more accurate representation of its underlying characteristics.</p><h2 id="Forecasting-with-Multiple-Seasonality"><a class="docs-heading-anchor" href="#Forecasting-with-Multiple-Seasonality">Forecasting with Multiple Seasonality</a><a id="Forecasting-with-Multiple-Seasonality-1"></a><a class="docs-heading-anchor-permalink" href="#Forecasting-with-Multiple-Seasonality" title="Permalink"></a></h2><p>The <span>$StateSpaceLearning.jl$</span> package handles multiple seasonality by passing parameter <span>$freq\_seasonal$</span> as a vector of Int in the StructuralModel instantiation.</p><p>We first execute the code considering a single daily seasonality (<span>$freq\_seasonal$</span>=24) to highlight the importance of adapting the model to handle this type of time series effectively:</p><pre><code class="language-julia hljs">using CSV, DataFrames, Plots, StateSpaceLearning
+
+solars = CSV.File(StateSpaceLearning.HOURLY_M4_EXAMPLE) |&gt; DataFrame
+y = solars[!, &quot;values&quot;]
+T = length(y)
+steps_ahead = 168
+
+model = StructuralModel(y; freq_seasonal=168)
+fit!(model)
+prediction = StateSpaceLearning.forecast(model, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
+
+plot_point_forecast(y, prediction)</code></pre><p><img src="../assets/one_seas.png" alt="one_seas"/></p><p>Note that the model successfully captured the daily seasonality but, as expected, was unable to capture the weekly seasonality. We now present the results after setting the <code>freq\_seasonal</code> hyperparameter to [24, 168], accounting for both daily and weekly seasonalities.</p><pre><code class="language-julia hljs">using CSV, DataFrames, Plots, StateSpaceLearning
+
+solars = CSV.File(StateSpaceLearning.HOURLY_M4_EXAMPLE) |&gt; DataFrame
+y = solars[!, &quot;values&quot;]
+T = length(y)
+steps_ahead = 168
+
+model = StructuralModel(y; freq_seasonal=[24, 168])
+fit!(model)
+prediction = StateSpaceLearning.forecast(model, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
+
+plot_point_forecast(y, prediction)</code></pre><p><img src="../assets/two_seas.png" alt="two_seas"/></p><p>Note that the model was able to capture both seasonalities in this case.</p><h2 id="Dynamic-Exogenous-Coefficients"><a class="docs-heading-anchor" href="#Dynamic-Exogenous-Coefficients">Dynamic Exogenous Coefficients</a><a id="Dynamic-Exogenous-Coefficients-1"></a><a class="docs-heading-anchor-permalink" href="#Dynamic-Exogenous-Coefficients" title="Permalink"></a></h2><p>Dynamic exogenous coefficients allow the effect of exogenous variables to vary over time with specific patterns (e.g., level, slope, seasonal or cyclical). This is configured through the <code>dynamic_exog_coefs</code> parameter in the StructuralModel constructor.</p><p>The <code>dynamic_exog_coefs</code> parameter accepts a vector of tuples, where each tuple contains:</p><ul><li>First element: A vector of an exogenous variable</li><li>Second element: The name of the component that the exogenous variable will be associated with</li><li>Third element (optional): For the seasonal component, the freq<em>seasonal parameter and for cycle component, the cycle</em>period parameter.</li></ul><p>For example:</p><pre><code class="language-julia hljs"># Make X1&#39;s effect vary annually and X2&#39;s effect vary semi-annually
+airp = CSV.File(StateSpaceLearning.AIR_PASSENGERS) |&gt; DataFrame
+y = log.(airp.passengers)
+X = vcat(collect(1:90), collect(90.5:-0.5:64)) + (rand(144) .* 10)
+y += X * -0.03
+
+dynamic_coefs = [(X, &quot;level&quot;)]
+
+model = StructuralModel(y;
+    dynamic_exog_coefs=dynamic_coefs
+)
+
+fit!(model)
+
+prediction = forecast(model, 30; dynamic_exog_coefs_forecasts = [collect(63.5:-0.5:49)])
+
+plot_point_forecast(y, prediction)</code></pre><p><img src="../assets/dynamic_exog.png" alt="dynamic_exog"/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../features/">« Extra Features</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.12.0 on <span class="colophon-date" title="Monday 9 June 2025 21:12">Monday 9 June 2025</span>. Using Julia version 1.10.9.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
