@@ -65,6 +65,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
     freq_seasonal::Union{Int,Vector{Int}}
     cycle_period::Union{Union{Int,<:AbstractFloat},Vector{Int},Vector{<:AbstractFloat}}
     outlier::Bool
+    ξ_threshold::Int
     ζ_threshold::Int
     ω_threshold::Int
     ϕ_threshold::Int
@@ -82,6 +83,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
         freq_seasonal::Union{Int,Vector{Int}}=12,
         cycle_period::Union{Union{Int,<:AbstractFloat},Vector{Int},Vector{<:AbstractFloat}}=0,
         outlier::Bool=true,
+        ξ_threshold::Int=1,
         ζ_threshold::Int=12,
         ω_threshold::Int=12,
         ϕ_threshold::Int=12,
@@ -156,6 +158,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
             freq_seasonal,
             cycle_period,
             outlier,
+            ξ_threshold,
             ζ_threshold,
             ω_threshold,
             ϕ_threshold,
@@ -180,6 +183,7 @@ mutable struct StructuralModel <: StateSpaceLearningModel
             freq_seasonal,
             cycle_period,
             outlier,
+            ξ_threshold,
             ζ_threshold,
             ω_threshold,
             ϕ_threshold,
@@ -189,6 +193,45 @@ mutable struct StructuralModel <: StateSpaceLearningModel
             nothing,
         )
     end
+end
+
+"""
+Create a Basic Structural Model.
+
+# Arguments
+- `y::Union{Vector,Matrix}`: Time series to be modeled.
+- `level::String="stochastic"`: Level component of the model.
+- `slope::String="stochastic"`: Slope component of the model.
+- `seasonal::String="stochastic"`: Seasonal component of the model.
+- `freq_seasonal::Union{Int,Vector{Int}}=12`: Seasonal period of the model.
+
+# Returns
+- `StructuralModel`: Basic Structural Model.
+"""
+function BasicStructuralModel(
+    y::Union{Vector,Matrix};
+    level::String="stochastic",
+    slope::String="stochastic",
+    seasonal::String="stochastic",
+    freq_seasonal::Union{Int,Vector{Int}}=12,
+)
+    return StructuralModel(
+        y;
+        level=level,
+        slope=slope,
+        seasonal=seasonal,
+        cycle="none",
+        freq_seasonal=freq_seasonal,
+        cycle_period=0,
+        outlier=false,
+        ξ_threshold=0,
+        ζ_threshold=0,
+        ω_threshold=0,
+        ϕ_threshold=0,
+        stochastic_start=1,
+        exog=zeros(length(y), 0),
+        dynamic_exog_coefs=nothing,
+    )
 end
 
 """
@@ -204,7 +247,8 @@ end
     - `Int`: Size of ξ calculated from T.
 
 """
-ξ_size(T::Int, stochastic_start::Int)::Int = T - max(2, stochastic_start)
+ξ_size(T::Int, ξ_threshold::Int, stochastic_start::Int)::Int =
+    T - max(2, stochastic_start) + 1 - ξ_threshold
 
 """
 ζ_size(T::Int, ζ_threshold::Int, stochastic_start::Int)::Int
@@ -273,19 +317,20 @@ o_size(T::Int, stochastic_start::Int)::Int = T - max(1, stochastic_start) + 1
     (2 * (T - max(2, stochastic_start) + 1) - (max(1, ϕ_threshold) * 2))
 
 """
-    create_ξ(T::Int, stochastic_start::Int)::Matrix
+    create_ξ(T::Int, ξ_threshold::Int, stochastic_start::Int)::Matrix
 
     Creates a matrix of innovations ξ based on the input sizes, and the desired steps ahead (this is necessary for the forecast function)
 
     # Arguments
     - `T::Int`: Length of the original time series.
+    - `ξ_threshold::Int`: Stabilize parameter ξ.
     - `stochastic_start::Int`: parameter to set at which time stamp the stochastic component starts.
 
     # Returns
     - `Matrix`: Matrix of innovations ξ constructed based on the input sizes.
 
 """
-function create_ξ(T::Int, stochastic_start::Int)::Matrix
+function create_ξ(T::Int, ξ_threshold::Int, stochastic_start::Int)::Matrix
     stochastic_start = max(2, stochastic_start)
     ξ_matrix = zeros(T, T - stochastic_start + 1)
     ones_indexes = findall(
@@ -293,7 +338,7 @@ function create_ξ(T::Int, stochastic_start::Int)::Matrix
         CartesianIndices((T, T - stochastic_start)),
     )
     ξ_matrix[ones_indexes] .= 1
-    return ξ_matrix[:, 1:(end - 1)]
+    return ξ_matrix[:, 1:(end - ξ_threshold)]
 end
 
 """
@@ -524,6 +569,7 @@ create_dynamic_exog_coefs_matrix(dynamic_exog_coefs::Vector{<:Tuple}, T::Int,ζ_
 function create_dynamic_exog_coefs_matrix(
     dynamic_exog_coefs::Vector{<:Tuple},
     T::Int,
+    ξ_threshold::Int,
     ζ_threshold::Int,
     ω_threshold::Int,
     ϕ_threshold::Int,
@@ -537,7 +583,7 @@ function create_dynamic_exog_coefs_matrix(
                 nothing
             else
                 state_components_dict["level"] = hcat(
-                    ones(T, 1), create_ξ(T, stochastic_start)
+                    ones(T, 1), create_ξ(T, ξ_threshold, stochastic_start)
                 )
             end
             key_name = "level"
@@ -588,6 +634,7 @@ create_forecast_dynamic_exog_coefs_matrix(dynamic_exog_coefs::Vector{<:Tuple}, T
     - `dynamic_exog_coefs::Vector{<:Tuple}`: Vector of tuples containing the combination components.
     - `T::Int`: Length of the original time series.
     - `steps_ahead::Int`: Steps ahead.
+    - `ξ_threshold::Int`: Stabilize parameter ξ.
     - `ζ_threshold::Int`: Stabilize parameter ζ.
     - `ω_threshold::Int`: Stabilize parameter ω.
     - `ϕ_threshold::Int`: Stabilize parameter ϕ.
@@ -600,6 +647,7 @@ function create_forecast_dynamic_exog_coefs_matrix(
     dynamic_exog_coefs::Vector{<:Tuple},
     T::Int,
     steps_ahead::Int,
+    ξ_threshold::Int,
     ζ_threshold::Int,
     ω_threshold::Int,
     ϕ_threshold::Int,
@@ -613,7 +661,8 @@ function create_forecast_dynamic_exog_coefs_matrix(
                 nothing
             else
                 state_components_dict["level"] = hcat(
-                    ones(T + steps_ahead, 1), create_ξ(T + steps_ahead, stochastic_start)
+                    ones(T + steps_ahead, 1),
+                    create_ξ(T + steps_ahead, ξ_threshold, stochastic_start),
                 )[
                     (end - steps_ahead + 1):end, 1:combination[4]
                 ]
@@ -680,6 +729,7 @@ create_X(
     freq_seasonal::Union{Int,Vector{Int}},
     cycle_period::Union{Int,Vector{Int}},
     outlier::Bool,
+    ξ_threshold::Int,
     ζ_threshold::Int,
     ω_threshold::Int,
     ϕ_threshold::Int,
@@ -701,6 +751,7 @@ create_X(
     - `freq_seasonal::Union{Int, Vector{Int}}`: Seasonal period.
     - `cycle_period::Union{Int,Vector{Int}}`: Cycle period.
     - `outlier::Bool`: Flag for considering outlier component.
+    - `ξ_threshold::Int`: Stabilize parameter ξ.
     - `ζ_threshold::Int`: Stabilize parameter ζ.
     - `ω_threshold::Int`: Stabilize parameter ω.
     - `ϕ_threshold::Int`: Stabilize parameter ϕ.
@@ -722,6 +773,7 @@ function create_X(
     freq_seasonal::Union{Int,Vector{Int}},
     cycle_period::Union{Union{Int,<:AbstractFloat},Vector{Int},Vector{<:AbstractFloat}},
     outlier::Bool,
+    ξ_threshold::Int,
     ζ_threshold::Int,
     ω_threshold::Int,
     ϕ_threshold::Int,
@@ -732,7 +784,7 @@ function create_X(
     T = size(exog, 1)
 
     ξ_matrix = if stochastic_level
-        create_ξ(T, stochastic_start)
+        create_ξ(T, ξ_threshold, stochastic_start)
     else
         zeros(T, 0)
     end
@@ -770,6 +822,7 @@ function create_X(
         create_dynamic_exog_coefs_matrix(
             dynamic_exog_coefs,
             T,
+            ξ_threshold,
             ζ_threshold,
             ω_threshold,
             ϕ_threshold,
@@ -847,7 +900,9 @@ function get_components_indexes(model::StructuralModel)::Dict
 
     if model.stochastic_level
         ξ_indexes = collect(
-            (FINAL_INDEX + 1):(FINAL_INDEX + ξ_size(T, model.stochastic_start))
+            (FINAL_INDEX + 1):(FINAL_INDEX + ξ_size(
+                T, model.ξ_threshold, model.stochastic_start
+            )),
         )
         FINAL_INDEX += length(ξ_indexes)
     else
@@ -908,7 +963,6 @@ function get_components_indexes(model::StructuralModel)::Dict
     FINAL_INDEX += length(exogenous_indexes)
 
     dynamic_exog_coefs_indexes = collect((FINAL_INDEX + 1):size(model.X, 2))
-    FINAL_INDEX += length(dynamic_exog_coefs_indexes)
 
     components_indexes_dict = Dict(
         "μ1" => μ1_indexes,
@@ -936,6 +990,43 @@ function get_components_indexes(model::StructuralModel)::Dict
             components_indexes_dict["c1_$(model.cycle_period[i])"] = c_indexes[i]
             if model.stochastic_cycle
                 components_indexes_dict["ϕ_$(model.cycle_period[i])"] = ϕ_indexes[i]
+            end
+        end
+    end
+
+    if !isnothing(model.dynamic_exog_coefs)
+        for i in eachindex(model.dynamic_exog_coefs)
+            if model.dynamic_exog_coefs[i][2] == "level"
+                components_indexes_dict["dynamic_exog_coefs_$(i)"] = collect(
+                    (FINAL_INDEX + 1):(FINAL_INDEX + 1 + ξ_size(
+                        T, model.ξ_threshold, model.stochastic_start
+                    )),
+                )
+                FINAL_INDEX += length(components_indexes_dict["dynamic_exog_coefs_$(i)"])
+            elseif model.dynamic_exog_coefs[i][2] == "slope"
+                components_indexes_dict["dynamic_exog_coefs_$(i)"] = collect(
+                    (FINAL_INDEX + 1):(FINAL_INDEX + 1 + ζ_size(
+                        T, model.ζ_threshold, model.stochastic_start
+                    )),
+                )
+                FINAL_INDEX += length(components_indexes_dict["dynamic_exog_coefs_$(i)"])
+            elseif model.dynamic_exog_coefs[i][2] == "seasonal"
+                components_indexes_dict["dynamic_exog_coefs_$(i)"] = collect(
+                    (FINAL_INDEX + 1):(FINAL_INDEX + model.dynamic_exog_coefs[i][3] + ω_size(
+                        T,
+                        model.dynamic_exog_coefs[i][3],
+                        model.ω_threshold,
+                        model.stochastic_start,
+                    )),
+                )
+                FINAL_INDEX += length(components_indexes_dict["dynamic_exog_coefs_$(i)"])
+            elseif model.dynamic_exog_coefs[i][2] == "cycle"
+                components_indexes_dict["dynamic_exog_coefs_$(i)"] = collect(
+                    (FINAL_INDEX + 1):(FINAL_INDEX + 2 + ϕ_size(
+                        T, model.ϕ_threshold, model.stochastic_start
+                    )),
+                )
+                FINAL_INDEX += length(components_indexes_dict["dynamic_exog_coefs_$(i)"])
             end
         end
     end
@@ -980,47 +1071,6 @@ function get_variances(
 end
 
 """
-get_variances(
-    model::StructuralModel,
-    ε::Vector{Vector{Fl}},
-    coefs::Vector{Vector{Tl}},
-    components_indexes::Dict{String,Vector{Int}},
-)::Vector{Dict} where {Fl, Tl}
-
-    Calculates variances for each innovation component and for the residuals.
-
-    # Arguments
-    - `model::StructuralModel`: StructuralModel object.
-    - `ε::Vector{Vector{Fl}}`: Vector of residuals.
-    - `coefs::Vector{Vector{Fl}}`: Vector of coefficients.
-    - `components_indexes::Dict{String, Vector{Int}}`: Dictionary containing indexes for different components.
-
-    # Returns
-    - `Vector{Dict}`: Dictionary containing variances for each innovation component.
-
-"""
-function get_variances(
-    model::StructuralModel,
-    ε::Vector{Vector{Fl}},
-    coefs::Vector{Vector{Tl}},
-    components_indexes::Dict{String,Vector{Int}},
-)::Vector{Dict} where {Fl,Tl}
-    model_innovations = get_model_innovations(model)
-
-    variances_vec = Dict[]
-
-    for i in eachindex(coefs)
-        variances = Dict()
-        for component in model_innovations
-            variances[component] = var(coefs[i][components_indexes[component]])
-        end
-        variances["ε"] = var(ε[i])
-        push!(variances_vec, variances)
-    end
-    return variances_vec
-end
-
-"""
     get_model_innovations(model::StructuralModel)::Vector
 
     Returns a vector containing the model innovations based on the input parameters.
@@ -1053,6 +1103,12 @@ function get_model_innovations(model::StructuralModel)
             push!(model_innovations, "ϕ_$i")
         end
     end
+
+    if !isnothing(model.dynamic_exog_coefs)
+        for i in eachindex(model.dynamic_exog_coefs)
+            push!(model_innovations, "dynamic_exog_coefs_$i")
+        end
+    end
     return model_innovations
 end
 
@@ -1083,7 +1139,11 @@ function get_trend_decomposition(
     end
 
     if model.stochastic_level && !isempty(components["ξ"]["Coefs"])
-        ξ = vcat(zeros(max(2, model.stochastic_start) - 1), components["ξ"]["Coefs"], 0.0)
+        ξ = vcat(
+            zeros(max(2, model.stochastic_start) - 1),
+            components["ξ"]["Coefs"],
+            zeros(model.ξ_threshold),
+        )
         @assert length(ξ) == T
     else
         ξ = zeros(AbstractFloat, T)
@@ -1572,7 +1632,7 @@ function forecast_dynamic_exog_coefs(
         dynamic_exog_coefs = Vector{Tuple}(undef, length(model.dynamic_exog_coefs))
         for i in eachindex(model.dynamic_exog_coefs)
             if model.dynamic_exog_coefs[i][2] == "level"
-                n_coefs = 1 + ξ_size(T, model.stochastic_start)
+                n_coefs = 1 + ξ_size(T, model.ξ_threshold, model.stochastic_start)
                 extra_param = ""
             elseif model.dynamic_exog_coefs[i][2] == "slope"
                 n_coefs = 1 + ζ_size(T, model.ζ_threshold, model.stochastic_start)
@@ -1601,6 +1661,7 @@ function forecast_dynamic_exog_coefs(
             dynamic_exog_coefs,
             T,
             steps_ahead,
+            model.ξ_threshold,
             model.ζ_threshold,
             model.ω_threshold,
             model.ϕ_threshold,

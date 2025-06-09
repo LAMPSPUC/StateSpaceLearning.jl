@@ -36,6 +36,7 @@ simulation = simulate(model, 12, 1000) # Gets 1000 scenarios path of 12 steps ah
 * `freq_seasonal::Union{Int,Vector{Int}}`: Seasonal frequency or vector of frequencies (default: 12)
 * `cycle_period::Union{Union{Int,<:AbstractFloat},Vector{Int},Vector{<:AbstractFloat}}`: Cycle period or vector of periods (default: 0)
 * `outlier::Bool`: Include outlier component (default: true)
+* `ξ_threshold::Int`: Threshold for level innovations (default: 1)
 * `ζ_threshold::Int`: Threshold for slope innovations (default: 12)
 * `ω_threshold::Int`: Threshold for seasonal innovations (default: 12)
 * `ϕ_threshold::Int`: Threshold for cycle innovations (default: 12)
