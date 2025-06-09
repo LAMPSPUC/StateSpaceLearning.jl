@@ -335,7 +335,7 @@ function create_ξ(T::Int, ξ_threshold::Int, stochastic_start::Int)::Matrix
     ξ_matrix = zeros(T, T - stochastic_start + 1)
     ones_indexes = findall(
         I -> Tuple(I)[1] - (stochastic_start - 2) > Tuple(I)[2],
-        CartesianIndices((T, T - stochastic_start)),
+        CartesianIndices((T, T - stochastic_start + 1)),
     )
     ξ_matrix[ones_indexes] .= 1
     return ξ_matrix[:, 1:(end - ξ_threshold)]
