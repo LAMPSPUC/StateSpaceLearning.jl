@@ -16,3 +16,7 @@ test.jl
 test_ms.jl
 new/
 test2.jl
+
+src/boosting_estimation_procedure.jl
+plots/
+paper_tests/m4_test/evaluate_model2.jl

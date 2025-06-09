@@ -5,11 +5,15 @@
     model2 = StateSpaceLearning.StructuralModel(y1; freq_seasonal=[3, 10])
     model3 = StateSpaceLearning.StructuralModel(y1; cycle_period=[3, 10.2])
     model4 = StateSpaceLearning.StructuralModel(y1; cycle_period=[3, 10.2])
+    model5 = StateSpaceLearning.BasicStructuralModel(y1; slope="none")
 
     @test typeof(model1) == StateSpaceLearning.StructuralModel
     @test typeof(model2) == StateSpaceLearning.StructuralModel
     @test typeof(model3) == StateSpaceLearning.StructuralModel
     @test typeof(model4) == StateSpaceLearning.StructuralModel
+    @test typeof(model5) == StateSpaceLearning.StructuralModel
+
+    @test size(model5.X) == (100, 201)
 
     @test_throws AssertionError StateSpaceLearning.StructuralModel(y1; stochastic_start=0)
     @test_throws AssertionError StateSpaceLearning.StructuralModel(
@@ -43,7 +47,7 @@ end
 end
 
 @testset "Innovation matrices" begin
-    @test StateSpaceLearning.ξ_size(10, 1) == 8
+    @test StateSpaceLearning.ξ_size(10, 1, 1) == 8
     @test StateSpaceLearning.ζ_size(10, 2, 1) == 6
     @test StateSpaceLearning.ζ_size(10, 0, 1) == 8
     @test StateSpaceLearning.ω_size(10, 2, 0, 1) == 9
@@ -52,7 +56,7 @@ end
     @test StateSpaceLearning.ϕ_size(10, 0, 1) == 16
     @test StateSpaceLearning.ϕ_size(10, 2, 1) == 14
 
-    @test StateSpaceLearning.ξ_size(10, 5) == 5
+    @test StateSpaceLearning.ξ_size(10, 1, 5) == 5
     @test StateSpaceLearning.ζ_size(10, 2, 5) == 3
     @test StateSpaceLearning.ζ_size(10, 0, 5) == 5
     @test StateSpaceLearning.ω_size(10, 2, 0, 5) == 6
@@ -60,8 +64,8 @@ end
     @test StateSpaceLearning.o_size(10, 6) == 5
     @test StateSpaceLearning.ϕ_size(10, 0, 5) == 10
 
-    X_ξ1 = StateSpaceLearning.create_ξ(5, 1)
-    X_ξ2 = StateSpaceLearning.create_ξ(5, 3)
+    X_ξ1 = StateSpaceLearning.create_ξ(5, 1, 1)
+    X_ξ2 = StateSpaceLearning.create_ξ(5, 1, 3)
 
     @test X_ξ1 == [
         0.0 0.0 0.0
@@ -173,14 +177,14 @@ end
     dynamic_exog_coefs1 = [(collect(1:5), "level")]
 
     X1 = StateSpaceLearning.create_dynamic_exog_coefs_matrix(
-        dynamic_exog_coefs1, 5, 0, 0, 0, 1
+        dynamic_exog_coefs1, 5, 1, 0, 0, 0, 1
     )
     @test size(X1) == (5, 4)
 
     dynamic_exog_coefs2 = [(collect(1:5), "slope")]
 
     X2 = StateSpaceLearning.create_dynamic_exog_coefs_matrix(
-        dynamic_exog_coefs2, 5, 0, 0, 0, 1
+        dynamic_exog_coefs2, 5, 1, 0, 0, 0, 1
     )
     @test size(X2) == (5, 4)
 
@@ -192,7 +196,7 @@ end
     ]
 
     X = StateSpaceLearning.create_dynamic_exog_coefs_matrix(
-        dynamic_exog_coefs, 5, 0, 0, 0, 1
+        dynamic_exog_coefs, 5, 1, 0, 0, 0, 1
     )
     @test size(X) == (5, 22)
 
@@ -203,21 +207,21 @@ end
         (collect(6:7), "cycle", 3, 8),
     ]
     X_f = StateSpaceLearning.create_forecast_dynamic_exog_coefs_matrix(
-        dynamic_exog_coefs, 5, 2, 0, 0, 0, 1
+        dynamic_exog_coefs, 5, 2, 1, 0, 0, 0, 1
     )
     @test size(X_f) == (2, 23)
 
     dynamic_exog_coefs2 = [(collect(6:7), "level", "", 4)]
 
     X_f2 = StateSpaceLearning.create_forecast_dynamic_exog_coefs_matrix(
-        dynamic_exog_coefs2, 5, 2, 0, 0, 0, 1
+        dynamic_exog_coefs2, 5, 2, 1, 0, 0, 0, 1
     )
     @test size(X_f2) == (2, 4)
 
     dynamic_exog_coefs3 = [(collect(6:7), "slope", "", 4)]
 
     X_f3 = StateSpaceLearning.create_forecast_dynamic_exog_coefs_matrix(
-        dynamic_exog_coefs3, 5, 2, 0, 0, 0, 1
+        dynamic_exog_coefs3, 5, 2, 1, 0, 0, 0, 1
     )
     @test size(X_f3) == (2, 4)
 end
@@ -243,6 +247,7 @@ end
         3,
         3,
         true,
+        1,
         0,
         0,
         0,
@@ -271,6 +276,7 @@ end
         3,
         3,
         true,
+        1,
         3,
         2,
         4,
