@@ -12,9 +12,9 @@ df_train4 = CSV.read("paper_tests/m4_test/Monthly-train4.csv", DataFrame)
 df_train = vcat(df_train1, df_train2, df_train3, df_train4) # so that files are not too big and can be uploaded to github
 df_test = CSV.read("paper_tests/m4_test/Monthly-test.csv", DataFrame)
 
-include("metrics.jl")
-include("evaluate_model.jl")
-include("prepare_data.jl")
+include("paper_tests/m4_test/metrics.jl")
+include("paper_tests/m4_test/evaluate_model.jl")
+include("paper_tests/m4_test/prepare_data.jl")
 
 dict_vec = build_train_test_dict(df_train, df_test)
 
@@ -25,8 +25,6 @@ function append_results(filepath, results_df)
     if isfile(filepath)
         df_old = CSV.read(filepath, DataFrame)
         results_df = vcat(df_old, results_df)
-        @info "MASE avg = $(mean(results_df[:, :MASE]))"
-        @info "sMAPE avg = $(mean(results_df[:, :sMAPE]))"
     end
     return CSV.write(filepath, results_df)
 end
@@ -84,6 +82,7 @@ function run_config(
         ]);
         digits=3,
     )
+    crps = trunc(mean(results_df[:, :CRPS]); digits=3)
     name = if outlier
         "SSL-O ($(information_criteria), α = $(α))"
     else
@@ -92,7 +91,7 @@ function run_config(
     results_table = vcat(
         results_table,
         DataFrame(
-            "Names" => ["$name"], "MASE" => [mase], "sMAPE" => [smape], "OWA" => [owa]
+            "Names" => ["$name"], "MASE" => [mase], "sMAPE" => [smape], "OWA" => [owa], "CRPS" => [crps]
         ),
     )
     return results_table

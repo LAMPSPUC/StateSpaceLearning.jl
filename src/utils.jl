@@ -139,9 +139,10 @@ function get_stochastic_values(
     start_idx::Int,
     final_idx::Int,
     seasonal_innovation_simulation::Int,
-)::Vector{AbstractFloat} where {Fl<:AbstractFloat}
+    N_scenarios::Int,
+)::Matrix{AbstractFloat} where {Fl<:AbstractFloat}
     if seasonal_innovation_simulation != 0
-        stochastic_term = Vector{AbstractFloat}(undef, steps_ahead)
+        stochastic_term = Matrix{AbstractFloat}(undef, steps_ahead, N_scenarios)
         for t in 1:steps_ahead
 
             # Generate potential seasonal indices
@@ -152,11 +153,11 @@ function get_stochastic_values(
             valid_indices = filter(idx -> start_idx <= idx <= final_idx, seasonal_indices)
 
             # Sample with randomness and sign flip
-            stochastic_term[t] = rand(estimated_stochastic[valid_indices]) * rand([1, -1])
+            stochastic_term[t, :] = rand(estimated_stochastic[valid_indices], N_scenarios) .* rand([1, -1], N_scenarios)
         end
     else
         stochastic_term =
-            rand(estimated_stochastic, steps_ahead) .* rand([1, -1], steps_ahead)
+            rand(estimated_stochastic, steps_ahead, N_scenarios) .* rand([1, -1], steps_ahead, N_scenarios)
     end
 
     return stochastic_term

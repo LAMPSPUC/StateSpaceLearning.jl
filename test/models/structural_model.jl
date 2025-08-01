@@ -536,17 +536,17 @@ end
 @testset "Function: simulate_states" begin
     model = StateSpaceLearning.StructuralModel(rand(100))
     StateSpaceLearning.fit!(model)
-    @test length(StateSpaceLearning.simulate_states(model, 10, true, 12)) == 10
-    @test length(StateSpaceLearning.simulate_states(model, 8, false, 12)) == 8
-    @test length(StateSpaceLearning.simulate_states(model, 10, false, 0)) == 10
+    @test length(StateSpaceLearning.simulate_states(model, 10, true, 12, 1)) == 10
+    @test length(StateSpaceLearning.simulate_states(model, 8, false, 12, 1)) == 8
+    @test length(StateSpaceLearning.simulate_states(model, 10, false, 0, 1)) == 10
 
     model = StateSpaceLearning.StructuralModel(
         rand(100); seasonal="none", cycle="stochastic", cycle_period=3, outlier=false
     )
     StateSpaceLearning.fit!(model)
-    @test length(StateSpaceLearning.simulate_states(model, 10, true, 12)) == 10
-    @test length(StateSpaceLearning.simulate_states(model, 8, false, 12)) == 8
-    @test length(StateSpaceLearning.simulate_states(model, 10, false, 0)) == 10
+    @test length(StateSpaceLearning.simulate_states(model, 10, true, 12, 1)) == 10
+    @test length(StateSpaceLearning.simulate_states(model, 8, false, 12, 1)) == 8
+    @test length(StateSpaceLearning.simulate_states(model, 10, false, 0, 1)) == 10
 end
 
 @testset "Function: forecast_dynamic_exog_coefs" begin

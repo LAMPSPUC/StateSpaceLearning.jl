@@ -20,3 +20,6 @@ test2.jl
 src/boosting_estimation_procedure.jl
 plots/
 paper_tests/m4_test/evaluate_model2.jl
+results_PROPHET/    
+results_SS/
+sarima/
