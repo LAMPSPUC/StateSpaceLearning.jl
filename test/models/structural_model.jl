@@ -532,13 +532,13 @@ end
         StateSpaceLearning.get_cycle_decomposition(model, model.output.components, 3)
     ) == 100
 
-    Random.seed!(123)
     model = StateSpaceLearning.StructuralModel(
         vcat(collect(1:5), collect(5:-1:1));
-        level="deterministic",
-        seasonal="none",
+        level="stochastic",
+        seasonal="stochastic",
         cycle="stochastic",
         cycle_period=3,
+        freq_seasonal=3,
         outlier=false,
         slope="stochastic",
         ζ_threshold=10,
