@@ -91,7 +91,11 @@ function run_config(
     results_table = vcat(
         results_table,
         DataFrame(
-            "Names" => ["$name"], "MASE" => [mase], "sMAPE" => [smape], "OWA" => [owa], "CRPS" => [crps]
+            "Names" => ["$name"],
+            "MASE" => [mase],
+            "sMAPE" => [smape],
+            "OWA" => [owa],
+            "CRPS" => [crps],
         ),
     )
     return results_table

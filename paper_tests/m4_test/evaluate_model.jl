@@ -46,7 +46,9 @@ function evaluate_SSL(
     smape = sMAPE(y_test, prediction)
     crps = CRPS(scenarios, y_test)
 
-    results_df = vcat(results_df, DataFrame([[mase], [smape], [crps]], [:MASE, :sMAPE, :CRPS]))
+    results_df = vcat(
+        results_df, DataFrame([[mase], [smape], [crps]], [:MASE, :sMAPE, :CRPS])
+    )
     initialization_df = vcat(
         initialization_df,
         DataFrame(

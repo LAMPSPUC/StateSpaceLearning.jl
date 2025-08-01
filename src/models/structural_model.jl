@@ -264,8 +264,9 @@ end
     - `Int`: Size of ζ calculated from T.
 
 """
-ζ_size(T::Int, ζ_threshold::Int, stochastic_start::Int)::Int =
-    max(0, T - ζ_threshold - max(2, stochastic_start))
+ζ_size(T::Int, ζ_threshold::Int, stochastic_start::Int)::Int = max(
+    0, T - ζ_threshold - max(2, stochastic_start)
+)
 
 """
 ω_size(T::Int, s::Int, ω_threshold::Int, stochastic_start::Int)::Int
@@ -282,8 +283,9 @@ end
     - `Int`: Size of ω calculated from T.
 
 """
-ω_size(T::Int, s::Int, ω_threshold::Int, stochastic_start::Int)::Int =
-    max(0, T - ω_threshold - s + 1 - max(0, max(2, stochastic_start) - s))
+ω_size(T::Int, s::Int, ω_threshold::Int, stochastic_start::Int)::Int = max(
+    0, T - ω_threshold - s + 1 - max(0, max(2, stochastic_start) - s)
+)
 
 """
 o_size(T::Int, stochastic_start::Int)::Int
@@ -313,8 +315,9 @@ o_size(T::Int, stochastic_start::Int)::Int = T - max(1, stochastic_start) + 1
     # Returns
     - `Int`: Size of ϕ calculated from T.
 """
-ϕ_size(T::Int, ϕ_threshold::Int, stochastic_start::Int)::Int =
-    (2 * (T - max(2, stochastic_start) + 1) - (max(1, ϕ_threshold) * 2))
+ϕ_size(T::Int, ϕ_threshold::Int, stochastic_start::Int)::Int = (
+    2 * (T - max(2, stochastic_start) + 1) - (max(1, ϕ_threshold) * 2)
+)
 
 """
     create_ξ(T::Int, ξ_threshold::Int, stochastic_start::Int)::Matrix
@@ -455,7 +458,7 @@ function create_ϕ(
         X = hcat(X, X_t)
     end
 
-    return round.(X, digits=5)
+    return round.(X; digits=5)
 end
 
 """
@@ -489,7 +492,7 @@ function create_deterministic_cycle(
 )::Matrix where {Fl<:AbstractFloat}
     λ = 2 * pi * (1:T) / c_period
     cycle1_matrix = hcat(cos.(λ), sin.(λ))
-    return round.(cycle1_matrix, digits=5)
+    return round.(cycle1_matrix; digits=5)
 end
 
 """
@@ -1273,12 +1276,16 @@ function get_cycle_decomposition(
             ϕ_cos = vcat(
                 zeros(max(2, model.stochastic_start) - 1),
                 components["ϕ_$(cycle_period)"]["Coefs"][1:2:end],
-                zeros(min(max(1, model.ϕ_threshold), T - max(2, model.stochastic_start) + 1)),
+                zeros(
+                    min(max(1, model.ϕ_threshold), T - max(2, model.stochastic_start) + 1)
+                ),
             )
             ϕ_sin = vcat(
                 zeros(max(2, model.stochastic_start) - 1),
                 components["ϕ_$(cycle_period)"]["Coefs"][2:2:end],
-                zeros(min(max(1, model.ϕ_threshold), T - max(2, model.stochastic_start) + 1)),
+                zeros(
+                    min(max(1, model.ϕ_threshold), T - max(2, model.stochastic_start) + 1)
+                ),
             )
             @assert length(ϕ_cos) == T
             @assert length(ϕ_sin) == T
@@ -1403,7 +1410,13 @@ function simulate_states(
             ζ_values = zeros(T)
         end
         stochastic_slope_set = get_stochastic_values(
-            ζ_values, steps_ahead, T, start_idx, final_idx, seasonal_innovation_simulation, N_scenarios
+            ζ_values,
+            steps_ahead,
+            T,
+            start_idx,
+            final_idx,
+            seasonal_innovation_simulation,
+            N_scenarios,
         )
     else
         slope = zeros(T)
@@ -1429,7 +1442,13 @@ function simulate_states(
             ξ_values = zeros(T)
         end
         stochastic_level_set = get_stochastic_values(
-            ξ_values, steps_ahead, T, start_idx, final_idx, seasonal_innovation_simulation, N_scenarios
+            ξ_values,
+            steps_ahead,
+            T,
+            start_idx,
+            final_idx,
+            seasonal_innovation_simulation,
+            N_scenarios,
         )
     end
 
@@ -1512,8 +1531,14 @@ function simulate_states(
                 ϕ_sin_values = []
                 for i in model.cycle_period
                     if !isempty(model.output.components["ϕ_$(i)"]["Coefs"])
-                        push!(ϕ_cos_values, model.output.components["ϕ_$(i)"]["Coefs"][1:2:end])
-                        push!(ϕ_sin_values, model.output.components["ϕ_$(i)"]["Coefs"][2:2:end])
+                        push!(
+                            ϕ_cos_values,
+                            model.output.components["ϕ_$(i)"]["Coefs"][1:2:end],
+                        )
+                        push!(
+                            ϕ_sin_values,
+                            model.output.components["ϕ_$(i)"]["Coefs"][2:2:end],
+                        )
                     else
                         push!(ϕ_cos_values, zeros(T))
                         push!(ϕ_sin_values, zeros(T))
@@ -1557,7 +1582,9 @@ function simulate_states(
 
     if !punctual
         stochastic_residuals_set = rand(
-            model.output.ε[findall(i -> !isnan(i), model.output.ε)], steps_ahead, N_scenarios
+            model.output.ε[findall(i -> !isnan(i), model.output.ε)],
+            steps_ahead,
+            N_scenarios,
         )
     end
 
@@ -1565,7 +1592,11 @@ function simulate_states(
     model.level ? trend = ones(T, N_scenarios) .* trend : nothing
     model.seasonal ? seasonals = [ones(T, N_scenarios) .* s for s in seasonals] : nothing
     for t in (T + 1):(T + steps_ahead)
-        slope_t = model.slope ? slope[end, :] + stochastic_slope_set[t - T, :] : zeros(N_scenarios)
+        slope_t = if model.slope
+            slope[end, :] + stochastic_slope_set[t - T, :]
+        else
+            zeros(N_scenarios)
+        end
 
         trend_t = if (model.level || model.slope)
             trend[end, :] + slope[end, :] + stochastic_level_set[t - T, :]
@@ -1579,7 +1610,8 @@ function simulate_states(
                 push!(
                     seasonals_t,
                     seasonals[i][t - model.freq_seasonal[i], :] +
-                    stochastic_seasonals_set[i][t - T + 1, :] - stochastic_seasonals_set[i][t - T, :]
+                    stochastic_seasonals_set[i][t - T + 1, :] -
+                    stochastic_seasonals_set[i][t - T, :],
                 )
             end
         else
@@ -1591,7 +1623,8 @@ function simulate_states(
             for i in eachindex(model.cycle_period)
                 λ = 2 * pi * (1:(T + steps_ahead)) / model.cycle_period[i]
 
-                if model.stochastic_cycle && !isempty(model.output.components["ϕ_$(model.cycle_period[i])"]["Coefs"])
+                if model.stochastic_cycle &&
+                    !isempty(model.output.components["ϕ_$(model.cycle_period[i])"]["Coefs"])
                     ϕ_cos = model.output.components["ϕ_$(model.cycle_period[i])"]["Coefs"][1:2:end]
                     ϕ_sin = model.output.components["ϕ_$(model.cycle_period[i])"]["Coefs"][2:2:end]
                     cycle_t =
@@ -1603,16 +1636,19 @@ function simulate_states(
                             ϕ_cos[j] * cos(λ[t]) + ϕ_sin[j] * sin(λ[t]) for
                             j in eachindex(ϕ_cos)
                         ) +
-                        [sum(
-                            stochastic_cycles_cos_set[i][j] * cos(λ[t]) +
-                            stochastic_cycles_sin_set[i][j] * sin(λ[t]) for
-                            j in eachindex(stochastic_cycles_cos_set[i][1:(t - T), k])
-                        ) for k in 1:N_scenarios]
+                        [
+                            sum(
+                                stochastic_cycles_cos_set[i][j] * cos(λ[t]) +
+                                stochastic_cycles_sin_set[i][j] * sin(λ[t]) for
+                                j in eachindex(stochastic_cycles_cos_set[i][1:(t - T), k])
+                            ) for k in 1:N_scenarios
+                        ]
                 else
-                    cycle_t = ones(N_scenarios) .* dot(
-                        model.output.components["c1_$(model.cycle_period[i])"]["Coefs"],
-                        [cos(λ[t]), sin(λ[t])],
-                    )
+                    cycle_t =
+                        ones(N_scenarios) .* dot(
+                            model.output.components["c1_$(model.cycle_period[i])"]["Coefs"],
+                            [cos(λ[t]), sin(λ[t])],
+                        )
                 end
                 push!(cycles_t, cycle_t)
             end
@@ -1620,10 +1656,15 @@ function simulate_states(
             cycles_t = [zeros(N_scenarios) for _ in eachindex(model.cycle_period)]
         end
 
-        outlier_t = (model.outlier && !punctual) ? stochastic_outliers_set[t - T, :] : zeros(N_scenarios)
+        outlier_t = if (model.outlier && !punctual)
+            stochastic_outliers_set[t - T, :]
+        else
+            zeros(N_scenarios)
+        end
         residuals_t = !punctual ? stochastic_residuals_set[t - T, :] : zeros(N_scenarios)
 
-        prediction[t - T, :] = trend_t + sum(seasonals_t) + sum(cycles_t) + outlier_t + residuals_t
+        prediction[t - T, :] =
+            trend_t + sum(seasonals_t) + sum(cycles_t) + outlier_t + residuals_t
 
         model.slope ? slope = vcat(slope, slope_t') : nothing
         model.level ? trend = vcat(trend, trend_t') : nothing

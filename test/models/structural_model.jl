@@ -787,11 +787,9 @@ end
     model5 = StateSpaceLearning.StructuralModel(y3; exog=exog)
     StateSpaceLearning.fit!(model5)
     exog_forecast = rand(18, 3)
-    forecast5 =
-        trunc.(
-            StateSpaceLearning.forecast(model5, 18; Exogenous_Forecast=exog_forecast);
-            digits=3,
-        )
+    forecast5 = trunc.(
+        StateSpaceLearning.forecast(model5, 18; Exogenous_Forecast=exog_forecast); digits=3
+    )
     @test length(forecast5) == 18
 
     dynamic_exog_coefs = [

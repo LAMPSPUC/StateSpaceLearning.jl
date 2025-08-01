@@ -18,7 +18,6 @@ function OWA(MASE1, MASE2, sMAPE1, sMAPE2)
     return 0.5 * (((MASE1) / (MASE2)) + ((sMAPE1) / (sMAPE2)))
 end
 
-
 function CRPS(scenarios, y)
     crps_scores = Vector{AbstractFloat}(undef, length(y))
 
