@@ -109,6 +109,9 @@ mutable struct StructuralModel <: StateSpaceLearningModel
 
         if typeof(cycle_period) <: Vector
             (@assert all(cycle_period .>= 0) "Cycle period must be greater than or equal to 0")
+            if isempty(cycle_period)
+                cycle_period = 0
+            end
         else
             (@assert cycle_period >= 0 "Cycle period must be greater than or equal to 0")
         end
@@ -1618,7 +1621,7 @@ function simulate_states(
             seasonals_t = [zeros(N_scenarios) for _ in eachindex(model.freq_seasonal)]
         end
 
-        if model.cycle_period != 0 && model.cycle_period != []
+        if model.cycle_period != 0
             cycles_t = []
             for i in eachindex(model.cycle_period)
                 λ = 2 * pi * (1:(T + steps_ahead)) / model.cycle_period[i]
