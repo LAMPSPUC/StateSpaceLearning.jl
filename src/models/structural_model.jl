@@ -1618,7 +1618,7 @@ function simulate_states(
             seasonals_t = [zeros(N_scenarios) for _ in eachindex(model.freq_seasonal)]
         end
 
-        if model.cycle_period != 0
+        if model.cycle_period != 0 && model.cycle_period != []
             cycles_t = []
             for i in eachindex(model.cycle_period)
                 λ = 2 * pi * (1:(T + steps_ahead)) / model.cycle_period[i]
