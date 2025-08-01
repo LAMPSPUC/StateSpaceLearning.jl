@@ -531,6 +531,22 @@ end
     @test length(
         StateSpaceLearning.get_cycle_decomposition(model, model.output.components, 3)
     ) == 100
+
+    Random.seed!(123)
+    model = StateSpaceLearning.StructuralModel(
+        vcat(collect(1:5), collect(5:-1:1));
+        level="deterministic",
+        seasonal="none",
+        cycle="stochastic",
+        cycle_period=3,
+        outlier=false,
+        slope="stochastic",
+        ζ_threshold=10,
+    )
+    StateSpaceLearning.fit!(model)
+    @test length(
+        StateSpaceLearning.get_cycle_decomposition(model, model.output.components, 3)
+    ) == 10
 end
 
 @testset "Function: simulate_states" begin
