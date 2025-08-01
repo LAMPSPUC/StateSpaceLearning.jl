@@ -39,10 +39,16 @@ function evaluate_SSL(
     normalized_prediction = StateSpaceLearning.forecast(model, H)
     prediction = de_normalize(normalized_prediction, max_y, min_y)
 
+    normalized_scenarios = StateSpaceLearning.simulate(model, H, 1000)
+    scenarios = de_normalize(normalized_scenarios, max_y, min_y)
+
     mase = MASE(y_train, y_test, prediction)
     smape = sMAPE(y_test, prediction)
+    crps = CRPS(scenarios, y_test)
 
-    results_df = vcat(results_df, DataFrame([[mase], [smape]], [:MASE, :sMAPE]))
+    results_df = vcat(
+        results_df, DataFrame([[mase], [smape], [crps]], [:MASE, :sMAPE, :CRPS])
+    )
     initialization_df = vcat(
         initialization_df,
         DataFrame(

@@ -232,7 +232,7 @@ function fit_lasso(
             α;
             information_criteria=information_criteria,
             penalty_factor=penalty_factor,
-            intercept=!rm_average,
+            intercept=(!rm_average),
         )
     else
         coefs, ε = fit_glmnet(

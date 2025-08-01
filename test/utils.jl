@@ -118,6 +118,7 @@ end
         start_idx,
         final_idx,
         seasonal_innovation_simulation1,
+        1,
     )
     st_values2 = StateSpaceLearning.get_stochastic_values(
         estimated_stochastic,
@@ -126,6 +127,7 @@ end
         start_idx,
         final_idx,
         seasonal_innovation_simulation2,
+        1,
     )
 
     @test length(st_values1) == steps_ahead

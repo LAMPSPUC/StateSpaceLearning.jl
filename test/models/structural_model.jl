@@ -531,22 +531,38 @@ end
     @test length(
         StateSpaceLearning.get_cycle_decomposition(model, model.output.components, 3)
     ) == 100
+
+    model = StateSpaceLearning.StructuralModel(
+        vcat(collect(1:5), collect(5:-1:1));
+        level="stochastic",
+        seasonal="stochastic",
+        cycle="stochastic",
+        cycle_period=3,
+        freq_seasonal=3,
+        outlier=false,
+        slope="stochastic",
+        ζ_threshold=10,
+    )
+    StateSpaceLearning.fit!(model)
+    @test length(
+        StateSpaceLearning.get_cycle_decomposition(model, model.output.components, 3)
+    ) == 10
 end
 
 @testset "Function: simulate_states" begin
     model = StateSpaceLearning.StructuralModel(rand(100))
     StateSpaceLearning.fit!(model)
-    @test length(StateSpaceLearning.simulate_states(model, 10, true, 12)) == 10
-    @test length(StateSpaceLearning.simulate_states(model, 8, false, 12)) == 8
-    @test length(StateSpaceLearning.simulate_states(model, 10, false, 0)) == 10
+    @test length(StateSpaceLearning.simulate_states(model, 10, true, 12, 1)) == 10
+    @test length(StateSpaceLearning.simulate_states(model, 8, false, 12, 1)) == 8
+    @test length(StateSpaceLearning.simulate_states(model, 10, false, 0, 1)) == 10
 
     model = StateSpaceLearning.StructuralModel(
         rand(100); seasonal="none", cycle="stochastic", cycle_period=3, outlier=false
     )
     StateSpaceLearning.fit!(model)
-    @test length(StateSpaceLearning.simulate_states(model, 10, true, 12)) == 10
-    @test length(StateSpaceLearning.simulate_states(model, 8, false, 12)) == 8
-    @test length(StateSpaceLearning.simulate_states(model, 10, false, 0)) == 10
+    @test length(StateSpaceLearning.simulate_states(model, 10, true, 12, 1)) == 10
+    @test length(StateSpaceLearning.simulate_states(model, 8, false, 12, 1)) == 8
+    @test length(StateSpaceLearning.simulate_states(model, 10, false, 0, 1)) == 10
 end
 
 @testset "Function: forecast_dynamic_exog_coefs" begin
@@ -787,11 +803,9 @@ end
     model5 = StateSpaceLearning.StructuralModel(y3; exog=exog)
     StateSpaceLearning.fit!(model5)
     exog_forecast = rand(18, 3)
-    forecast5 =
-        trunc.(
-            StateSpaceLearning.forecast(model5, 18; Exogenous_Forecast=exog_forecast);
-            digits=3,
-        )
+    forecast5 = trunc.(
+        StateSpaceLearning.forecast(model5, 18; Exogenous_Forecast=exog_forecast); digits=3
+    )
     @test length(forecast5) == 18
 
     dynamic_exog_coefs = [
