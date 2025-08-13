@@ -95,10 +95,10 @@ mutable struct StructuralModel <: StateSpaceLearningModel
 
         @assert !has_intercept(exog) "Exogenous matrix must not have an intercept column"
         @assert 1 <= stochastic_start < length(y) "stochastic_start must be greater than or equal to 1 and smaller than the length of the time series"
-        @assert level in ["deterministic", "stochastic", "none"] "level must be either deterministic, stochastic or no"
-        @assert slope in ["deterministic", "stochastic", "none"] "slope must be either deterministic, stochastic or no"
-        @assert seasonal in ["deterministic", "stochastic", "none"] "seasonal must be either deterministic, stochastic or no"
-        @assert cycle in ["deterministic", "stochastic", "none"] "cycle must be either deterministic, stochastic or no"
+        @assert level in ["deterministic", "stochastic", "none"] "level must be either deterministic, stochastic or none"
+        @assert slope in ["deterministic", "stochastic", "none"] "slope must be either deterministic, stochastic or none"
+        @assert seasonal in ["deterministic", "stochastic", "none"] "seasonal must be either deterministic, stochastic or none"
+        @assert cycle in ["deterministic", "stochastic", "none"] "cycle must be either deterministic, stochastic or none"
         @assert seasonal != "none" ? length(y) > minimum(freq_seasonal) : true "Time series must be longer than the seasonal period if seasonal is added"
 
         if typeof(freq_seasonal) <: Vector
@@ -1591,7 +1591,7 @@ function simulate_states(
         )
     end
 
-    model.slope ? slope = ones(T, N_scenarios) .* slope : nothing
+    slope = ones(T, N_scenarios) .* slope
     model.level ? trend = ones(T, N_scenarios) .* trend : nothing
     model.seasonal ? seasonals = [ones(T, N_scenarios) .* s for s in seasonals] : nothing
     for t in (T + 1):(T + steps_ahead)
