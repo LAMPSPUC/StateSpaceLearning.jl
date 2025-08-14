@@ -1432,7 +1432,7 @@ function simulate_states(
         if model.stochastic_level && !punctual
             if seasonal_innovation_simulation != 0
                 ξ_values = vcat(
-                    zeros(start_idx - 1), model.output.components["ξ"]["Coefs"], zeros(1)
+                    zeros(start_idx - 1), model.output.components["ξ"]["Coefs"], zeros(model.ξ_threshold)
                 )
             else
                 if !isempty(model.output.components["ξ"]["Coefs"])
