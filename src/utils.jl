@@ -153,9 +153,13 @@ function get_stochastic_values(
             valid_indices = filter(idx -> start_idx <= idx <= final_idx, seasonal_indices)
 
             # Sample with randomness and sign flip
-            stochastic_term[t, :] =
-                rand(estimated_stochastic[valid_indices], N_scenarios) .*
-                rand([1, -1], N_scenarios)
+            if !isempty(estimated_stochastic[valid_indices])
+                stochastic_term[t, :] =
+                    rand(estimated_stochastic[valid_indices], N_scenarios) .*
+                    rand([1, -1], N_scenarios)
+            else
+                stochastic_term[t, :] .= 0.0
+            end
         end
     else
         stochastic_term =
