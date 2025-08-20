@@ -1592,7 +1592,7 @@ function simulate_states(
     end
 
     slope = ones(T, N_scenarios) .* slope
-    model.level ? trend = ones(T, N_scenarios) .* trend : nothing
+    model.level || model.slope ? trend = ones(T, N_scenarios) .* trend : nothing
     model.seasonal ? seasonals = [ones(T, N_scenarios) .* s for s in seasonals] : nothing
     for t in (T + 1):(T + steps_ahead)
         slope_t = if model.slope
