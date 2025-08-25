@@ -1376,6 +1376,8 @@ end
     - `steps_ahead::Int`: Steps ahead.
     - `punctual::Bool`: Flag for considering punctual forecast.
     - `seasonal_innovation_simulation::Int`: Flag for considering seasonal innovation simulation.
+    - `N_scenarios::Int`: Number of scenarios to simulate.
+    - `simulate_outliers::Bool`: Flag for considering outliers simulation.
 
     # Returns
     - `Vector{AbstractFloat}`: Vector of states.
@@ -1386,6 +1388,7 @@ function simulate_states(
     punctual::Bool,
     seasonal_innovation_simulation::Int,
     N_scenarios::Int,
+    simulate_outliers::Bool,
 )::Matrix{AbstractFloat}
     T = length(model.y)
 
@@ -1659,7 +1662,7 @@ function simulate_states(
             cycles_t = [zeros(N_scenarios) for _ in eachindex(model.cycle_period)]
         end
 
-        outlier_t = if (model.outlier && !punctual)
+        outlier_t = if (simulate_outliers && model.outlier && !punctual)
             stochastic_outliers_set[t - T, :]
         else
             zeros(N_scenarios)
@@ -1764,7 +1767,7 @@ function forecast(
     Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0),
     dynamic_exog_coefs_forecasts::Vector{<:Vector}=Vector{Vector}(undef, 0),
 )::Vector{AbstractFloat} where {Fl<:AbstractFloat}
-    states_prediction = simulate_states(model, steps_ahead, true, 0, 1)[:, 1]
+    states_prediction = simulate_states(model, steps_ahead, true, 0, 1, false)[:, 1]
 
     @assert size(Exogenous_Forecast, 1) == steps_ahead
     @assert all(
@@ -1807,6 +1810,7 @@ end
     - `Exogenous_Forecast::Matrix{Fl}`: Matrix of forecasts of exogenous variables.
     - `dynamic_exog_coefs_forecasts::Vector{<:Vector}`: Vector of vectors of combination components forecasts.
     - `seasonal_innovation_simulation::Int`: Number of seasonal innovation simulation.
+    - `simulate_outliers::Bool`: Flag to indicate whether to simulate outliers.
     - `seed::Int`: Seed for the random number generator.
 
     # Returns
@@ -1819,11 +1823,12 @@ function simulate(
     Exogenous_Forecast::Matrix{Fl}=zeros(steps_ahead, 0),
     dynamic_exog_coefs_forecasts::Vector{<:Vector}=Vector{Vector}(undef, 0),
     seasonal_innovation_simulation::Int=0,
+    simulate_outliers::Bool=true,
     seed::Int=1234,
 )::Matrix{AbstractFloat} where {Fl<:AbstractFloat}
     Random.seed!(seed)
     scenarios = simulate_states(
-        model, steps_ahead, false, seasonal_innovation_simulation, N_scenarios
+        model, steps_ahead, false, seasonal_innovation_simulation, N_scenarios, simulate_outliers
     )
 
     dynamic_exog_coefs_prediction = forecast_dynamic_exog_coefs(
