@@ -94,7 +94,20 @@ end
     X = rand(10, 3)
     y[1] = NaN
     X[1, :] .= NaN
-    y_treated, X_treated, valid_indexes = StateSpaceLearning.handle_missing_values(X, y)
+    
+    # Create a model to get components_indexes and innovations_names
+    model = StateSpaceLearning.StructuralModel(
+        y;
+        level="stochastic",
+        slope="stochastic",
+        seasonal="stochastic",
+        freq_seasonal=2,
+        outlier=true,
+    )
+    components_indexes = StateSpaceLearning.get_components_indexes(model)
+    innovations_names = StateSpaceLearning.get_model_innovations(model)
+    
+    y_treated, X_treated, valid_indexes, valid_columns, components_indexes_new = StateSpaceLearning.handle_missing_values(X, y, components_indexes, innovations_names)
     @test y_treated == y[2:end]
     @test X_treated == X[2:end, :]
     @test valid_indexes == 2:10

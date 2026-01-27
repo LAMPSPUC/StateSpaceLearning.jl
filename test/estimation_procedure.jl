@@ -209,22 +209,20 @@ end
     X = Basic_Structural.X
     X2 = Basic_Structural_w_level.X
 
-    innovations_names = StateSpaceLearning.get_model_innovations(Basic_Structural)
-
     coefs1, ε1 = StateSpaceLearning.estimation_procedure(
-        X, y, components_indexes, 0.1, "aic", 0.05, true, true, innovations_names
+        X, y, components_indexes, 0.1, "aic", 0.05, true, true
     )
     @test length(coefs1) == 43
     @test length(ε1) == 10
 
     coefs1, ε1 = StateSpaceLearning.estimation_procedure(
-        X2, y, components_indexes2, 0.1, "aic", 0.05, true, true, innovations_names
+        X2, y, components_indexes2, 0.1, "aic", 0.05, true, true
     )
     @test length(coefs1) == 34
     @test length(ε1) == 10
 
     coefs2, ε2 = StateSpaceLearning.estimation_procedure(
-        X, y, components_indexes, 0.1, "aic", 0.05, true, false, innovations_names
+        X, y, components_indexes, 0.1, "aic", 0.05, true, false
     )
     @test length(coefs2) == 43
     @test length(ε2) == 10

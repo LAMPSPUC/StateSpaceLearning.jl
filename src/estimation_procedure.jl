@@ -112,7 +112,6 @@ end
     Lasso_X::Matrix{Tl},
     Lasso_y::Vector{Fl},
     α::AbstractFloat;
-    information_criteria::String="aic",
     penalty_factor::Vector{Pl}=ones(size(Lasso_X, 2) - 1),
     intercept::Bool=intercept,
 )::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat, Pl <: AbstractFloat}
@@ -138,6 +137,7 @@ function fit_glmnet(
     information_criteria::String="aic",
     penalty_factor::Vector{Pl}=ones(size(Lasso_X, 2) - 1),
     intercept::Bool=intercept,
+    standardize::Bool=true,
 )::Tuple{
     Vector{AbstractFloat},Vector{AbstractFloat}
 } where {Fl<:AbstractFloat,Tl<:AbstractFloat,Pl<:AbstractFloat}
@@ -149,6 +149,8 @@ function fit_glmnet(
         intercept=intercept,
         dfmax=size(Lasso_X, 2),
         lambda_min_ratio=0.001,
+        standardize=standardize,
+        tol=1e-7,
     )
     return get_path_information_criteria(
         model, Lasso_X, Lasso_y, information_criteria; intercept=intercept
@@ -160,7 +162,7 @@ end
     Estimation_X::Matrix{Tl},
     estimation_y::Vector{Fl},
     α::AbstractFloat,
-    information_criteria::String,
+    select::Select,
     penalize_exogenous::Bool,
     components_indexes::Dict{String,Vector{Int}},
     penalty_factor::Vector{Pl};
@@ -192,6 +194,7 @@ function fit_lasso(
     components_indexes::Dict{String,Vector{Int}},
     penalty_factor::Vector{Pl};
     rm_average::Bool=false,
+    standardize::Bool=true,
 )::Tuple{
     Vector{AbstractFloat},Vector{AbstractFloat}
 } where {Fl<:AbstractFloat,Tl<:AbstractFloat,Pl<:AbstractFloat}
@@ -233,6 +236,7 @@ function fit_lasso(
             information_criteria=information_criteria,
             penalty_factor=penalty_factor,
             intercept=(!rm_average),
+            standardize=standardize
         )
     else
         coefs, ε = fit_glmnet(
@@ -242,13 +246,14 @@ function fit_lasso(
             information_criteria=information_criteria,
             penalty_factor=penalty_factor,
             intercept=false,
+            standardize=standardize
         )
     end
     return rm_average ? (vcat(mean_y, coefs), ε) : (coefs, ε)
 end
 
 """
-    estimation_procedure(
+estimation_procedure(
     Estimation_X::Matrix{Tl},
     estimation_y::Vector{Fl},
     components_indexes::Dict{String,Vector{Int}},
@@ -257,9 +262,9 @@ end
     ϵ::AbstractFloat,
     penalize_exogenous::Bool,
     penalize_initial_states::Bool,
-    innovations_names::Vector{String},
-    initial_states_names::Vector{String},
-)::Tuple{Vector{AbstractFloat},Vector{AbstractFloat}} where {Fl <: AbstractFloat, Tl <: AbstractFloat}
+)::Tuple{
+    Vector{AbstractFloat},Vector{AbstractFloat}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
 
     Fits an Adaptive Lasso (AdaLasso) regression model to the provided data and returns coefficients and residuals.
 
@@ -272,10 +277,6 @@ end
     - `ϵ::AbstractFloat`: Non negative value to handle 0 coefs on the first lasso step (default: 0.05).
     - `penalize_exogenous::Bool`: Flag for selecting exogenous variables. When false the penalty factor for these variables will be set to 0.
     - `penalize_initial_states::Bool`: Flag for selecting initial states. When false the penalty factor for these variables will be set to 0.
-    - `innovations_names::Vector{String}`: Vector of strings containing the names of the innovations.
-    - `initial_states_names::Vector{String}`: Vector of strings containing the names of the initial states.
-
-
     # Returns
     - `Tuple{Vector{AbstractFloat}, Vector{AbstractFloat}}`: Tuple containing coefficients and residuals of the fitted AdaLasso model.
 
@@ -289,7 +290,6 @@ function estimation_procedure(
     ϵ::AbstractFloat,
     penalize_exogenous::Bool,
     penalize_initial_states::Bool,
-    innovations_names::Vector{String},
 )::Tuple{
     Vector{AbstractFloat},Vector{AbstractFloat}
 } where {Fl<:AbstractFloat,Tl<:AbstractFloat}
@@ -306,7 +306,7 @@ function estimation_procedure(
         if length(penalty_factor) != length(components_indexes["initial_states"][2:end])
             penalty_factor[components_indexes["initial_states"][2:end] .- 1] .= 0
         end
-        penalty_factor[all_zero_idx .- 1] .= Inf
+        penalty_factor[all_zero_idx .- 1] .= (10 / ϵ)
         coefs, _ = fit_lasso(
             Estimation_X,
             estimation_y,
@@ -322,7 +322,7 @@ function estimation_procedure(
         if length(penalty_factor) != length(components_indexes["initial_states"])
             penalty_factor[components_indexes["initial_states"][1:end]] .= 0
         end
-        penalty_factor[all_zero_idx] .= Inf
+        penalty_factor[all_zero_idx] .= (10 / ϵ)
         coefs, _ = fit_lasso(
             Estimation_X,
             estimation_y,
@@ -341,19 +341,10 @@ function estimation_procedure(
     for key in keys(components_indexes)
         if key != "initial_states" && key != "μ1"
             component = components_indexes[key]
-            if key in innovations_names
-                κ = count(i -> i != 0, coefs[component]) < 1 ? 0 : std(coefs[component])
-                if hasintercept
-                    ts_penalty_factor[component .- 1] .= (1 / (κ + ϵ))
-                else
-                    ts_penalty_factor[component] .= (1 / (κ + ϵ))
-                end
+            if hasintercept
+                ts_penalty_factor[component .- 1] = (1 ./ (abs.(coefs[component]) .+ ϵ))
             else
-                if hasintercept
-                    ts_penalty_factor[component .- 1] = (1 ./ (abs.(coefs[component]) .+ ϵ))
-                else
-                    ts_penalty_factor[component] = (1 ./ (abs.(coefs[component]) .+ ϵ))
-                end
+                ts_penalty_factor[component] = (1 ./ (abs.(coefs[component]) .+ ϵ))
             end
         end
     end
@@ -364,14 +355,14 @@ function estimation_procedure(
         else
             nothing
         end
-        ts_penalty_factor[all_zero_idx .- 1] .= Inf
+        ts_penalty_factor[all_zero_idx .- 1] .= (10 / ϵ)
     else
         if !penalize_initial_states
             ts_penalty_factor[components_indexes["initial_states"][1:end]] .= 0
         else
             nothing
         end
-        ts_penalty_factor[all_zero_idx] .= Inf
+        ts_penalty_factor[all_zero_idx] .= (10 / ϵ)
     end
 
     return fit_lasso(

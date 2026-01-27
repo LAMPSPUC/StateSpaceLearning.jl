@@ -13,7 +13,8 @@ include("datasets.jl")
 include("fit_forecast.jl")
 include("plots.jl")
 
-export fit!,
+export fit!, 
+    fit_split!,
     forecast,
     simulate,
     StructuralModel,
@@ -21,5 +22,4 @@ export fit!,
     plot_point_forecast,
     plot_scenarios,
     simulate_states
-
 end # module StateSpaceLearning

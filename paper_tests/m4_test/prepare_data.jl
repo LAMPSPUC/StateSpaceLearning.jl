@@ -6,7 +6,7 @@ function de_normalize(y, max_y::AbstractFloat, min_y::AbstractFloat)
     return (y .* (max_y - min_y)) .+ min_y
 end
 
-function build_train_test_dict(df_train::DataFrame, df_test::DataFrame)
+function build_train_test_dict(df_train::DataFrame, df_test::DataFrame; name="M")
     train_test_dict = Dict()
     for i in eachindex(df_train[:, 1])
         key = df_train[:, 1][i]
@@ -30,8 +30,8 @@ function build_train_test_dict(df_train::DataFrame, df_test::DataFrame)
     end
 
     dict_vec = []
-    for i in 1:48000
-        key = "M$i"
+    for i in 1:size(df_train, 1)
+        key = "$name$i"
         train_test_dict[key]["key"] = key
         push!(dict_vec, train_test_dict[key])
     end

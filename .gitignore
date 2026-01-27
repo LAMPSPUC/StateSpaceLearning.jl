@@ -23,3 +23,7 @@ paper_tests/m4_test/evaluate_model2.jl
 results_PROPHET/    
 results_SS/
 sarima/
+
+results_simulation/
+results_metrics/
+ssl_vs_kalman_paired_tests.csv
