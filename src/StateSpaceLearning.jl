@@ -13,7 +13,7 @@ include("datasets.jl")
 include("fit_forecast.jl")
 include("plots.jl")
 
-export fit!, 
+export fit!,
     fit_split!,
     forecast,
     simulate,

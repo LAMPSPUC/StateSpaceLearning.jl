@@ -44,7 +44,9 @@ function fit!(
 
     innovations_names = get_model_innovations(model)
 
-    estimation_y, Estimation_X, valid_indexes, valid_columns, components_indexes = handle_missing_values(model.X, model.y, components_indexes_orig, innovations_names)
+    estimation_y, Estimation_X, valid_indexes, valid_columns, components_indexes = handle_missing_values(
+        model.X, model.y, components_indexes_orig, innovations_names
+    )
 
     coefs_raw, estimation_ε = estimation_procedure(
         Estimation_X,
@@ -116,33 +118,85 @@ function fit_split!(
     ϵ::AbstractFloat=0.05,
     penalize_exogenous::Bool=true,
     penalize_initial_states::Bool=true,
-    seed::Int=123
+    seed::Int=123,
 ) where {Fl<:AbstractFloat}
 
     # model parameters
-    level = (model.level && model.stochastic_level) ? "stochastic" : model.level ? "deterministic" : "none"
-    slope = (model.slope && model.stochastic_slope) ? "stochastic" : model.slope ? "deterministic" : "none"
-    seasonal = (model.seasonal && model.stochastic_seasonal) ? "stochastic" : model.seasonal ? "deterministic" : "none"
-    cycle = (model.cycle && model.stochastic_cycle) ? "stochastic" : model.cycle ? "deterministic" : "none"
+    level = if (model.level && model.stochastic_level)
+        "stochastic"
+    elseif model.level
+        "deterministic"
+    else
+        "none"
+    end
+    slope = if (model.slope && model.stochastic_slope)
+        "stochastic"
+    elseif model.slope
+        "deterministic"
+    else
+        "none"
+    end
+    seasonal = if (model.seasonal && model.stochastic_seasonal)
+        "stochastic"
+    elseif model.seasonal
+        "deterministic"
+    else
+        "none"
+    end
+    cycle = if (model.cycle && model.stochastic_cycle)
+        "stochastic"
+    elseif model.cycle
+        "deterministic"
+    else
+        "none"
+    end
     @assert model.n_exogenous == 0 "Exogenous variables are not supported in this method yet"
     @assert isnothing(model.dynamic_exog_coefs) "Dynamic exogenous coefficients are not supported in this method yet"
     ##############################################################################
 
     Random.seed!(seed)
 
-    train_idx = collect(1:length(model.y) - H)
-    val_idx = collect(length(model.y) - H + 1:length(model.y))
+    train_idx = collect(1:(length(model.y) - H))
+    val_idx = collect((length(model.y) - H + 1):length(model.y))
 
     train_y = model.y[train_idx]
     val_y = model.y[val_idx]
 
     rmse_vec = AbstractFloat[]
     for α in α_set
-        model_α = StructuralModel(train_y; level=level, slope=slope, seasonal=seasonal, cycle=cycle, freq_seasonal=model.freq_seasonal, cycle_period=model.cycle_period, outlier=model.outlier, ξ_threshold=model.ξ_threshold, ζ_threshold=model.ζ_threshold, ω_threshold=model.ω_threshold, ϕ_threshold=model.ϕ_threshold, stochastic_start=model.stochastic_start)
-        fit!(model_α; α=α, information_criteria=information_criteria, ϵ=ϵ, penalize_exogenous=penalize_exogenous,penalize_initial_states=penalize_initial_states)
+        model_α = StructuralModel(
+            train_y;
+            level=level,
+            slope=slope,
+            seasonal=seasonal,
+            cycle=cycle,
+            freq_seasonal=model.freq_seasonal,
+            cycle_period=model.cycle_period,
+            outlier=model.outlier,
+            ξ_threshold=model.ξ_threshold,
+            ζ_threshold=model.ζ_threshold,
+            ω_threshold=model.ω_threshold,
+            ϕ_threshold=model.ϕ_threshold,
+            stochastic_start=model.stochastic_start,
+        )
+        fit!(
+            model_α;
+            α=α,
+            information_criteria=information_criteria,
+            ϵ=ϵ,
+            penalize_exogenous=penalize_exogenous,
+            penalize_initial_states=penalize_initial_states,
+        )
         prediction = forecast(model_α, H)
         push!(rmse_vec, mean((val_y - prediction) .^ 2))
     end
 
-    fit!(model; α=α_set[argmin(rmse_vec)], information_criteria=information_criteria, ϵ=ϵ, penalize_exogenous=penalize_exogenous,penalize_initial_states=penalize_initial_states)
+    fit!(
+        model;
+        α=α_set[argmin(rmse_vec)],
+        information_criteria=information_criteria,
+        ϵ=ϵ,
+        penalize_exogenous=penalize_exogenous,
+        penalize_initial_states=penalize_initial_states,
+    )
 end

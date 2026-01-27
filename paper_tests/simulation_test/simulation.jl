@@ -298,7 +298,11 @@ end
 df = DataFrame()
 
 col1 = []
-for name in ("Correct Sparsity", "Fraction of Relevant Variables Included", "Fraction of Irrelevant Variables Excluded")
+for name in (
+    "Correct Sparsity",
+    "Fraction of Relevant Variables Included",
+    "Fraction of Irrelevant Variables Excluded",
+)
     for K in [3, 5, 8, 10]
         for M in [50, 100]
             push!(col1, name * " (K=$K, M=$M)")

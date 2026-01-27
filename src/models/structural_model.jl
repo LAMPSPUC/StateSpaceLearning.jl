@@ -1435,7 +1435,9 @@ function simulate_states(
         if model.stochastic_level && !punctual
             if seasonal_innovation_simulation != 0
                 ξ_values = vcat(
-                    zeros(start_idx - 1), model.output.components["ξ"]["Coefs"], zeros(model.ξ_threshold)
+                    zeros(start_idx - 1),
+                    model.output.components["ξ"]["Coefs"],
+                    zeros(model.ξ_threshold),
                 )
             else
                 if !isempty(model.output.components["ξ"]["Coefs"])
@@ -1583,15 +1585,18 @@ function simulate_states(
         start_idx = 1
         final_idx = T
         outlier_values = model.output.components["o"]["Coefs"]
-        stochastic_outliers_set = rand(outlier_values, steps_ahead, N_scenarios) .* rand([1, -1], steps_ahead, N_scenarios)
+        stochastic_outliers_set =
+            rand(outlier_values, steps_ahead, N_scenarios) .*
+            rand([1, -1], steps_ahead, N_scenarios)
     end
 
     if !punctual
-        stochastic_residuals_set = rand(
-            model.output.ε[findall(i -> !isnan(i), model.output.ε)],
-            steps_ahead,
-            N_scenarios,
-        ) .* rand([1, -1], steps_ahead, N_scenarios)
+        stochastic_residuals_set =
+            rand(
+                model.output.ε[findall(i -> !isnan(i), model.output.ε)],
+                steps_ahead,
+                N_scenarios,
+            ) .* rand([1, -1], steps_ahead, N_scenarios)
     end
 
     slope = ones(T, N_scenarios) .* slope
@@ -1828,7 +1833,12 @@ function simulate(
 )::Matrix{AbstractFloat} where {Fl<:AbstractFloat}
     Random.seed!(seed)
     scenarios = simulate_states(
-        model, steps_ahead, false, seasonal_innovation_simulation, N_scenarios, simulate_outliers
+        model,
+        steps_ahead,
+        false,
+        seasonal_innovation_simulation,
+        N_scenarios,
+        simulate_outliers,
     )
 
     dynamic_exog_coefs_prediction = forecast_dynamic_exog_coefs(

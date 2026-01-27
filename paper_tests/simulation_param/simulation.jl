@@ -12,10 +12,7 @@ include("simulation_generator.jl")
 include("metrics.jl")
 include("evaluate_models.jl")
 
-function kalman_components_statespacemodels(
-    y::AbstractVector{<:AbstractFloat},
-    s::Int,
-)
+function kalman_components_statespacemodels(y::AbstractVector{<:AbstractFloat}, s::Int)
     py"""
     import math
     import statsmodels.api as sm
@@ -36,8 +33,8 @@ function kalman_components_statespacemodels(
 
     estimated_innovations = py"evaluate_ss"(y, s)
 
-    μ_hat    = estimated_innovations["level"]
-    ν_hat    = estimated_innovations["trend"]
+    μ_hat = estimated_innovations["level"]
+    ν_hat = estimated_innovations["trend"]
     γ_hat = estimated_innovations["seasonal"]
 
     return μ_hat, ν_hat, γ_hat
@@ -54,16 +51,12 @@ function component_metrics(
     sample_size::Int,
     replicate::Int,
 )
-    return DataFrame(
+    return DataFrame(;
         sample_size=fill(sample_size, 3),
         replicate=fill(replicate, 3),
         method=fill(method, 3),
         component=["level", "slope", "seasonal"],
-        bias=[
-            bias_func(μ_1, μ_2),
-            bias_func(ν_1, ν_2),
-            bias_func(γ_1, γ_2),
-        ],
+        bias=[bias_func(μ_1, μ_2), bias_func(ν_1, ν_2), bias_func(γ_1, γ_2)],
     )
 end
 
@@ -74,17 +67,13 @@ function run_experiment(sample_sizes::Vector{Int}; reps::Int=50)
         @info "Running experiment with sample size: $T and $reps repetitions"
         for rep in 1:reps
             s = 12
-            y, μ, ν, γ_vec, xi_std, zeta_std, omega_std, eps_std =
-                generate_series(T, rep)
+            y, μ, ν, γ_vec, xi_std, zeta_std, omega_std, eps_std = generate_series(T, rep)
 
             μ_ssl, ν_ssl, γ_ssl = get_SSL_results(y, s, μ, ν, γ_vec, "aic")
 
-            μ_kal, ν_kal, γ_kal =
-                kalman_components_statespacemodels(
-                    y, s
-                )
+            μ_kal, ν_kal, γ_kal = kalman_components_statespacemodels(y, s)
             align_components!(μ_kal, ν_kal, γ_kal, μ, ν, γ_vec)
-            
+
             ssl_true_df = component_metrics(
                 μ_ssl, ν_ssl, γ_ssl, μ, ν, γ_vec, "SSL vs True", T, rep
             )
@@ -101,7 +90,6 @@ function run_experiment(sample_sizes::Vector{Int}; reps::Int=50)
 end
 
 function paired_significance(results::DataFrame)
-
     alpha = 0.05
 
     ssl_true = filter(row -> row.method == "SSL vs True", results)
@@ -110,13 +98,11 @@ function paired_significance(results::DataFrame)
     stats_rows = DataFrame()
 
     for group_ssl in groupby(ssl_true, [:sample_size, :component])
-        
         sample_size = group_ssl.sample_size[1]
         component = group_ssl.component[1]
 
         group_kal = filter(
-            row -> row.sample_size == sample_size && row.component == component,
-            kal_true
+            row -> row.sample_size == sample_size && row.component == component, kal_true
         )
 
         if isempty(group_kal)
@@ -127,8 +113,8 @@ function paired_significance(results::DataFrame)
         col_ssl = group_ssl[:, :bias]
         col_kal = group_kal[:, :bias]
 
-        paired_diffs = col_ssl .- col_kal 
-        
+        paired_diffs = col_ssl .- col_kal
+
         n = length(paired_diffs)
         if n <= 1
             continue
@@ -137,7 +123,7 @@ function paired_significance(results::DataFrame)
         mean_diff = mean(paired_diffs)
         std_diff = std(paired_diffs; corrected=true)
         stderr = std_diff / sqrt(n)
-        
+
         if stderr > 0
             t_stat = mean_diff / stderr
             p_value = 2 * (1 - cdf(TDist(n - 1), abs(t_stat)))
@@ -149,7 +135,7 @@ function paired_significance(results::DataFrame)
 
         stats_rows = vcat(
             stats_rows,
-            DataFrame(
+            DataFrame(;
                 sample_size=sample_size,
                 component=component,
                 mean_bias_diff=mean_diff,
@@ -176,4 +162,11 @@ paired_stats = paired_significance(results)
 
 CSV.write("paper_tests/simulation_param/ssl_vs_kalman_paired_tests.csv", paired_stats)
 
-gg = [["Hourly", "H"], ["Daily", "D"], ["Weekly", "W"], ["Monthly", "M"], ["Quarterly", "Q"], ["Yearly", "Y"]]
+gg = [
+    ["Hourly", "H"],
+    ["Daily", "D"],
+    ["Weekly", "W"],
+    ["Monthly", "M"],
+    ["Quarterly", "Q"],
+    ["Yearly", "Y"],
+]

@@ -772,30 +772,32 @@ end
     model3 = StateSpaceLearning.StructuralModel(y3)
     StateSpaceLearning.fit!(model3)
     forecast3 = round.(StateSpaceLearning.forecast(model3, 18); digits=3)
-    @test all(isapprox.(
-        forecast3,
-        [
-            6.115,
-            6.089,
-            6.231,
-            6.202,
-            6.216,
-            6.345,
-            6.464,
-            6.465,
-            6.3,
-            6.186,
-            6.047,
-            6.168,
-            6.192,
-            6.167,
-            6.308,
-            6.279,
-            6.293,
-            6.422,
-        ];
-        atol=1e-3,
-    ))
+    @test all(
+        isapprox.(
+            forecast3,
+            [
+                6.115,
+                6.089,
+                6.231,
+                6.202,
+                6.216,
+                6.345,
+                6.464,
+                6.465,
+                6.3,
+                6.186,
+                6.047,
+                6.168,
+                6.192,
+                6.167,
+                6.308,
+                6.279,
+                6.293,
+                6.422,
+            ];
+            atol=1e-3,
+        ),
+    )
 
     model4 = StateSpaceLearning.StructuralModel(y3; freq_seasonal=[12, 36])
     StateSpaceLearning.fit!(model4)

@@ -25,7 +25,7 @@ function evaluate_SSL(
     else
         ξ_threshold = 0
     end
-    
+
     model = StateSpaceLearning.StructuralModel(
         normalized_y;
         level="stochastic",
@@ -38,7 +38,7 @@ function evaluate_SSL(
         ξ_threshold=ξ_threshold,
         ζ_threshold=param["ζ_threshold"],
         ω_threshold=param["ω_threshold"],
-        ϕ_threshold=param["ϕ_threshold"]
+        ϕ_threshold=param["ϕ_threshold"],
     )
 
     if selection == "split"
@@ -78,14 +78,13 @@ function evaluate_SSL(
     return initialization_df, results_df
 end
 
-
 function evaluate_SS(input::Dict, m::Int, H::Int, frequency::Int)
     """
     Evaluate statsmodels UnobservedComponents model using PyCall
     Similar to evaluate_ss in m4_test.py
     Requires PyCall to be imported in the calling scope
     """
-    
+
     y_train = input["train"]
     y_test = input["test"]
 
@@ -93,11 +92,11 @@ function evaluate_SS(input::Dict, m::Int, H::Int, frequency::Int)
     y_test_py = PyObject(y_test)
     H_py = PyObject(H)
     frequency_py = PyObject(frequency)
-    
+
     py"""
     import statsmodels.api as sm
     import numpy as np
-    
+
     def evaluate_ss_py(y_train, y_test, H, frequency):
         # Prepare model components
         if frequency > 1:
@@ -146,21 +145,17 @@ function evaluate_SS(input::Dict, m::Int, H::Int, frequency::Int)
         
         return forecast_values, simulation
     """
-    
-    prediction, scenarios = py"evaluate_ss_py"(
-        y_train_py, y_test_py, 
-        H_py, frequency_py
-    )
-    
+
+    prediction, scenarios = py"evaluate_ss_py"(y_train_py, y_test_py, H_py, frequency_py)
+
     # Convert back to Julia arrays
     prediction = Vector{Float64}(prediction)
     scenarios = Matrix{Float64}(scenarios)
-    
+
     # Calculate metrics
-    mase = MASE(y_train, y_test, prediction; m = m)
+    mase = MASE(y_train, y_test, prediction; m=m)
     smape = sMAPE(y_test, prediction)
     crps = CRPS(scenarios, y_test)
-    
+
     return DataFrame([[mase], [smape], [crps]], [:MASE, :sMAPE, :CRPS])
-    
 end

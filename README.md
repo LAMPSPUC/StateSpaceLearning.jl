@@ -240,6 +240,14 @@ To reproduce the paper results, run the following experiments:
 
 Evaluates SSL and SS (StateSpaceModels) benchmark models on M4 competition dataset across all granularities (Monthly, Quarterly, Daily, Hourly, Weekly, Yearly).
 
+**Before running:** Add PyCall to your Julia environment:
+```julia
+using Pkg
+Pkg.add("PyCall")
+```
+
+The script also requires Python packages (`statsmodels`, `numpy`) for the SS benchmark evaluation.
+
 ```shell
 julia paper_tests/m4_test/m4_test.jl
 ```
@@ -253,8 +261,6 @@ The script:
 Results are saved in:
 - `paper_tests/m4_test/results_SSL/` - SSL model results by granularity
 - `paper_tests/m4_test/metrics_results/` - Summary metrics and benchmark results
-
-Note: Requires PyCall and Python packages (`statsmodels`, `numpy`) for the SS benchmark evaluation.
 
 ### Simulation Parameter Study
 

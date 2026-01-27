@@ -236,7 +236,7 @@ function fit_lasso(
             information_criteria=information_criteria,
             penalty_factor=penalty_factor,
             intercept=(!rm_average),
-            standardize=standardize
+            standardize=standardize,
         )
     else
         coefs, ε = fit_glmnet(
@@ -246,7 +246,7 @@ function fit_lasso(
             information_criteria=information_criteria,
             penalty_factor=penalty_factor,
             intercept=false,
-            standardize=standardize
+            standardize=standardize,
         )
     end
     return rm_average ? (vcat(mean_y, coefs), ε) : (coefs, ε)

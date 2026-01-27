@@ -34,21 +34,112 @@ include("metrics.jl")
 include("evaluate_model.jl")
 include("prepare_data.jl")
 
-complete_dict_vec = Dict("M" => build_train_test_dict(df_train, df_test;name="M"),
-                         "D" => build_train_test_dict(df_train_daily, df_test_daily;name="D"),
-                         "Q" => build_train_test_dict(df_train_quarterly, df_test_quarterly;name="Q"),
-                         "H" => build_train_test_dict(df_train_hourly, df_test_hourly;name="H"),
-                         "W" => build_train_test_dict(df_train_weekly, df_test_weekly;name="W"),
-                         "Y" => build_train_test_dict(df_train_yearly, df_test_yearly;name="Y"),
+complete_dict_vec = Dict(
+    "M" => build_train_test_dict(df_train, df_test; name="M"),
+    "D" => build_train_test_dict(df_train_daily, df_test_daily; name="D"),
+    "Q" => build_train_test_dict(df_train_quarterly, df_test_quarterly; name="Q"),
+    "H" => build_train_test_dict(df_train_hourly, df_test_hourly; name="H"),
+    "W" => build_train_test_dict(df_train_weekly, df_test_weekly; name="W"),
+    "Y" => build_train_test_dict(df_train_yearly, df_test_yearly; name="Y"),
 )
 
 parameters_dict = Dict(
-    "M" => Dict("freq_seasonal" => 12, "cycle_period" => 0, "m" => 12, "ξ_threshold" => 1, "ζ_threshold" => 12, "ω_threshold" => 12, "ϕ_threshold" => 0, "seasonal" => "stochastic", "cycle" => "none", "sample_size" => 60, "name" => "MONTH", "H" => 18, "NAIVE_sMAPE" => 14.427, "NAIVE_MASE" => 1.063),
-    "Q" => Dict("freq_seasonal" => 4, "cycle_period" => 0, "m" => 4, "ξ_threshold" => 1, "ζ_threshold" => 4, "ω_threshold" => 4, "ϕ_threshold" => 0, "seasonal" => "stochastic", "cycle" => "none", "sample_size" => "all", "name" => "QUARTERLY", "H" => 8, "NAIVE_sMAPE" => 11.012, "NAIVE_MASE" => 1.371),
-    "D" => Dict("freq_seasonal" => 1, "cycle_period" => 0, "m" => 1, "ξ_threshold" => 1, "ζ_threshold" => 7, "ω_threshold" => 1, "ϕ_threshold" => 0, "seasonal" => "none", "cycle" => "none", "sample_size" => 90, "name" => "DAILY", "H" => 14, "NAIVE_sMAPE" => 3.045, "NAIVE_MASE" => 3.278),
-    "W" => Dict("freq_seasonal" => 1, "cycle_period" => 0, "m" => 1, "ξ_threshold" => 1, "ζ_threshold" => 4, "ω_threshold" => 1, "ϕ_threshold" => 0, "seasonal" => "none", "cycle" => "none", "sample_size" => 104, "name" => "WEEKLY", "H" => 13, "NAIVE_sMAPE" => 9.161, "NAIVE_MASE" => 2.777),
-    "Y" => Dict("freq_seasonal" => 1, "cycle_period" => 0, "m" => 1, "ξ_threshold" => 1, "ζ_threshold" => 2, "ω_threshold" => 1, "ϕ_threshold" => 0, "seasonal" => "none", "cycle" => "none", "sample_size" => "all", "name" => "YEARLY", "H" => 6, "NAIVE_sMAPE" => 16.342, "NAIVE_MASE" => 3.974),
-    "H" => Dict("freq_seasonal" => 168, "cycle_period" => [24], "m" => 24, "ξ_threshold" => 1, "ζ_threshold" => 168, "ω_threshold" => 168, "ϕ_threshold" => 12, "seasonal" => "stochastic", "cycle" => "stochastic", "sample_size" => 720, "name" => "HOURLY", "H" => 48, "NAIVE_sMAPE" => 18.383, "NAIVE_MASE" => 2.395),
+    "M" => Dict(
+        "freq_seasonal" => 12,
+        "cycle_period" => 0,
+        "m" => 12,
+        "ξ_threshold" => 1,
+        "ζ_threshold" => 12,
+        "ω_threshold" => 12,
+        "ϕ_threshold" => 0,
+        "seasonal" => "stochastic",
+        "cycle" => "none",
+        "sample_size" => 60,
+        "name" => "MONTH",
+        "H" => 18,
+        "NAIVE_sMAPE" => 14.427,
+        "NAIVE_MASE" => 1.063,
+    ),
+    "Q" => Dict(
+        "freq_seasonal" => 4,
+        "cycle_period" => 0,
+        "m" => 4,
+        "ξ_threshold" => 1,
+        "ζ_threshold" => 4,
+        "ω_threshold" => 4,
+        "ϕ_threshold" => 0,
+        "seasonal" => "stochastic",
+        "cycle" => "none",
+        "sample_size" => "all",
+        "name" => "QUARTERLY",
+        "H" => 8,
+        "NAIVE_sMAPE" => 11.012,
+        "NAIVE_MASE" => 1.371,
+    ),
+    "D" => Dict(
+        "freq_seasonal" => 1,
+        "cycle_period" => 0,
+        "m" => 1,
+        "ξ_threshold" => 1,
+        "ζ_threshold" => 7,
+        "ω_threshold" => 1,
+        "ϕ_threshold" => 0,
+        "seasonal" => "none",
+        "cycle" => "none",
+        "sample_size" => 90,
+        "name" => "DAILY",
+        "H" => 14,
+        "NAIVE_sMAPE" => 3.045,
+        "NAIVE_MASE" => 3.278,
+    ),
+    "W" => Dict(
+        "freq_seasonal" => 1,
+        "cycle_period" => 0,
+        "m" => 1,
+        "ξ_threshold" => 1,
+        "ζ_threshold" => 4,
+        "ω_threshold" => 1,
+        "ϕ_threshold" => 0,
+        "seasonal" => "none",
+        "cycle" => "none",
+        "sample_size" => 104,
+        "name" => "WEEKLY",
+        "H" => 13,
+        "NAIVE_sMAPE" => 9.161,
+        "NAIVE_MASE" => 2.777,
+    ),
+    "Y" => Dict(
+        "freq_seasonal" => 1,
+        "cycle_period" => 0,
+        "m" => 1,
+        "ξ_threshold" => 1,
+        "ζ_threshold" => 2,
+        "ω_threshold" => 1,
+        "ϕ_threshold" => 0,
+        "seasonal" => "none",
+        "cycle" => "none",
+        "sample_size" => "all",
+        "name" => "YEARLY",
+        "H" => 6,
+        "NAIVE_sMAPE" => 16.342,
+        "NAIVE_MASE" => 3.974,
+    ),
+    "H" => Dict(
+        "freq_seasonal" => 168,
+        "cycle_period" => [24],
+        "m" => 24,
+        "ξ_threshold" => 1,
+        "ζ_threshold" => 168,
+        "ω_threshold" => 168,
+        "ϕ_threshold" => 12,
+        "seasonal" => "stochastic",
+        "cycle" => "stochastic",
+        "sample_size" => 720,
+        "name" => "HOURLY",
+        "H" => 48,
+        "NAIVE_sMAPE" => 18.383,
+        "NAIVE_MASE" => 2.395,
+    ),
 )
 
 # Function to append results to CSV file
@@ -70,7 +161,7 @@ function run_config(
     selection::String,
     information_criteria::String,
     α::AbstractFloat,
-    param::Dict
+    param::Dict,
 )
     results_df = DataFrame()
     initialization_df = DataFrame()
@@ -93,7 +184,7 @@ function run_config(
             α,
             selection,
             information_criteria,
-            param
+            param,
         )
 
         if i % clear_df_number == 0 || i == length(dict_vec)
@@ -177,7 +268,10 @@ function run_benchmark_model(dict_vec::Vector, param::Dict)
         "CRPS" => [crps],
         "Median CRPS" => [median_crps],
     )
-    CSV.write("paper_tests/m4_test/metrics_results/BENCHMARK_$(param["name"])_SUMMARY.csv", summary_df)
+    CSV.write(
+        "paper_tests/m4_test/metrics_results/BENCHMARK_$(param["name"])_SUMMARY.csv",
+        summary_df,
+    )
     return results_df
 end
 
@@ -189,21 +283,30 @@ function main()
             for selection in ["split", "fixed_alpha"]
                 if selection == "fixed_alpha"
                     information_criteria = "aic"
-                    alpha_set = [0.1, 0.3, 0.5, 0.7, 0.9, 1.0] 
-                else 
+                    alpha_set = [0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
+                else
                     information_criteria = "aic"
                     alpha_set = [-1.0]
                 end
                 for α in alpha_set
                     @info "Running configuration: Param=$(gran), Outlier=$(outlier), IC=$(information_criteria), α=$(α)"
                     results_table = run_config(
-                        complete_dict_vec[gran], results_table, outlier, selection, information_criteria, α, parameters_dict[gran]
+                        complete_dict_vec[gran],
+                        results_table,
+                        outlier,
+                        selection,
+                        information_criteria,
+                        α,
+                        parameters_dict[gran],
                     )
                 end
             end
         end
         filename = parameters_dict[gran]["name"]
-        CSV.write("paper_tests/m4_test/metrics_results/SSL_$(filename)_METRICS_RESULTS.csv", results_table)
+        CSV.write(
+            "paper_tests/m4_test/metrics_results/SSL_$(filename)_METRICS_RESULTS.csv",
+            results_table,
+        )
         @info "Running benchmark model for $(parameters_dict[gran]["name"])"
         run_benchmark_model(complete_dict_vec[gran], parameters_dict[gran])
     end

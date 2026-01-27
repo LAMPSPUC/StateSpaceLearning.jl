@@ -91,8 +91,13 @@ end
         - `valid_indexes::Vector{Int}`: Vector containing valid indexes of the time series.
 """
 function handle_missing_values(
-    X::Matrix{Tl}, y::Vector{Fl}, components_indexes_orig::Dict{String, Vector{Int}}, innovations_names::Vector{String}
-)::Tuple{Vector{Fl},Matrix{Fl},Vector{Int}, Vector{Int},Dict{String, Vector{Int}}} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
+    X::Matrix{Tl},
+    y::Vector{Fl},
+    components_indexes_orig::Dict{String,Vector{Int}},
+    innovations_names::Vector{String},
+)::Tuple{
+    Vector{Fl},Matrix{Fl},Vector{Int},Vector{Int},Dict{String,Vector{Int}}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     invalid_indexes = unique(
         vcat([i[1] for i in findall(i -> any(isnan, i), X)], findall(i -> isnan(i), y))
     )
@@ -131,7 +136,9 @@ function handle_missing_values(
         end
     end
 
-    return y[valid_indexes], X[valid_indexes, valid_columns], valid_indexes, valid_columns, components_indexes
+    return y[valid_indexes],
+    X[valid_indexes, valid_columns], valid_indexes, valid_columns,
+    components_indexes
 end
 
 """
