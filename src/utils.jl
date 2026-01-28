@@ -91,14 +91,54 @@ end
         - `valid_indexes::Vector{Int}`: Vector containing valid indexes of the time series.
 """
 function handle_missing_values(
-    X::Matrix{Tl}, y::Vector{Fl}
-)::Tuple{Vector{Fl},Matrix{Fl},Vector{Int}} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
+    X::Matrix{Tl},
+    y::Vector{Fl},
+    components_indexes_orig::Dict{String,Vector{Int}},
+    innovations_names::Vector{String},
+)::Tuple{
+    Vector{Fl},Matrix{Fl},Vector{Int},Vector{Int},Dict{String,Vector{Int}}
+} where {Fl<:AbstractFloat,Tl<:AbstractFloat}
     invalid_indexes = unique(
         vcat([i[1] for i in findall(i -> any(isnan, i), X)], findall(i -> isnan(i), y))
     )
     valid_indexes = setdiff(1:length(y), invalid_indexes)
 
-    return y[valid_indexes], X[valid_indexes, :], valid_indexes
+    T, p = size(X)
+    invalid_indexes = setdiff(collect(1:T), valid_indexes)
+
+    valid_columns = Int[]
+    for col_idx in 1:p
+        is_innovation = false
+        for inov in innovations_names
+            if col_idx in components_indexes_orig[inov]
+                is_innovation = true
+                break
+            end
+        end
+
+        if is_innovation
+            col = X[:, col_idx]
+            first_non_zero = findfirst(i -> i != 0, col)
+            if !(first_non_zero in invalid_indexes)
+                push!(valid_columns, col_idx)
+            end
+        else
+            push!(valid_columns, col_idx)
+        end
+    end
+
+    components_indexes = deepcopy(components_indexes_orig)
+    invalid_columns = setdiff(collect(1:size(X, 2)), valid_columns)
+    for i in invalid_columns
+        for comp in keys(components_indexes)
+            filter!(x -> x != i, components_indexes[comp])
+            components_indexes[comp][components_indexes[comp] .> i] .-= 1
+        end
+    end
+
+    return y[valid_indexes],
+    X[valid_indexes, valid_columns], valid_indexes, valid_columns,
+    components_indexes
 end
 
 """

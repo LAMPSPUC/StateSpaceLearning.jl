@@ -19,15 +19,13 @@ function get_SSL_results(
 
     model = StateSpaceLearning.StructuralModel(
         y_train;
-        level=true,
-        stochastic_level=true,
-        trend=true,
-        stochastic_trend=true,
-        seasonal=true,
-        stochastic_seasonal=true,
+        level="stochastic",
+        slope="stochastic",
+        seasonal="stochastic",
         freq_seasonal=12,
         outlier=false,
-        ζ_ω_threshold=12,
+        ζ_threshold=12,
+        ω_threshold=12,
         exog=X_train,
     )
     t = @elapsed StateSpaceLearning.fit!(
@@ -84,11 +82,12 @@ function get_SS_res_results(
     import statsmodels.api as sm
     import numpy as np
     def evaluate_ss(y_train):
-        model_components = {'irregular': True, 'level': True, 'trend': True, 'freq_seasonal': [{'period': 12}], 'stochastic_level': True, 'stochastic_trend': True, 'stochastic_freq_seasonal': [True]}
+        model_components = {'irregular': True, 'level': True, 'trend': True, 'seasonal': 12, 
+        'stochastic_level': True, 'stochastic_trend': True, 'stochastic_seasonal': True}
         model = sm.tsa.UnobservedComponents(np.array(y_train), **model_components)
         results = model.fit(disp = False, maxiter = 1e5)
         trend_component = results.level["smoothed"] + results.trend["smoothed"]
-        seasonal_component = results.freq_seasonal[0]["smoothed"]
+        seasonal_component = results.seasonal["smoothed"]
         deseasonalized_detrended_series = np.array(y_train) - trend_component - seasonal_component
         converged = results.mle_retvals['converged']
         return deseasonalized_detrended_series, converged
@@ -149,7 +148,8 @@ function get_exogenous_ss_inf_criteria(
     import statsmodels.api as sm
     import numpy as np
     def evaluate_ss(y_train, X_train):
-        model_components = {'irregular': True, 'exog': X_train, 'level': True, 'trend': True, 'freq_seasonal': [{'period': 12}], 'stochastic_level': True, 'stochastic_trend': True, 'stochastic_freq_seasonal': [True]}
+        model_components = {'irregular': True, 'level': True, 'trend': True, 'seasonal': 12, 
+                            'stochastic_level': True, 'stochastic_trend': True, 'stochastic_seasonal': True, 'exog': X_train}
         model = sm.tsa.UnobservedComponents(np.array(y_train), **model_components)
         results = model.fit(disp = False, maxiter = 1e5)
         aic = results.aic

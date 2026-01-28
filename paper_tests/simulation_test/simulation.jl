@@ -66,10 +66,7 @@ create_dirs()
         rr6 = DataFrame()
         for i in 1:50
             y_featured, true_exps, X, true_β = generate_subset(60, M, K)
-            y_featured = M_K_d["p_vec_M_K"][i]["y_featured"]
-            true_exps = M_K_d["p_vec_M_K"][i]["true_exps"]
-            X = M_K_d["p_vec_M_K"][i]["X"]
-            true_β = M_K_d["p_vec_M_K"][i]["true_β"]
+
             @info(i)
             series_result1 = get_SSL_results(
                 y_featured,
@@ -160,16 +157,7 @@ p_vec = []
 for M in [50, 100]
     for K in [3, 5, 8, 10]
         for N in 1:10
-            p_vec_M_K = Dict()
-            for i in 1:50
-                p_vec_M_K[i] = Dict()
-                y_featured, true_exps, X, true_β = generate_subset(60, M, K)
-                p_vec_M_K[i]["y_featured"] = y_featured
-                p_vec_M_K[i]["true_exps"] = true_exps
-                p_vec_M_K[i]["X"] = X
-                p_vec_M_K[i]["true_β"] = true_β
-            end
-            push!(p_vec, Dict("M" => M, "K" => K, "N" => N, "p_vec_M_K" => p_vec_M_K))
+            push!(p_vec, Dict("M" => M, "K" => K, "N" => N))
         end
     end
 end
@@ -267,9 +255,7 @@ function get_metrics(df, q, n)
         positive_rate += (i_df["true_positives"] + i_df["false_positives"]) / T
         false_positive_rate += (i_df["false_positives"]) / T
     end
-    return true_model_rate,
-    all_true_positives_rate, true_positive_rate, true_negative_rate, positive_rate,
-    false_positive_rate
+    return true_model_rate, true_positive_rate, true_negative_rate
 end
 
 df_dict = Dict()
@@ -311,16 +297,31 @@ end
 
 df = DataFrame()
 
+col1 = []
+for name in (
+    "Correct Sparsity",
+    "Fraction of Relevant Variables Included",
+    "Fraction of Irrelevant Variables Excluded",
+)
+    for K in [3, 5, 8, 10]
+        for M in [50, 100]
+            push!(col1, name * " (K=$K, M=$M)")
+        end
+    end
+end
+
+df[!, :names] = col1
+
 for name in ["SSL_aic", "SSL_bic", "SS_aic", "SS_bic", "SS_f_aic", "SS_f_bic"]
-    for n in [50, 100]
-        column = []
-        for i in 1:6
-            for q in [3, 5, 8, 10]
-                push!(column, round(df_dict[name][n, q][i]; digits=3))
+    col = []
+    for i in 1:3
+        for K in [3, 5, 8, 10]
+            for M in [50, 100]
+                push!(col, round(df_dict[name][M, K][i]; digits=3))
             end
         end
-        df[!, Symbol(name * "_" * string(n))] = column
     end
+    df[!, Symbol(name)] = col
 end
 
 CSV.write("paper_tests/simulation_test/results_metrics/metrics_confusion_matrix.csv", df)

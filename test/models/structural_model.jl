@@ -460,16 +460,16 @@ end
                 model, model.output.components, 3
             ),
             [
-                -0.011114430313782316
-                0.016993897901375513
+                -0.044081327237994634
+                0.0063225840948002085
                 0.0
-                -0.06137711460224293
-                -0.028221145277986203
-                0.045215043179361716
-                -0.0027753371516487588
-                -0.08682292272858037
-                -0.036923166352424444
-                0.13243351808078532
+                -0.10328221293202901
+                -0.026388985525670358
+                0.03271156962047057
+                -0.04055311303187252
+                -0.08911808542582685
+                -0.056329494364296594
+                0.06168562111577232
             ],
             atol=1e-6,
         ),
@@ -481,14 +481,14 @@ end
             [
                 0.0
                 0.0
-                1.6111635465327112e-18
-                -0.005696779520104198
-                -0.030765036256794644
-                0.08224069806471179
-                0.030974382058151183
-                -0.15828117942894446
-                0.037361403241860734
-                0.17009485813575637
+                0.0
+                0.0
+                -0.059265576349974494
+                0.11853115269994902
+                0.049421658648386435
+                -0.21570011701006325
+                0.06508213027290488
+                0.18553595198051165
             ],
             atol=1e-6,
         ),
@@ -771,31 +771,37 @@ end
     ]
     model3 = StateSpaceLearning.StructuralModel(y3)
     StateSpaceLearning.fit!(model3)
-    forecast3 = trunc.(StateSpaceLearning.forecast(model3, 18); digits=3)
-    @assert forecast3 == [
-        6.11,
-        6.082,
-        6.221,
-        6.19,
-        6.197,
-        6.328,
-        6.447,
-        6.44,
-        6.285,
-        6.163,
-        6.026,
-        6.142,
-        6.166,
-        6.138,
-        6.278,
-        6.246,
-        6.253,
-        6.384,
-    ]
+    forecast3 = round.(StateSpaceLearning.forecast(model3, 18); digits=3)
+    @test all(
+        isapprox.(
+            forecast3,
+            [
+                6.115,
+                6.089,
+                6.231,
+                6.202,
+                6.216,
+                6.345,
+                6.464,
+                6.465,
+                6.3,
+                6.186,
+                6.047,
+                6.168,
+                6.192,
+                6.167,
+                6.308,
+                6.279,
+                6.293,
+                6.422,
+            ];
+            atol=1e-3,
+        ),
+    )
 
     model4 = StateSpaceLearning.StructuralModel(y3; freq_seasonal=[12, 36])
     StateSpaceLearning.fit!(model4)
-    forecast4 = trunc.(StateSpaceLearning.forecast(model4, 18); digits=3)
+    forecast4 = round.(StateSpaceLearning.forecast(model4, 18); digits=3)
 
     @test length(forecast4) == 18
 
@@ -803,7 +809,7 @@ end
     model5 = StateSpaceLearning.StructuralModel(y3; exog=exog)
     StateSpaceLearning.fit!(model5)
     exog_forecast = rand(18, 3)
-    forecast5 = trunc.(
+    forecast5 = round.(
         StateSpaceLearning.forecast(model5, 18; Exogenous_Forecast=exog_forecast); digits=3
     )
     @test length(forecast5) == 18
@@ -835,14 +841,14 @@ end
         y3; seasonal="none", cycle="deterministic", cycle_period=[12, 6, 4, 3, 12 / 5, 2]
     )
     StateSpaceLearning.fit!(model7)
-    forecast7 = trunc.(StateSpaceLearning.forecast(model7, 18); digits=3)
+    forecast7 = round.(StateSpaceLearning.forecast(model7, 18); digits=3)
     @test length(forecast7) == 18
 
     model8 = StateSpaceLearning.StructuralModel(
         y3; seasonal="none", cycle="stochastic", cycle_period=[12, 6, 4, 3, 12 / 5, 2]
     )
     StateSpaceLearning.fit!(model8)
-    forecast8 = trunc.(StateSpaceLearning.forecast(model8, 18); digits=3)
+    forecast8 = round.(StateSpaceLearning.forecast(model8, 18); digits=3)
     @test length(forecast8) == 18
 end
 

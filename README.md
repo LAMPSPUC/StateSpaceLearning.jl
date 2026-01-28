@@ -73,8 +73,8 @@ log_air_passengers = log.(airp.passengers)
 steps_ahead = 30
 
 model = StructuralModel(log_air_passengers)
-fit!(model)
-prediction_log = forecast(model, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
+StateSpaceLearning.fit!(model)
+prediction_log = StateSpaceLearning.forecast(model, steps_ahead) # arguments are the output of the fitted model and number of steps ahead the user wants to forecast
 prediction = exp.(prediction_log)
 
 plot_point_forecast(airp.passengers, prediction)
@@ -234,36 +234,63 @@ StateSpaceModels.fit!(ss_model)
 
 ## Paper Results Reproducibility
 
-The paper has two experiments (results for the M4 competition and a simulation study). To reproduce each experiment follow the instructions below:
+To reproduce the paper results, run the following experiments:
 
-### M4 Experiment
+### M4 Competition Test
 
-To reproduce M4 paper results you can clone the repository and run the following commands on terminal:
+Evaluates SSL and SS (StateSpaceModels) benchmark models on M4 competition dataset across all granularities (Monthly, Quarterly, Daily, Hourly, Weekly, Yearly).
+
+**Before running:** Add PyCall to your Julia environment:
+```julia
+using Pkg
+Pkg.add("PyCall")
+```
+
+The script also requires Python packages (`statsmodels`, `numpy`) for the SS benchmark evaluation.
 
 ```shell
 julia paper_tests/m4_test/m4_test.jl
-python paper_tests/m4_test/m4_test.py
 ```
 
-The results for SSL model in terms of MASE and sMAPE for all 48000 series will be stored in folder "paper_tests/m4_test/results_SSL". The average results of MASE, sMAPE and OWA will be saved in file "paper_tests/m4_test/metric_results/SSL_METRICS_RESULTS.csv".
+The script:
+- Downloads M4 competition datasets directly from GitHub
+- Runs SSL models with various configurations (with/without outliers, different selection methods, and alpha values)
+- Runs SS (StateSpaceModels) benchmark models using PyCall
+- Calculates metrics (MASE, sMAPE, OWA, CRPS) for all models
 
-The results for SS model in terms of MASE and sMAPE for all 48000 series will be stored in folder "paper_tests/m4_test/results_SS". The average results of MASE, sMAPE and OWA will be saved in file "paper_tests/m4_test/metric_results/SS_METRICS_RESULTS.csv".
+Results are saved in:
+- `paper_tests/m4_test/results_SSL/` - SSL model results by granularity
+- `paper_tests/m4_test/metrics_results/` - Summary metrics and benchmark results
 
-### Simulation Experiment
+### Simulation Parameter Study
 
-To reproduce the simulation results you can clone the repository and run the following commands on terminal:
+Compares SSL vs Kalman filter on simulated data.
 
 ```shell
-julia paper_tests/simulation_test/simulation.jl 0
+julia paper_tests/simulation_param/simulation.jl [repetitions] [sample_sizes]
 ```
 
-As this test takes a long time, you may want to run it in parallel, for that you can change the last argument to be number of workers to use in the parallelization:
+Example:
+```shell
+julia paper_tests/simulation_param/simulation.jl 100 60,120,240
+```
+
+Results are saved in `paper_tests/simulation_param/ssl_vs_kalman_paired_tests.csv`.
+
+### Simulation Test
+
+Large-scale simulation comparing SSL, SS, and other methods.
 
 ```shell
-julia paper_tests/simulation_test/simulation.jl 3
+julia paper_tests/simulation_test/simulation.jl [num_workers]
 ```
 
-The results will be saved in two separated files: "paper_tests/simulation_test/results_metrics/metrics_confusion_matrix.csv" and "paper_tests/simulation_test/results_metrics/metrics_bias_mse.csv"
+Example (with 4 parallel workers):
+```shell
+julia paper_tests/simulation_test/simulation.jl 4
+```
+
+Results are saved in `paper_tests/simulation_test/results_simulation/` and `paper_tests/simulation_test/results_metrics/`.
 
 
 ## Contributing
