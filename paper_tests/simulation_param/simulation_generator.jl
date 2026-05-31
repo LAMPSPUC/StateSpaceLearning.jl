@@ -5,14 +5,14 @@ function generate_series(
     seed::Union{Nothing,Int}=nothing;
     sparse::Bool=false,
     μ1_mean::Float64=0.0,
-    μ1_std::Float64=2.0,
+    μ1_std::Float64=1.0,
     ν1_mean::Float64=0.0,
-    ν1_std::Float64=0.0001,
+    ν1_std::Float64=0.1,
     γ1_mean::Float64=0.0,
     γ1_std::Float64=1.0,
-    xi_std::Float64=0.1,
-    zeta_std::Float64=0.00005,
-    omega_std::Float64=0.2,
+    xi_std::Float64=1.0,
+    zeta_std::Float64=0.01,
+    omega_std::Float64=1.0,
     eps_std::Float64=0.02,
 )
     if seed !== nothing
@@ -60,17 +60,17 @@ function generate_series(
         # Update components
         push!(ν, ν[t - 1] + trend_shock)
         push!(μ, μ[t - 1] + ν[t - 1] + level_shock)
-        if t > 12
+        if t > s
             push!(γ_vec, -sum(γ_vec[(t - s + 1):(t - 1)]) + seasonal_shock)
         end
     end
 
     # Final "true" series (before observation noise)
-    y_observed = [μ[t] + γ_vec[t] + rand(Normal(0, eps_std)) for t in 1:T]
+    # μ = μ .- μ[1]
+    # ν = ν .- ν[1]
+    # γ_vec = γ_vec .- mean(γ_vec[1:s])
 
-    μ = μ .- mean(μ)
-    ν = ν .- mean(ν)
-    γ_vec = γ_vec .- mean(γ_vec)
+    y_observed = [μ[t] + γ_vec[t] + rand(Normal(0, eps_std)) for t in 1:T]
 
     return y_observed, μ, ν, γ_vec, xi_std, zeta_std, omega_std, eps_std
 end

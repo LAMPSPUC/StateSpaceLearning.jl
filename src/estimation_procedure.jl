@@ -373,6 +373,6 @@ function estimation_procedure(
         penalize_exogenous,
         components_indexes,
         ts_penalty_factor;
-        rm_average=false,
+        rm_average=hasintercept,
     )
 end

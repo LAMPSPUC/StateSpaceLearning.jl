@@ -7,10 +7,21 @@ using PyCall
 using Random, Statistics, DataFrames, LinearAlgebra
 using CSV
 using Distributions
+using Dates
+using Printf
 
 include("simulation_generator.jl")
 include("metrics.jl")
 include("evaluate_models.jl")
+
+function format_time_diff(diff::Millisecond)
+    """Format a time difference in HH:MM:SS"""
+    total_seconds = div(diff.value, 1000)
+    hours = div(total_seconds, 3600)
+    minutes = div(rem(total_seconds, 3600), 60)
+    seconds = rem(total_seconds, 60)
+    return @sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+end
 
 function kalman_components_statespacemodels(y::AbstractVector{<:AbstractFloat}, s::Int)
     py"""
@@ -60,72 +71,88 @@ function component_metrics(
     )
 end
 
-function run_experiment(sample_sizes::Vector{Int}; reps::Int=50)
+function run_experiment(sample_sizes::Vector{Int}; reps::Int=50, compare::AbstractString="both")
     results = DataFrame()
+    start_time = now()
+    total_iterations = length(sample_sizes) * reps
+    current_iteration = 0
 
     for (idx, T) in enumerate(sample_sizes)
         @info "Running experiment with sample size: $T and $reps repetitions"
         for rep in 1:reps
+            current_iteration += 1
+            
             s = 12
             y, μ, ν, γ_vec, xi_std, zeta_std, omega_std, eps_std = generate_series(T, rep)
 
             μ_ssl, ν_ssl, γ_ssl = get_SSL_results(y, s, μ, ν, γ_vec, "aic")
 
-            μ_kal, ν_kal, γ_kal = kalman_components_statespacemodels(y, s)
-            align_components!(μ_kal, ν_kal, γ_kal, μ, ν, γ_vec)
+            # Compute Kalman components only if needed (to save time)
+            μ_kal = ν_kal = γ_kal = nothing
+            need_kalman = lowercase(compare) in ("kalman", "both")
+            if need_kalman
+                μ_kal, ν_kal, γ_kal = kalman_components_statespacemodels(y, s)
+            end
 
-            ssl_true_df = component_metrics(
-                μ_ssl, ν_ssl, γ_ssl, μ, ν, γ_vec, "SSL vs True", T, rep
-            )
-            kal_true_df = component_metrics(
-                μ_kal, ν_kal, γ_kal, μ, ν, γ_vec, "Kalman vs True", T, rep
-            )
+            # Collect comparisons based on `compare` parameter
+            if lowercase(compare) in ("true", "both")
+                ssl_vs_true_df = component_metrics(
+                    μ_ssl, ν_ssl, γ_ssl, μ, ν, γ_vec, "SSL vs True", T, rep
+                )
+                results = vcat(results, ssl_vs_true_df)
+            end
 
-            results = vcat(results, ssl_true_df)
-            results = vcat(results, kal_true_df)
+            if need_kalman
+                ssl_vs_kalman_df = component_metrics(
+                    μ_ssl, ν_ssl, γ_ssl, μ_kal, ν_kal, γ_kal, "SSL vs Kalman", T, rep
+                )
+                results = vcat(results, ssl_vs_kalman_df)
+            end
+            
+            # Progress logging
+            elapsed = now() - start_time
+            elapsed_ms = elapsed.value
+            avg_time_per_iter_ms = elapsed_ms / current_iteration
+            remaining_iterations = total_iterations - current_iteration
+            estimated_remaining_ms = avg_time_per_iter_ms * remaining_iterations
+            estimated_total_ms = elapsed_ms + estimated_remaining_ms
+            
+            @printf("\n[Progress] Iteration %d/%d (%.1f%%)\n", current_iteration, total_iterations, 100*current_iteration/total_iterations)
+            @printf("  Sample size: %d | Replicate: %d\n", T, rep)
+            @printf("  Elapsed: %s\n", format_time_diff(Millisecond(round(Int, elapsed_ms))))
+            @printf("  Estimated remaining: %s\n", format_time_diff(Millisecond(round(Int, estimated_remaining_ms))))
+            @printf("  Estimated total time: %s\n", format_time_diff(Millisecond(round(Int, estimated_total_ms))))
         end
     end
 
+    total_elapsed = now() - start_time
+    @printf("\n✓ Experiment completed in %s\n", format_time_diff(total_elapsed))
     return results
 end
 
 function paired_significance(results::DataFrame)
     alpha = 0.05
-
-    ssl_true = filter(row -> row.method == "SSL vs True", results)
-    kal_true = filter(row -> row.method == "Kalman vs True", results)
-
     stats_rows = DataFrame()
 
-    for group_ssl in groupby(ssl_true, [:sample_size, :component])
-        sample_size = group_ssl.sample_size[1]
-        component = group_ssl.component[1]
+    for group in groupby(results, [:sample_size, :component, :method])
+        sample_size = group.sample_size[1]
+        component = group.component[1]
+        method = group.method[1]
 
-        group_kal = filter(
-            row -> row.sample_size == sample_size && row.component == component, kal_true
-        )
+        col_bias = group[:, :bias]
 
-        if isempty(group_kal)
-            @warn "No matching Kalman group found for $sample_size, $component"
-            continue
-        end
-
-        col_ssl = group_ssl[:, :bias]
-        col_kal = group_kal[:, :bias]
-
-        paired_diffs = col_ssl .- col_kal
-
-        n = length(paired_diffs)
+        n = length(col_bias)
         if n <= 1
             continue
         end
 
-        mean_diff = mean(paired_diffs)
-        std_diff = std(paired_diffs; corrected=true)
-        stderr = std_diff / sqrt(n)
+        mean_bias = mean(col_bias)
+        std_bias = std(col_bias; corrected=true)
+        stderr = std_bias / sqrt(n)
 
+        # One-sample t-test: H0: bias = 0
         if stderr > 0
-            t_stat = mean_diff / stderr
+            t_stat = mean_bias / stderr
             p_value = 2 * (1 - cdf(TDist(n - 1), abs(t_stat)))
         else
             t_stat = 0.0
@@ -138,8 +165,10 @@ function paired_significance(results::DataFrame)
             DataFrame(;
                 sample_size=sample_size,
                 component=component,
-                mean_bias_diff=mean_diff,
-                std_bias_diff=std_diff,
+                method=method,
+                mean_bias=mean_bias,
+                std_bias=std_bias,
+                stderr=stderr,
                 t_stat=t_stat,
                 p_value=p_value,
                 significant=significant,
@@ -153,20 +182,12 @@ function paired_significance(results::DataFrame)
 end
 
 default_sample_sizes = [60, 120, 240, 480, 960]
-reps = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 50
+reps = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 1000
 sample_sizes = length(ARGS) >= 2 ? parse.(Int, split(ARGS[2], ",")) : default_sample_sizes
+compare_arg = length(ARGS) >= 3 ? ARGS[3] : "both"
 
-results = run_experiment(sample_sizes; reps=reps)
+results = run_experiment(sample_sizes; reps=reps, compare=compare_arg)
 
 paired_stats = paired_significance(results)
 
-CSV.write("paper_tests/simulation_param/ssl_vs_kalman_paired_tests.csv", paired_stats)
-
-gg = [
-    ["Hourly", "H"],
-    ["Daily", "D"],
-    ["Weekly", "W"],
-    ["Monthly", "M"],
-    ["Quarterly", "Q"],
-    ["Yearly", "Y"],
-]
+CSV.write("paper_tests/simulation_param/ssl_paired_tests_by_method.csv", paired_stats)
