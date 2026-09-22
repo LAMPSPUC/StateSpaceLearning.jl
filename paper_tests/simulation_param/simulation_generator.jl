@@ -35,8 +35,8 @@ function generate_series(
     true_innovations = Dict(
         "level" => zeros(T), "trend" => zeros(T), "seasonal" => zeros(T)
     )
-    μ = [μ1];
-    ν = [ν1];
+    μ = [μ1]
+    ν = [ν1]
     γ_vec = vcat(γ1_initial, -sum(γ1_initial))
 
     # --- 2. Generate Series with Dense, Heavy-Tailed Shocks ---
