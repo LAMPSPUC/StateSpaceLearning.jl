@@ -92,7 +92,7 @@ function get_path_information_criteria(
         ε = Lasso_y - fit
 
         method_vec[i] = get_information(
-            T, K[i], ε; information_criteria=information_criteria
+            T, K[i], ε; information_criteria=information_criteria, p=size(Lasso_X, 2)
         )
     end
 

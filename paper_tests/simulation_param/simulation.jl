@@ -71,7 +71,9 @@ function component_metrics(
     )
 end
 
-function run_experiment(sample_sizes::Vector{Int}; reps::Int=50, compare::AbstractString="both")
+function run_experiment(
+    sample_sizes::Vector{Int}; reps::Int=50, compare::AbstractString="both"
+)
     results = DataFrame()
     start_time = now()
     total_iterations = length(sample_sizes) * reps
@@ -81,7 +83,7 @@ function run_experiment(sample_sizes::Vector{Int}; reps::Int=50, compare::Abstra
         @info "Running experiment with sample size: $T and $reps repetitions"
         for rep in 1:reps
             current_iteration += 1
-            
+
             s = 12
             y, μ, ν, γ_vec, xi_std, zeta_std, omega_std, eps_std = generate_series(T, rep)
 
@@ -108,7 +110,7 @@ function run_experiment(sample_sizes::Vector{Int}; reps::Int=50, compare::Abstra
                 )
                 results = vcat(results, ssl_vs_kalman_df)
             end
-            
+
             # Progress logging
             elapsed = now() - start_time
             elapsed_ms = elapsed.value
@@ -116,12 +118,25 @@ function run_experiment(sample_sizes::Vector{Int}; reps::Int=50, compare::Abstra
             remaining_iterations = total_iterations - current_iteration
             estimated_remaining_ms = avg_time_per_iter_ms * remaining_iterations
             estimated_total_ms = elapsed_ms + estimated_remaining_ms
-            
-            @printf("\n[Progress] Iteration %d/%d (%.1f%%)\n", current_iteration, total_iterations, 100*current_iteration/total_iterations)
+
+            @printf(
+                "\n[Progress] Iteration %d/%d (%.1f%%)\n",
+                current_iteration,
+                total_iterations,
+                100 * current_iteration / total_iterations
+            )
             @printf("  Sample size: %d | Replicate: %d\n", T, rep)
-            @printf("  Elapsed: %s\n", format_time_diff(Millisecond(round(Int, elapsed_ms))))
-            @printf("  Estimated remaining: %s\n", format_time_diff(Millisecond(round(Int, estimated_remaining_ms))))
-            @printf("  Estimated total time: %s\n", format_time_diff(Millisecond(round(Int, estimated_total_ms))))
+            @printf(
+                "  Elapsed: %s\n", format_time_diff(Millisecond(round(Int, elapsed_ms)))
+            )
+            @printf(
+                "  Estimated remaining: %s\n",
+                format_time_diff(Millisecond(round(Int, estimated_remaining_ms)))
+            )
+            @printf(
+                "  Estimated total time: %s\n",
+                format_time_diff(Millisecond(round(Int, estimated_total_ms)))
+            )
         end
     end
 

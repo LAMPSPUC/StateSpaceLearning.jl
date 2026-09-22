@@ -191,7 +191,7 @@ function fit_split!(
         push!(rmse_vec, mean((val_y - prediction) .^ 2))
     end
 
-    fit!(
+    return fit!(
         model;
         α=α_set[argmin(rmse_vec)],
         information_criteria=information_criteria,

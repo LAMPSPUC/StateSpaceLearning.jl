@@ -1,7 +1,6 @@
 function get_SSL_results(
     y_train::Vector{Fl}, s::Int, μ_true, ν_true, γ_true, inf_criteria::String
 ) where {Fl<:AbstractFloat}
-
     model = StateSpaceLearning.StructuralModel(
         y_train; freq_seasonal=s, outlier=false, ξ_threshold=0, ζ_threshold=1, ω_threshold=1
     )

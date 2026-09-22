@@ -267,9 +267,8 @@ end
     - `Int`: Size of ζ calculated from T.
 
 """
-ζ_size(T::Int, ζ_threshold::Int, stochastic_start::Int)::Int = max(
-    0, T - ζ_threshold - max(2, stochastic_start)
-)
+ζ_size(T::Int, ζ_threshold::Int, stochastic_start::Int)::Int =
+    max(0, T - ζ_threshold - max(2, stochastic_start))
 
 """
 ω_size(T::Int, s::Int, ω_threshold::Int, stochastic_start::Int)::Int
@@ -286,9 +285,8 @@ end
     - `Int`: Size of ω calculated from T.
 
 """
-ω_size(T::Int, s::Int, ω_threshold::Int, stochastic_start::Int)::Int = max(
-    0, T - ω_threshold - s + 1 - max(0, max(2, stochastic_start) - s)
-)
+ω_size(T::Int, s::Int, ω_threshold::Int, stochastic_start::Int)::Int =
+    max(0, T - ω_threshold - s + 1 - max(0, max(2, stochastic_start) - s))
 
 """
 o_size(T::Int, stochastic_start::Int)::Int
@@ -318,9 +316,8 @@ o_size(T::Int, stochastic_start::Int)::Int = T - max(1, stochastic_start) + 1
     # Returns
     - `Int`: Size of ϕ calculated from T.
 """
-ϕ_size(T::Int, ϕ_threshold::Int, stochastic_start::Int)::Int = (
-    2 * (T - max(2, stochastic_start) + 1) - (max(1, ϕ_threshold) * 2)
-)
+ϕ_size(T::Int, ϕ_threshold::Int, stochastic_start::Int)::Int =
+    (2 * (T - max(2, stochastic_start) + 1) - (max(1, ϕ_threshold) * 2))
 
 """
     create_ξ(T::Int, ξ_threshold::Int, stochastic_start::Int)::Matrix
